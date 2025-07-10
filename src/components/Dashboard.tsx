@@ -61,11 +61,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const obterClassificacaoQualidade = (qualidade: number) => {
     if (qualidade < 355) {
-      return { texto: t('poorQuality'), cor: 'text-red-600', fundo: 'bg-red-100' };
+      return { texto: t('poorQuality'), cor: 'text-red-600', fundo: isDark ? 'bg-red-900' : 'bg-red-100' };
     } else if (qualidade < 365) {
-      return { texto: t('goodQuality'), cor: 'text-yellow-600', fundo: 'bg-yellow-100' };
+      return { texto: t('goodQuality'), cor: 'text-yellow-600', fundo: isDark ? 'bg-yellow-900' : 'bg-yellow-100' };
     } else {
-      return { texto: t('excellentQuality'), cor: 'text-green-600', fundo: 'bg-green-100' };
+      return { texto: t('excellentQuality'), cor: 'text-green-600', fundo: isDark ? 'bg-green-900' : 'bg-green-100' };
     }
   };
 
@@ -281,11 +281,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <div className={`p-4 rounded-lg border ${isDark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
                   <h3 className={`font-semibold mb-3 flex items-center ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
                     <Info className="h-4 w-4 mr-2 text-blue-500" />
-                    Métricas do Modelo
+                    Métricas do Modelo ML
                   </h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>R² (Precisão do modelo):</span>
+                      <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>R² Score (Precisão):</span>
                       <span className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
                         {(metricas.r2 * 100).toFixed(0)}%
                       </span>
@@ -294,17 +294,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       <div className="bg-green-600 h-2 rounded-full" style={{ width: `${metricas.r2 * 100}%` }}></div>
                     </div>
                     <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {metricas.r2 > 0.9 ? "Modelo muito preciso" : metricas.r2 > 0.7 ? "Modelo razoavelmente preciso" : "Modelo pouco preciso"}
+                      {metricas.r2 > 0.9 ? "Modelo ML muito preciso" : metricas.r2 > 0.8 ? "Modelo ML preciso" : metricas.r2 > 0.7 ? "Modelo ML razoável" : "Modelo ML impreciso"}
                     </p>
                     
                     <div className="flex justify-between mt-3">
-                      <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>Erro Médio:</span>
+                      <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>MAE (Erro Médio):</span>
                       <span className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
                         {metricas.mae.toFixed(1)} {t('units')}
                       </span>
                     </div>
+                    <div className="flex justify-between">
+                      <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>MSE (Erro Quadrático):</span>
+                      <span className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                        {metricas.mse.toFixed(1)}
+                      </span>
+                    </div>
                     <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Em média, as previsões podem variar ±{metricas.mae.toFixed(1)} unidades
+                      Modelo treinado com {valoresReais.length} amostras. Erro médio: ±{metricas.mae.toFixed(1)} unidades
                     </p>
                   </div>
                 </div>
@@ -327,10 +333,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="space-y-6">
             <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} p-4 rounded-lg shadow-lg`}>
               <h3 className={`text-lg font-semibold mb-3 text-center ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
-                {t('realVsPredicted')}
+                {t('realVsPredicted')} (ML)
               </h3>
               <p className={`text-xs mb-3 text-center ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Este gráfico mostra como o modelo prevê comparado com dados reais
+                Este gráfico mostra como o modelo ML prevê comparado com dados reais de treinamento
               </p>
               <Line
                 data={dadosComparacao}
