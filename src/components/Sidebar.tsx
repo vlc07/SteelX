@@ -30,15 +30,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isDark 
 }) => {
   const menuItems = [
-    { id: 'presentation', icon: Presentation, label: t('presentation') },
-    { id: 'dashboard', icon: Home, label: t('dashboard') },
-    { id: 'simulation', icon: BarChart3, label: t('simulation') },
-    { id: 'comparison', icon: GitCompare, label: t('comparison') },
-    { id: 'optimization', icon: Settings, label: t('optimization') },
-    { id: 'results', icon: FileText, label: t('results') },
-    { id: 'help', icon: HelpCircle, label: t('help') },
-    { id: 'glossary', icon: BookOpen, label: t('glossary') },
-    { id: 'technical-docs', icon: FileCode, label: t('technicalDocs') }
+    { id: 'presentation', icon: Presentation, label: t('presentation'), tourId: 'presentation-tab' },
+    { id: 'dashboard', icon: Home, label: t('dashboard'), tourId: 'dashboard-tab' },
+    { id: 'simulation', icon: BarChart3, label: t('simulation'), tourId: 'simulation-tab' },
+    { id: 'comparison', icon: GitCompare, label: t('comparison'), tourId: 'comparison-tab' },
+    { id: 'optimization', icon: Settings, label: t('optimization'), tourId: 'optimization-tab' },
+    { id: 'results', icon: FileText, label: t('results'), tourId: 'results-tab' },
+    { id: 'help', icon: HelpCircle, label: t('help'), tourId: 'help-tab' },
+    { id: 'glossary', icon: BookOpen, label: t('glossary'), tourId: 'glossary-tab' },
+    { id: 'technical-docs', icon: FileCode, label: t('technicalDocs'), tourId: 'technical-docs-tab' }
   ];
 
   return (
@@ -86,6 +86,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }}
                   className={`
                     w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors
+                  `}
+                  data-tour={item.tourId}
+                >
                     ${isActive 
                       ? (isDark ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700')
                       : (isDark ? 'text-gray-300 hover:bg-gray-700 hover:text-white' : 'text-gray-600 hover:bg-gray-100')

@@ -1,5 +1,7 @@
 import React from 'react';
 import { Calculator, Users, Info, HelpCircle, Download } from 'lucide-react';
+import { GettingStarted } from './GettingStarted';
+import { InteractiveTour } from './InteractiveTour';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 
@@ -35,6 +37,7 @@ interface DashboardProps {
   onDownloadResults: () => void;
   t: (key: string) => string;
   isDark: boolean;
+  onTabChange?: (tab: string) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -57,8 +60,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   calcular,
   onDownloadResults,
   t,
-  isDark
+  isDark,
+  onTabChange
 }) => {
+  const [showTour, setShowTour] = React.useState(false);
+  const [showGettingStarted, setShowGettingStarted] = React.useState(true);
+
   const obterClassificacaoQualidade = (qualidade: number) => {
     if (qualidade < 355) {
       return { texto: t('poorQuality'), cor: 'text-red-600', fundo: isDark ? 'bg-red-900' : 'bg-red-100' };
@@ -102,8 +109,35 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Interactive Tour */}
+      <InteractiveTour
+        isOpen={showTour}
+        onClose={() => setShowTour(false)}
+        onTabChange={onTabChange || (() => {})}
+        isDark={isDark}
+      />
+
+      {/* Getting Started Guide */}
+      {showGettingStarted && (
+        <div className="relative">
+          <button
+            onClick={() => setShowGettingStarted(false)}
+            className={`absolute top-4 right-4 z-10 p-1 rounded ${
+              isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            ×
+          </button>
+          <GettingStarted
+            onStartTour={() => setShowTour(true)}
+            onTabChange={onTabChange || (() => {})}
+            isDark={isDark}
+          />
+        </div>
+      )}
+
       {/* Cabeçalho */}
-      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
+      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`} data-tour="header">
         <div className="flex items-center justify-center mb-4">
           <Calculator className="h-8 w-8 text-blue-500 mr-2" />
           <h1 className={`text-2xl font-bold text-blue-700 ${isDark ? 'text-blue-400' : ''}`}>
@@ -165,7 +199,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Painel de Controle */}
-        <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
+        <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`} data-tour="parameters">
           <h2 className={`text-xl font-bold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
             {t('processParameters')}
           </h2>
@@ -250,6 +284,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <button
               onClick={calcular}
               className="w-full bg-blue-500 text-white py-3 rounded hover:bg-blue-600 transition-colors font-semibold"
+              data-tour="calculate-button"
             >
               {t('calculate')}
             </button>
