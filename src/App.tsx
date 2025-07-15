@@ -157,6 +157,7 @@ function App() {
             onDownloadResults={downloadResults}
             t={t}
             isDark={isDark}
+            onTabChange={setActiveTab}
           />
         );
       case 'presentation':
