@@ -86,14 +86,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }}
                   className={`
                     w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors
-                  `}
-                  data-tour={item.tourId}
-                >
                     ${isActive 
                       ? (isDark ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700')
                       : (isDark ? 'text-gray-300 hover:bg-gray-700 hover:text-white' : 'text-gray-600 hover:bg-gray-100')
                     }
                   `}
+                  data-tour={item.tourId}
+                >
                 >
                   <Icon className="h-5 w-5 mr-3" />
                   {item.label}
