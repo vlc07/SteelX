@@ -30,44 +30,44 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
     {
       id: 'welcome',
       title: 'Bem-vindo ao SteelX',
-      content: 'Este sistema inteligente otimiza processos de fusão de aço carbono usando algoritmos de Machine Learning. Vamos fazer um tour pelas principais funcionalidades.',
+      content: 'Este sistema inteligente otimiza processos de fusão de aço carbono usando algoritmos de Machine Learning avançados. Vamos fazer um tour pelas principais funcionalidades do sistema.',
       target: 'body',
       position: 'bottom'
     },
     {
       id: 'presentation',
       title: 'Apresentação do Sistema',
-      content: 'Aqui você encontra informações sobre o projeto, equipe de desenvolvimento e especificações técnicas do sistema.',
+      content: 'Aqui você encontra informações detalhadas sobre o projeto, equipe de desenvolvimento, especificações técnicas e aplicações industriais do sistema SteelX.',
       target: '[data-tour="presentation-tab"]',
       position: 'right',
       action: 'presentation'
     },
     {
       id: 'dashboard',
-      title: 'Painel Principal',
-      content: 'O Dashboard é onde você ajusta os parâmetros do processo e obtém uma previsão rápida da qualidade. É o ponto de partida para usar o sistema.',
+      title: 'Painel Principal de Controle',
+      content: 'O Dashboard é o centro de controle onde você ajusta os parâmetros do processo metalúrgico e obtém previsões instantâneas de qualidade usando nosso modelo de IA.',
       target: '[data-tour="dashboard-tab"]',
       position: 'right',
       action: 'dashboard'
     },
     {
       id: 'parameters',
-      title: 'Parâmetros do Processo',
-      content: 'Ajuste os 4 parâmetros principais: Temperatura, Tempo, Pressão e Velocidade. Cada um influencia a qualidade final do aço de forma diferente.',
+      title: 'Configuração de Parâmetros',
+      content: 'Ajuste os 4 parâmetros críticos do processo: Temperatura (maior impacto), Tempo, Pressão e Velocidade. Cada parâmetro influencia a qualidade final de forma diferente.',
       target: '[data-tour="parameters"]',
       position: 'left'
     },
     {
       id: 'calculate',
-      title: 'Cálculo de Qualidade',
-      content: 'Clique em "Calcular Qualidade" para obter uma previsão instantânea baseada nos parâmetros atuais. O sistema usa ML para fazer essa predição.',
+      title: 'Predição de Qualidade com IA',
+      content: 'Clique em "Calcular Qualidade" para obter uma previsão instantânea baseada em nosso modelo de Machine Learning treinado com dados reais da indústria.',
       target: '[data-tour="calculate-button"]',
       position: 'top'
     },
     {
       id: 'simulation',
-      title: 'Laboratório de Simulação',
-      content: 'Na aba Simulação, você pode executar diferentes tipos de testes: simulação única, em lote ou análise de sensibilidade para entender melhor o comportamento do modelo.',
+      title: 'Laboratório de Simulação ML',
+      content: 'Execute diferentes tipos de análises: simulação única, em lote ou análise de sensibilidade para compreender o comportamento do modelo de IA em diversos cenários.',
       target: '[data-tour="simulation-tab"]',
       position: 'right',
       action: 'simulation'
@@ -75,33 +75,34 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
     {
       id: 'optimization',
       title: 'Otimização Inteligente',
-      content: 'O sistema oferece 3 algoritmos de otimização: Busca em Grade, Algoritmo Genético e Otimização Bayesiana. Cada um encontra os melhores parâmetros de forma diferente.',
+      content: 'Utilize algoritmos avançados de otimização: Busca em Grade, Algoritmo Genético e Otimização Bayesiana para encontrar automaticamente os melhores parâmetros.',
       target: '[data-tour="optimization-tab"]',
       position: 'right',
       action: 'optimization'
     },
     {
       id: 'results',
-      title: 'Análise de Resultados',
-      content: 'Aqui você visualiza todos os resultados de simulações e otimizações, com gráficos detalhados e relatórios exportáveis.',
+      title: 'Análise Avançada de Resultados',
+      content: 'Visualize resultados detalhados com gráficos interativos, métricas de performance do modelo ML e relatórios exportáveis para análise técnica.',
       target: '[data-tour="results-tab"]',
       position: 'right',
       action: 'results'
     },
     {
       id: 'help',
-      title: 'Ajuda e Suporte',
-      content: 'Se tiver dúvidas, consulte a seção de Ajuda com FAQ e o Glossário com definições técnicas.',
+      title: 'Suporte e Documentação',
+      content: 'Acesse documentação técnica completa, FAQ detalhado e glossário de termos para maximizar o uso do sistema SteelX.',
       target: '[data-tour="help-tab"]',
       position: 'right',
       action: 'help'
     },
     {
       id: 'complete',
-      title: 'Tour Concluído',
-      content: 'Agora você conhece as principais funcionalidades do SteelX. Comece pelo Dashboard para fazer sua primeira otimização!',
+      title: 'Tour Concluído com Sucesso',
+      content: 'Parabéns! Agora você conhece todas as funcionalidades do SteelX. Comece pelo Dashboard para realizar sua primeira otimização de processo metalúrgico.',
       target: 'body',
-      position: 'bottom'
+      position: 'bottom',
+      action: 'dashboard'
     }
   ];
 
@@ -116,7 +117,10 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
 
   useEffect(() => {
     if (isActive && tourSteps[currentStep]?.action) {
-      onTabChange(tourSteps[currentStep].action!);
+      // Small delay to ensure smooth transition
+      setTimeout(() => {
+        onTabChange(tourSteps[currentStep].action!);
+      }, 100);
     }
   }, [currentStep, isActive, onTabChange]);
 
@@ -137,6 +141,8 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
   const closeTour = () => {
     setIsActive(false);
     onClose();
+    // Return to dashboard after tour completion
+    onTabChange('dashboard');
   };
 
   const skipTour = () => {
@@ -150,7 +156,7 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50" />
+      <div className="fixed inset-0 bg-black bg-opacity-60 z-50" />
       
       {/* Tour Modal */}
       <div className={`fixed z-50 ${
@@ -160,7 +166,7 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
       }`}>
         <div className={`
           ${isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'} 
-          border rounded-lg shadow-xl p-6 max-w-md w-full
+          border rounded-xl shadow-2xl p-6 max-w-md w-full animate-slide-in
         `}>
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
@@ -169,19 +175,21 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
             </h3>
             <button
               onClick={closeTour}
-              className={`p-1 rounded ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`p-1 rounded-full hover:bg-opacity-20 hover:bg-gray-500 transition-colors ${
+                isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
+              }`}
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
           {/* Content */}
-          <p className={`mb-6 ${isDark ? 'text-gray-300' : 'text-gray-600'} leading-relaxed`}>
+          <p className={`mb-6 ${isDark ? 'text-gray-300' : 'text-gray-600'} leading-relaxed text-sm`}>
             {currentTourStep.content}
           </p>
 
           {/* Progress */}
-          <div className="mb-4">
+          <div className="mb-6">
             <div className="flex justify-between text-sm mb-2">
               <span className={isDark ? 'text-gray-400' : 'text-gray-500'}>
                 Passo {currentStep + 1} de {tourSteps.length}
@@ -192,7 +200,7 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                className="bg-blue-600 h-2 rounded-full transition-all duration-500"
                 style={{ width: `${((currentStep + 1) / tourSteps.length) * 100}%` }}
               />
             </div>
@@ -202,7 +210,9 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
           <div className="flex justify-between items-center">
             <button
               onClick={skipTour}
-              className={`text-sm ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`text-sm px-3 py-1 rounded transition-colors ${
+                isDark ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              }`}
             >
               Pular Tour
             </button>
@@ -211,11 +221,11 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
               {currentStep > 0 && (
                 <button
                   onClick={prevStep}
-                  className={`flex items-center px-4 py-2 rounded ${
+                  className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
                     isDark 
                       ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  } transition-colors`}
+                  }`}
                 >
                   <ArrowLeft className="h-4 w-4 mr-1" />
                   Anterior
@@ -224,12 +234,12 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
 
               <button
                 onClick={nextStep}
-                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
                 {currentStep === tourSteps.length - 1 ? (
                   <>
                     <CheckCircle className="h-4 w-4 mr-1" />
-                    Concluir
+                    Finalizar
                   </>
                 ) : (
                   <>
@@ -248,10 +258,11 @@ export const InteractiveTour: React.FC<InteractiveTourProps> = ({
         <style>
           {`
             ${currentTourStep.target} {
-              position: relative;
-              z-index: 51;
-              box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.5);
-              border-radius: 8px;
+              position: relative !important;
+              z-index: 51 !important;
+              box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.6) !important;
+              border-radius: 8px !important;
+              background-color: ${isDark ? 'rgba(55, 65, 81, 0.95)' : 'rgba(255, 255, 255, 0.95)'} !important;
             }
           `}
         </style>
