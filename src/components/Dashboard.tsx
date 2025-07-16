@@ -1,7 +1,5 @@
 import React from 'react';
 import { Calculator, Users, Info, HelpCircle, Download } from 'lucide-react';
-import { GettingStarted } from './GettingStarted';
-import { InteractiveTour } from './InteractiveTour';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
 
@@ -37,7 +35,6 @@ interface DashboardProps {
   onDownloadResults: () => void;
   t: (key: string) => string;
   isDark: boolean;
-  onTabChange?: (tab: string) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -61,10 +58,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onDownloadResults,
   t,
   isDark,
-  onTabChange
 }) => {
-  const [showTour, setShowTour] = React.useState(false);
-  const [showGettingStarted, setShowGettingStarted] = React.useState(true);
 
   const obterClassificacaoQualidade = (qualidade: number) => {
     if (qualidade < 355) {
@@ -109,33 +103,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Interactive Tour */}
-      <InteractiveTour
-        isOpen={showTour}
-        onClose={() => setShowTour(false)}
-        onTabChange={onTabChange || (() => {})}
-        isDark={isDark}
-      />
-
-      {/* Getting Started Guide */}
-      {showGettingStarted && (
-        <div className="relative">
-          <button
-            onClick={() => setShowGettingStarted(false)}
-            className={`absolute top-4 right-4 z-10 p-1 rounded ${
-              isDark ? 'text-gray-400 hover:text-white' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            ×
-          </button>
-          <GettingStarted
-            onStartTour={() => setShowTour(true)}
-            onTabChange={onTabChange || (() => {})}
-            isDark={isDark}
-          />
-        </div>
-      )}
-
       {/* Cabeçalho */}
       <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`} data-tour="header">
         <div className="flex items-center justify-center mb-4">
@@ -188,10 +155,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className={`mt-4 ${isDark ? 'bg-blue-900' : 'bg-blue-50'} rounded-lg p-4 border ${isDark ? 'border-blue-800' : 'border-blue-200'}`}>
             <h3 className={`font-semibold mb-2 ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>Como usar:</h3>
             <ol className={`list-decimal list-inside space-y-1 text-sm ${isDark ? 'text-blue-200' : 'text-blue-700'}`}>
-              <li>{t('helpStep1')}</li>
-              <li>{t('helpStep2')}</li>
-              <li>{t('helpStep3')}</li>
-              <li>{t('helpStep4')}</li>
+              <li>Ajuste os parâmetros do processo (temperatura, tempo, pressão e velocidade)</li>
+              <li>Clique em "Calcular" para ver a qualidade prevista</li>
+              <li>Analise os gráficos para entender melhor os resultados</li>
+              <li>Use a classificação simples para entender se a qualidade é boa ou ruim</li>
             </ol>
           </div>
         )}
