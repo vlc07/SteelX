@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Settings, Play, BarChart, Brain, Search, Zap } from 'lucide-react';
 import { OptimizationRange } from '../types';
+import { PARAMETER_LIMITS, validateAllParameters } from '../utils/parameterValidation';
 
 interface OptimizationProps {
   t: (key: string) => string;
@@ -10,10 +11,26 @@ interface OptimizationProps {
 
 export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimizationComplete }) => {
   const [ranges, setRanges] = useState<{[key: string]: OptimizationRange}>({
-    temperatura: { min: 1450, max: 1520, step: 5 },
-    tempo: { min: 30, max: 90, step: 5 },
-    pressao: { min: 100, max: 102, step: 0.1 },
-    velocidade: { min: 290, max: 310, step: 1 }
+    temperatura: { 
+      min: PARAMETER_LIMITS.temperatura.min, 
+      max: PARAMETER_LIMITS.temperatura.max, 
+      step: PARAMETER_LIMITS.temperatura.step 
+    },
+    tempo: { 
+      min: PARAMETER_LIMITS.tempo.min, 
+      max: PARAMETER_LIMITS.tempo.max, 
+      step: PARAMETER_LIMITS.tempo.step 
+    },
+    pressao: { 
+      min: PARAMETER_LIMITS.pressao.min, 
+      max: PARAMETER_LIMITS.pressao.max, 
+      step: PARAMETER_LIMITS.pressao.step 
+    },
+    velocidade: { 
+      min: PARAMETER_LIMITS.velocidade.min, 
+      max: PARAMETER_LIMITS.velocidade.max, 
+      step: PARAMETER_LIMITS.velocidade.step 
+    }
   });
 
   const [isOptimizing, setIsOptimizing] = useState(false);
@@ -310,11 +327,25 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
   };
 
   const updateRange = (param: string, field: keyof OptimizationRange, value: number) => {
+    const limits = PARAMETER_LIMITS[param as keyof typeof PARAMETER_LIMITS];
+    
+    // Validate the range values against industrial limits
+    let validatedValue = value;
+    if (field === 'min' && value < limits.min) {
+      validatedValue = limits.min;
+    } else if (field === 'max' && value > limits.max) {
+      validatedValue = limits.max;
+    } else if (field === 'min' && value >= ranges[param].max) {
+      validatedValue = ranges[param].max - limits.step;
+    } else if (field === 'max' && value <= ranges[param].min) {
+      validatedValue = ranges[param].min + limits.step;
+    }
+    
     setRanges(prev => ({
       ...prev,
       [param]: {
         ...prev[param],
-        [field]: value
+        [field]: validatedValue
       }
     }));
   };
@@ -462,10 +493,21 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
         {/* Optimization Ranges */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {Object.entries(ranges).map(([param, range]) => (
+            (() => {
+              const limits = PARAMETER_LIMITS[param as keyof typeof PARAMETER_LIMITS];
+              return (
             <div key={param} className={`p-4 rounded-lg border ${isDark ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
               <h3 className={`text-lg font-medium mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
-                {t(param)} - Faixa de Busca
+                {t(param)} - Faixa de Otimização
               </h3>
+              
+              {/* Industrial limits info */}
+              <div className={`mb-4 p-2 rounded text-xs ${isDark ? 'bg-blue-900 text-blue-200' : 'bg-blue-50 text-blue-700'}`}>
+                <strong>Limites Industriais:</strong> {limits.min} - {limits.max} {limits.unit}
+                <br />
+                <strong>Faixa Ótima:</strong> {limits.industrialRange}
+              </div>
+              
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -474,6 +516,8 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
                   <input
                     type="number"
                     value={range.min}
+                    min={limits.min}
+                    max={range.max - limits.step}
                     onChange={(e) => updateRange(param, 'min', Number(e.target.value))}
                     className={`w-full border rounded p-2 ${
                       isDark 
@@ -490,6 +534,8 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
                   <input
                     type="number"
                     value={range.max}
+                    min={range.min + limits.step}
+                    max={limits.max}
                     onChange={(e) => updateRange(param, 'max', Number(e.target.value))}
                     className={`w-full border rounded p-2 ${
                       isDark 
@@ -506,22 +552,35 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
                   <input
                     type="number"
                     value={range.step}
+                    min={limits.step}
+                    max={(range.max - range.min) / 4}
                     onChange={(e) => updateRange(param, 'step', Number(e.target.value))}
                     className={`w-full border rounded p-2 ${
                       isDark 
                         ? 'bg-gray-600 border-gray-500 text-white' 
                         : 'bg-white border-gray-300 text-gray-900'
                     }`}
-                    step={param === 'pressao' ? 0.01 : 0.1}
+                    step={limits.step}
                   />
                 </div>
               </div>
               
               {/* Search Space Info */}
               <div className={`mt-3 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Espaço de busca: {Math.ceil((range.max - range.min) / range.step) + 1} pontos
+                <strong>Espaço de busca:</strong> {Math.ceil((range.max - range.min) / range.step) + 1} pontos
+                <br />
+                <strong>Resolução:</strong> {range.step} {limits.unit}
               </div>
+              
+              {/* Warning for narrow ranges */}
+              {(range.max - range.min) < (limits.max - limits.min) * 0.3 && (
+                <div className={`mt-2 p-2 rounded text-xs ${isDark ? 'bg-yellow-900 text-yellow-200' : 'bg-yellow-50 text-yellow-700'}`}>
+                  ⚠️ Faixa muito restrita pode limitar a otimização
+                </div>
+              )}
             </div>
+              );
+            })()
           ))}
         </div>
 

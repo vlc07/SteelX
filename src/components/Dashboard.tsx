@@ -1,7 +1,9 @@
 import React from 'react';
-import { Calculator, Users, Info, HelpCircle, Download } from 'lucide-react';
+import { Calculator, Users, Info, HelpCircle, Download, AlertTriangle } from 'lucide-react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line, Bar } from 'react-chartjs-2';
+import { ParameterInput } from './ParameterInput';
+import { validateAllParameters, validateParameterCombination } from '../utils/parameterValidation';
 
 ChartJS.register(
   CategoryScale,
@@ -37,6 +39,11 @@ interface DashboardProps {
   isDark: boolean;
 }
 
+interface ValidationState {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
 export const Dashboard: React.FC<DashboardProps> = ({
   temperatura,
   setTemperatura,
@@ -59,6 +66,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
   t,
   isDark,
 }) => {
+  const [validationState, setValidationState] = React.useState<ValidationState>({
+    isValid: true,
+    errors: [],
+    warnings: []
+  });
+
+  // Validate parameters whenever they change
+  React.useEffect(() => {
+    const paramValidation = validateAllParameters({
+      temperatura,
+      tempo,
+      pressao,
+      velocidade
+    });
+    
+    const combinationValidation = validateParameterCombination({
+      temperatura,
+      tempo,
+      pressao,
+      velocidade
+    });
+    
+    setValidationState({
+      isValid: paramValidation.isValid && combinationValidation.isValid,
+      errors: paramValidation.errors,
+      warnings: combinationValidation.warnings
+    });
+  }, [temperatura, tempo, pressao, velocidade]);
 
   const obterClassificacaoQualidade = (qualidade: number) => {
     if (qualidade < 355) {
@@ -172,89 +207,79 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </h2>
           
           <div className="space-y-4">
-            <div>
-              <label className={`block mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                {t('temperature')} ({t('celsius')}):
-              </label>
-              <input
-                type="number"
-                value={temperatura}
-                onChange={(e) => setTemperatura(Number(e.target.value))}
-                className={`w-full border rounded p-2 ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
-                    : 'bg-white border-gray-300 text-gray-900'
-                }`}
-              />
-              <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                Faixa recomendada: 1450-1520°C
-              </p>
-            </div>
+            <ParameterInput
+              label={t('temperature')}
+              parameterName="temperatura"
+              value={temperatura}
+              onChange={setTemperatura}
+              isDark={isDark}
+            />
 
-            <div>
-              <label className={`block mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                {t('time')} ({t('minutes')}):
-              </label>
-              <input
-                type="number"
-                value={tempo}
-                onChange={(e) => setTempo(Number(e.target.value))}
-                className={`w-full border rounded p-2 ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
-                    : 'bg-white border-gray-300 text-gray-900'
-                }`}
-              />
-              <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                Faixa recomendada: 30-90 minutos
-              </p>
-            </div>
+            <ParameterInput
+              label={t('time')}
+              parameterName="tempo"
+              value={tempo}
+              onChange={setTempo}
+              isDark={isDark}
+            />
 
-            <div>
-              <label className={`block mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                {t('pressure')} ({t('kpa')}):
-              </label>
-              <input
-                type="number"
-                value={pressao}
-                onChange={(e) => setPressao(Number(e.target.value))}
-                className={`w-full border rounded p-2 ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
-                    : 'bg-white border-gray-300 text-gray-900'
-                }`}
-              />
-              <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                Faixa recomendada: 100-102 kPa
-              </p>
-            </div>
+            <ParameterInput
+              label={t('pressure')}
+              parameterName="pressao"
+              value={pressao}
+              onChange={setPressao}
+              isDark={isDark}
+            />
 
-            <div>
-              <label className={`block mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                {t('speed')} ({t('rpm')}):
-              </label>
-              <input
-                type="number"
-                value={velocidade}
-                onChange={(e) => setVelocidade(Number(e.target.value))}
-                className={`w-full border rounded p-2 ${
-                  isDark 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
-                    : 'bg-white border-gray-300 text-gray-900'
-                }`}
-              />
-              <p className={`text-xs mt-1 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                Faixa recomendada: 290-310 rpm
-              </p>
-            </div>
+            <ParameterInput
+              label={t('speed')}
+              parameterName="velocidade"
+              value={velocidade}
+              onChange={setVelocidade}
+              isDark={isDark}
+            />
+
+            {/* Validation Messages */}
+            {(!validationState.isValid || validationState.warnings.length > 0) && (
+              <div className="space-y-2">
+                {validationState.errors.map((error, index) => (
+                  <div key={index} className={`p-3 rounded-lg ${isDark ? 'bg-red-900 text-red-200' : 'bg-red-50 text-red-700'} border ${isDark ? 'border-red-700' : 'border-red-200'}`}>
+                    <div className="flex items-start">
+                      <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm">{error}</span>
+                    </div>
+                  </div>
+                ))}
+                
+                {validationState.warnings.map((warning, index) => (
+                  <div key={index} className={`p-3 rounded-lg ${isDark ? 'bg-yellow-900 text-yellow-200' : 'bg-yellow-50 text-yellow-700'} border ${isDark ? 'border-yellow-700' : 'border-yellow-200'}`}>
+                    <div className="flex items-start">
+                      <AlertTriangle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                      <span className="text-sm">{warning}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <button
               onClick={calcular}
-              className="w-full bg-blue-500 text-white py-3 rounded hover:bg-blue-600 transition-colors font-semibold"
+              disabled={!validationState.isValid}
+              className={`w-full py-3 rounded-lg font-semibold transition-colors ${
+                validationState.isValid
+                  ? 'bg-blue-500 text-white hover:bg-blue-600'
+                  : 'bg-gray-400 text-gray-200 cursor-not-allowed'
+              }`}
               data-tour="calculate-button"
             >
               {t('calculate')}
             </button>
+            
+            {!validationState.isValid && (
+              <p className={`text-sm text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                Corrija os parâmetros acima para habilitar o cálculo
+              </p>
+            )}
           </div>
 
           {/* Resultado com Classificação */}

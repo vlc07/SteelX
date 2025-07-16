@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Play, BarChart3, TrendingUp, Zap, AlertCircle } from 'lucide-react';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import { ParameterInput } from './ParameterInput';
+import { validateAllParameters, validateParameterCombination } from '../utils/parameterValidation';
 
 ChartJS.register(
   CategoryScale,
@@ -45,6 +47,34 @@ export const Simulation: React.FC<SimulationProps> = ({
   const [isRunning, setIsRunning] = useState(false);
   const [activeAnalysis, setActiveAnalysis] = useState<'single' | 'batch' | 'sensitivity'>('single');
   const [sensitivityResults, setSensitivityResults] = useState<any>(null);
+  const [validationState, setValidationState] = useState({
+    isValid: true,
+    errors: [] as string[],
+    warnings: [] as string[]
+  });
+
+  // Validate parameters whenever they change
+  React.useEffect(() => {
+    const paramValidation = validateAllParameters({
+      temperatura,
+      tempo,
+      pressao,
+      velocidade
+    });
+    
+    const combinationValidation = validateParameterCombination({
+      temperatura,
+      tempo,
+      pressao,
+      velocidade
+    });
+    
+    setValidationState({
+      isValid: paramValidation.isValid && combinationValidation.isValid,
+      errors: paramValidation.errors,
+      warnings: combinationValidation.warnings
+    });
+  }, [temperatura, tempo, pressao, velocidade]);
 
   // Enhanced quality calculation with more realistic ML-based model
   const calculateQuality = (temp: number, time: number, press: number, speed: number) => {
@@ -407,36 +437,67 @@ export const Simulation: React.FC<SimulationProps> = ({
         </div>
 
         {/* Current Parameters Display */}
-        <div className={`${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-4 mb-6`}>
-          <h3 className={`text-lg font-semibold mb-3 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
-            Parâmetros Atuais
+        <div className={`${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-6 mb-6`}>
+          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+            Configuração de Parâmetros para Simulação
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Temperatura</div>
-              <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                {temperatura}°C
-              </div>
-            </div>
-            <div className="text-center">
-              <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Tempo</div>
-              <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                {tempo} min
-              </div>
-            </div>
-            <div className="text-center">
-              <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Pressão</div>
-              <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                {pressao} kPa
-              </div>
-            </div>
-            <div className="text-center">
-              <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Velocidade</div>
-              <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                {velocidade} rpm
-              </div>
-            </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ParameterInput
+              label="Temperatura"
+              parameterName="temperatura"
+              value={temperatura}
+              onChange={setTemperatura}
+              isDark={isDark}
+            />
+
+            <ParameterInput
+              label="Tempo"
+              parameterName="tempo"
+              value={tempo}
+              onChange={setTempo}
+              isDark={isDark}
+            />
+
+            <ParameterInput
+              label="Pressão"
+              parameterName="pressao"
+              value={pressao}
+              onChange={setPressao}
+              isDark={isDark}
+            />
+
+            <ParameterInput
+              label="Velocidade"
+              parameterName="velocidade"
+              value={velocidade}
+              onChange={setVelocidade}
+              isDark={isDark}
+            />
           </div>
+          
+          {/* Validation Messages */}
+          {(!validationState.isValid || validationState.warnings.length > 0) && (
+            <div className="mt-4 space-y-2">
+              {validationState.errors.map((error, index) => (
+                <div key={index} className={`p-3 rounded-lg ${isDark ? 'bg-red-900 text-red-200' : 'bg-red-50 text-red-700'} border ${isDark ? 'border-red-700' : 'border-red-200'}`}>
+                  <div className="flex items-start">
+                    <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">{error}</span>
+                  </div>
+                </div>
+              ))}
+              
+              {validationState.warnings.map((warning, index) => (
+                <div key={index} className={`p-3 rounded-lg ${isDark ? 'bg-yellow-900 text-yellow-200' : 'bg-yellow-50 text-yellow-700'} border ${isDark ? 'border-yellow-700' : 'border-yellow-200'}`}>
+                  <div className="flex items-start">
+                    <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">{warning}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}
@@ -444,9 +505,9 @@ export const Simulation: React.FC<SimulationProps> = ({
           {activeAnalysis === 'single' && (
             <button
               onClick={runSingleSimulation}
-              disabled={isRunning}
+              disabled={isRunning || !validationState.isValid}
               className={`flex items-center px-6 py-3 rounded-lg font-medium ${
-                isRunning
+                isRunning || !validationState.isValid
                   ? 'bg-gray-400 text-white cursor-not-allowed'
                   : 'bg-blue-500 text-white hover:bg-blue-600'
               } transition-colors`}
@@ -459,9 +520,9 @@ export const Simulation: React.FC<SimulationProps> = ({
           {activeAnalysis === 'batch' && (
             <button
               onClick={runBatchSimulation}
-              disabled={isRunning}
+              disabled={isRunning || !validationState.isValid}
               className={`flex items-center px-6 py-3 rounded-lg font-medium ${
-                isRunning
+                isRunning || !validationState.isValid
                   ? 'bg-gray-400 text-white cursor-not-allowed'
                   : 'bg-green-500 text-white hover:bg-green-600'
               } transition-colors`}
@@ -474,9 +535,9 @@ export const Simulation: React.FC<SimulationProps> = ({
           {activeAnalysis === 'sensitivity' && (
             <button
               onClick={runSensitivityAnalysis}
-              disabled={isRunning}
+              disabled={isRunning || !validationState.isValid}
               className={`flex items-center px-6 py-3 rounded-lg font-medium ${
-                isRunning
+                isRunning || !validationState.isValid
                   ? 'bg-gray-400 text-white cursor-not-allowed'
                   : 'bg-purple-500 text-white hover:bg-purple-600'
               } transition-colors`}
@@ -486,6 +547,14 @@ export const Simulation: React.FC<SimulationProps> = ({
             </button>
           )}
         </div>
+        
+        {!validationState.isValid && (
+          <div className="text-center">
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              Corrija os parâmetros acima para habilitar as simulações
+            </p>
+          </div>
+        )}
 
         {/* Progress indicator */}
         {isRunning && (
