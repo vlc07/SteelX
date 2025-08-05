@@ -141,10 +141,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Cabeçalho */}
       <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`} data-tour="header">
         <div className="flex items-center justify-center mb-4">
-          <Calculator className="h-8 w-8 text-blue-500 mr-2" />
-          <h1 className={`text-2xl font-bold text-blue-700 ${isDark ? 'text-blue-400' : ''}`}>
-            SteelX - {t('title')}
-          </h1>
+          <img 
+            src="/Design sem nome_20250801_134847_0000.svg" 
+            alt="MetaLytics" 
+            className="h-12 w-auto mr-2"
+          />
         </div>
         
         {/* Subtitle */}
@@ -152,12 +153,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
             Sistema Inteligente para Otimização de Processos Metalúrgicos
           </p>
-        </div>
-        
-        <div className="flex items-center justify-center mb-4">
-          <h2 className={`text-xl font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-            {t('title')}
-          </h2>
         </div>
         
         {/* Seção dos Autores */}

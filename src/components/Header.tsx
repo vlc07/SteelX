@@ -46,10 +46,11 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             
             <div className="flex items-center space-x-2">
-              <Calculator className="h-6 w-6 text-blue-500" />
-              <h1 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-                {t('title')}
-              </h1>
+              <img 
+                src="/Design sem nome_20250801_134847_0000.svg" 
+                alt="MetaLytics" 
+                className="h-8 w-auto"
+              />
             </div>
           </div>
 

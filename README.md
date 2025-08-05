@@ -1,1 +1,1 @@
-SteelX - Sistema de Otimização de Processos Metalúrgicos
+MetaLytics - Sistema de Otimização de Processos Metalúrgicos

@@ -31,7 +31,14 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
             </div>
           </div>
           <h1 className="text-4xl font-bold mb-4">
-            SteelX - {t('systemOverview')}
+            <div className="flex items-center justify-center mb-4">
+              <img 
+                src="/Design sem nome_20250801_134847_0000.svg" 
+                alt="MetaLytics" 
+                className="h-16 w-auto mr-4"
+              />
+              <span>{t('systemOverview')}</span>
+            </div>
           </h1>
           <p className="text-xl mb-6 opacity-90">
             {t('intelligentSystem')}

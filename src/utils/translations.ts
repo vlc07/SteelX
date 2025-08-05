@@ -3,7 +3,7 @@ import { Translations } from '../types';
 export const translations: Translations = {
   pt: {
     // Header
-    title: 'SteelX',
+    title: 'MetaLytics',
     authors: 'Autores do Projeto',
     howToUse: 'Como usar esta ferramenta?',
     hideHelp: 'Ocultar Ajuda',
@@ -209,7 +209,7 @@ export const translations: Translations = {
   
   en: {
     // Header
-    title: 'SteelX',
+    title: 'MetaLytics',
     authors: 'Project Authors',
     howToUse: 'How to use this tool?',
     hideHelp: 'Hide Help',
@@ -415,7 +415,7 @@ export const translations: Translations = {
   
   es: {
     // Header
-    title: 'SteelX',
+    title: 'MetaLytics',
     authors: 'Autores del Proyecto',
     howToUse: '¿Cómo usar esta herramienta?',
     hideHelp: 'Ocultar Ayuda',
