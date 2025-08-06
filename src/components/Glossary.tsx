@@ -85,7 +85,12 @@ export const Glossary: React.FC<GlossaryProps> = ({ t, isDark }) => {
       <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
         <h2 className={`text-2xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
           <BookOpen className="h-6 w-6 mr-2 text-blue-500" />
-          {t('glossaryTitle')}
+          <span>{t('glossaryTitle')} - </span>
+          <img 
+            src="/src/Cópia de Cópia de Cópia de metalyics.svg" 
+            alt="MetaLytics" 
+            className="h-6 w-auto ml-2"
+          />
         </h2>
 
         {/* Search Bar */}

@@ -51,7 +51,7 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
           <BookOpen className="h-6 w-6 mr-2 text-blue-500" />
           <span>Documentação Técnica - </span>
           <img 
-            src="/Design sem nome_20250801_134847_0000.svg" 
+            src="/src/Cópia de Cópia de Cópia de metalyics.svg" 
             alt="MetaLytics" 
             className="h-6 w-auto ml-2"
           />

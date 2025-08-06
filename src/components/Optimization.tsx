@@ -413,7 +413,12 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
       <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
         <h2 className={`text-2xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
           <Settings className="h-6 w-6 mr-2 text-blue-500" />
-          <span>Otimização com Algoritmos ML</span>
+          <span>Otimização com Algoritmos ML - </span>
+          <img 
+            src="/src/Cópia de Cópia de Cópia de metalyics.svg" 
+            alt="MetaLytics" 
+            className="h-6 w-auto ml-2"
+          />
         </h2>
 
         {/* Optimization Method Selection */}

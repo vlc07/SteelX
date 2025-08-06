@@ -33,7 +33,7 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
           <h1 className="text-4xl font-bold mb-4">
             <div className="flex items-center justify-center mb-4">
               <img 
-                src="/Design sem nome_20250801_134847_0000.svg" 
+                src="/src/Cópia de Cópia de Cópia de metalyics.svg" 
                 alt="MetaLytics" 
                 className="h-16 w-auto mr-4"
               />

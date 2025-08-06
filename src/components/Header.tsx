@@ -47,7 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
             
             <div className="flex items-center space-x-2">
               <img 
-                src="/Design sem nome_20250801_134847_0000.svg" 
+                src="/src/Cópia de Cópia de Cópia de metalyics.svg" 
                 alt="MetaLytics" 
                 className="h-8 w-auto"
               />
