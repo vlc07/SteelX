@@ -1,1 +1,1 @@
-MetaLytics - Sistema de Otimização de Processos Metalúrgicos
+Metalyics - Sistema de Otimização de Processos Metalúrgicos
