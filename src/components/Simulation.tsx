@@ -401,9 +401,9 @@ export const Simulation: React.FC<SimulationProps> = ({
           <BarChart3 className="h-6 w-6 mr-2 text-blue-500" />
           <span>{t('simulation')} & Análise ML - </span>
           <img 
-            src="/src/Cópia de Cópia de Cópia de metalyics.svg" 
+            src="/metalyics-logo.svg" 
             alt="MetaLytics" 
-            className="h-6 w-auto ml-2"
+            className="h-7 w-auto ml-2"
           />
         </h2>
 

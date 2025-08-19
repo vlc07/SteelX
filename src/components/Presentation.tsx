@@ -25,20 +25,15 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
       {/* Hero Section */}
       <div className={`${isDark ? 'bg-gradient-to-br from-blue-900 to-purple-900' : 'bg-gradient-to-br from-blue-600 to-purple-600'} rounded-2xl p-8 text-white`}>
         <div className="text-center">
-          <div className="flex justify-center mb-6">
-            <div className="p-4 bg-white bg-opacity-20 rounded-full">
-              <Factory className="h-16 w-16" />
-            </div>
+          <div className="flex justify-center mb-8">
+            <img 
+              src="/metalyics-logo.svg" 
+              alt="MetaLytics" 
+              className="h-24 w-auto"
+            />
           </div>
           <h1 className="text-4xl font-bold mb-4">
-            <div className="flex items-center justify-center mb-4">
-              <img 
-                src="/src/Cópia de Cópia de Cópia de metalyics.svg" 
-                alt="MetaLytics" 
-                className="h-16 w-auto mr-4"
-              />
-              <span>{t('systemOverview')}</span>
-            </div>
+            {t('systemOverview')}
           </h1>
           <p className="text-xl mb-6 opacity-90">
             {t('intelligentSystem')}
