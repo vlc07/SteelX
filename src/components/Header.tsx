@@ -49,7 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
               <img 
                 src="/metalyics-logo.svg" 
                 alt="Metalyics" 
-                className="h-10 w-auto"
+                className="h-11 w-auto"
               />
             </div>
           </div>
