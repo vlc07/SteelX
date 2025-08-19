@@ -3,7 +3,7 @@ import { Translations } from '../types';
 export const translations: Translations = {
   pt: {
     // Header
-    title: 'MetaLytics',
+    title: 'Metalyics',
     authors: 'Autores do Projeto',
     howToUse: 'Como usar esta ferramenta?',
     hideHelp: 'Ocultar Ajuda',
