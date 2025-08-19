@@ -29,7 +29,7 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
             <img 
               src="/metalyics-logo.svg" 
               alt="MetaLytics" 
-              className="h-24 w-auto"
+              className="h-35 w-auto"
             />
           </div>
           <h1 className="text-4xl font-bold mb-4">
