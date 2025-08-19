@@ -53,9 +53,9 @@ export const Help: React.FC<HelpProps> = ({ t, isDark }) => {
           <HelpCircle className="h-6 w-6 mr-2 text-blue-500" />
           <span>{t('help')} & FAQ - </span>
           <img 
-            src="/src/Cópia de Cópia de Cópia de metalyics.svg" 
+            src="/metalyics-logo.svg" 
             alt="MetaLytics" 
-            className="h-6 w-auto ml-2"
+            className="h-7 w-auto ml-2"
           />
         </h2>
 
