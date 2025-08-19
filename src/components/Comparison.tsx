@@ -67,7 +67,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
           <span>{t('compareScenarios')} - </span>
           <img 
             src="/metalyics-logo.svg" 
-            alt="MetaLytics" 
+            alt="Metalyics" 
             className="h-7 w-auto ml-2"
           />
         </h2>
