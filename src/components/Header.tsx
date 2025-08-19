@@ -48,8 +48,8 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center space-x-2">
               <img 
                 src="/metalyics-logo.svg" 
-                alt="MetaLytics" 
-                className="h-10 w-auto"
+                alt="Metalyics" 
+                className="h-30 w-auto"
               />
             </div>
           </div>
