@@ -94,12 +94,12 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
               {activeSection === 'overview' && (
                 <div className="space-y-6">
                   <h3 className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    Visão Geral do Sistema SteelX
+                    Visão Geral do Sistema
                   </h3>
                   
                   <div className="space-y-4">
                     <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'} leading-relaxed`}>
-                      O SteelX é um sistema inteligente de otimização de processos metalúrgicos que utiliza 
+                      O Metalyics Software é um sistema inteligente de otimização de processos metalúrgicos que utiliza 
                       técnicas avançadas de Machine Learning e algoritmos de otimização para maximizar a 
                       qualidade do aço carbono produzido.
                     </p>
