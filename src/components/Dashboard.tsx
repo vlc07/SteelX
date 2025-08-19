@@ -143,7 +143,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="flex items-center justify-center mb-4">
           <img 
             src="/metalyics-logo.svg" 
-            alt="MetaLytics" 
+            alt="Metalyics" 
             className="h-16 w-auto mr-2"
           />
         </div>
