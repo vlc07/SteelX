@@ -28,7 +28,7 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
           <div className="flex justify-center mb-8">
             <img 
                 src="/metalyics-logo.svg" 
-                alt="MetaLytics" 
+                alt="Metalyics" 
                 className="mx-auto"
                 style={{ height: "150px", width: "auto" }}
             />
