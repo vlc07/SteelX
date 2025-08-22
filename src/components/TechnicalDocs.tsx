@@ -50,11 +50,7 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
         <h2 className={`text-2xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
           <BookOpen className="h-6 w-6 mr-2 text-blue-500" />
           <span>Documentação Técnica - </span>
-          <img 
-            src="/metalyics-logo.svg" 
-            alt="MetaLytics" 
-            className="h-7 w-auto ml-2"
-          />
+          
         </h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
