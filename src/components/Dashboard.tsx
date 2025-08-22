@@ -143,12 +143,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="flex items-center justify-center mb-4">
           <img 
             src="/metalyics-logo.svg" 
-            alt="MetaLytics" 
-            className="h-16 w-auto mx-auto"
-            onError={(e) => {
-              console.error('Dashboard logo failed to load');
-              e.currentTarget.style.display = 'none';
-            }}
+            alt="Metalyics" 
+            className="h-16 w-auto mr-2"
           />
         </div>
         

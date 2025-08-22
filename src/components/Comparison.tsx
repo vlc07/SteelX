@@ -64,16 +64,12 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
       <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
         <h2 className={`text-2xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
           <GitCompare className="h-6 w-6 mr-2 text-blue-500" />
+          <span>{t('compareScenarios')} - </span>
           <img 
             src="/metalyics-logo.svg" 
-            alt="MetaLytics" 
-            className="h-8 w-auto mr-3"
-            onError={(e) => {
-              console.error('Logo failed to load');
-              e.currentTarget.style.display = 'none';
-            }}
+            alt="Metalyics" 
+            className="h-7 w-auto ml-2"
           />
-          <span>{t('compareScenarios')}</span>
         </h2>
 
         {/* Add New Scenario */}
