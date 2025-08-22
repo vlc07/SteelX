@@ -87,9 +87,10 @@ export const Glossary: React.FC<GlossaryProps> = ({ t, isDark }) => {
           <BookOpen className="h-6 w-6 mr-2 text-blue-500" />
           <span>{t('glossaryTitle')} - </span>
           <img 
-            src="/metalyics-logo.svg" 
-            alt="MetaLytics" 
-            className="h-7 w-auto ml-2"
+            src="/Metalyicscerta.png" 
+                alt="Metalyics" 
+                className="mx-auto"
+                style={{ height: "20px", width: "auto" }}
           />
         </h2>
 
