@@ -65,12 +65,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
         <h2 className={`text-2xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
           <GitCompare className="h-6 w-6 mr-2 text-blue-500" />
           <span>{t('compareScenarios')} - </span>
-          <img 
-            src="/Metalyicscerta.png" 
-                alt="Metalyics" 
-                className="mx-auto"
-                style={{ height: "20px", width: "auto" }}
-          />
+        
         </h2>
 
         {/* Add New Scenario */}
