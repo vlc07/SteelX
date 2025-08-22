@@ -51,7 +51,7 @@ export const Help: React.FC<HelpProps> = ({ t, isDark }) => {
       <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
         <h2 className={`text-2xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
           <HelpCircle className="h-6 w-6 mr-2 text-blue-500" />
-          <span>{t('help')} & FAQ - </span>
+          <span>{t('help')} & FAQ </span>
           
         </h2>
 
