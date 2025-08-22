@@ -400,11 +400,7 @@ export const Simulation: React.FC<SimulationProps> = ({
         <h2 className={`text-2xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
           <BarChart3 className="h-6 w-6 mr-2 text-blue-500" />
           <span>{t('simulation')} & Análise ML - </span>
-          <img 
-            src="/metalyics-logo.svg" 
-            alt="MetaLytics" 
-            className="h-7 w-auto ml-2"
-          />
+          
         </h2>
 
         {/* Simulation Type Selector */}
