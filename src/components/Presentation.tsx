@@ -138,6 +138,13 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
                 Dados fornecidos pelo Centro Tecnológico Randon, garantindo autenticidade e aplicabilidade real 
                 dos algoritmos desenvolvidos.
               </p>
+
+              {/* Logo do CTR */}
+              <div className="flex justify-center mt-4">
+                <img 
+                    src="/logoCTR.svg"
+                    alt="Logo Centro Tecnológico Randon"
+                    className="h-12 w-auto"
             </div>
           </div>
         </div>
