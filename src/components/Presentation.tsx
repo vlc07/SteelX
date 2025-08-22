@@ -276,7 +276,7 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
               </li>
               <li className="flex items-center">
                 <span className="w-2 h-2 bg-orange-500 rounded-full mr-3"></span>
-                <strong>Algoritmo Genético:</strong> Evolução de soluções
+                <strong>Algoritmo Genético: </strong> Evolução de soluções
               </li>
               <li className="flex items-center">
                 <span className="w-2 h-2 bg-teal-500 rounded-full mr-3"></span>
