@@ -30,7 +30,7 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
                 src="/Metalyicscerta.png" 
                 alt="Metalyics" 
                 className="mx-auto"
-                style={{ height: "350px", width: "auto" }}
+                style={{ height: "150px", width: "auto" }}
             />
           </div>
           <h1 className="text-4xl font-bold mb-4">
