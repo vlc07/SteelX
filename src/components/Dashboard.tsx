@@ -142,9 +142,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`} data-tour="header">
         <div className="flex items-center justify-center mb-4">
           <img 
-            src="/metalyics-logo.svg" 
-            alt="Metalyics" 
-            className="h-16 w-auto mr-2"
+            src="/Metalyicscerta.png" 
+                alt="Metalyics" 
+                className="mx-auto"
+                style={{ height: "20px", width: "auto" }}
           />
         </div>
         
