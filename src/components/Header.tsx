@@ -52,6 +52,7 @@ export const Header: React.FC<HeaderProps> = ({
              className="mx-auto"
              style={{ height: "20px", width: "auto" }}
              />
+              
           </div>
 
           <div className="flex items-center space-x-3">
