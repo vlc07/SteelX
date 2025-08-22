@@ -148,7 +148,6 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
                />
             </div>
           </div>
-        </div>
 
         <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-8`}>
           <h2 className={`text-2xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
