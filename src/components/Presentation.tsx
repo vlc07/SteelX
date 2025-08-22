@@ -252,7 +252,7 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
               </li>
               <li className="flex items-center">
                 <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
-                <strong>Tempo de Processo:</strong>   10 - 120 minutos
+                <strong>Tempo de Processo:</strong>10 - 120 minutos
               </li>
               <li className="flex items-center">
                 <span className="w-2 h-2 bg-yellow-500 rounded-full mr-3"></span>
