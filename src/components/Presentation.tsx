@@ -27,19 +27,21 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
         <div className="text-center">
           <div className="flex justify-center mb-8">
             <img 
-             src="/Metalyicscerta.png" 
-             alt="MetaLytics" 
-             className="mx-auto"
-             style={{ height: "50px", width: "auto" }}
-             />
-
+              src="/Metalyicscerta.png" 
+              alt="MetaLytics" 
+              className="mx-auto"
+              style={{ height: "50px", width: "auto" }}
+            />
           </div>
+
           <h1 className="text-4xl font-bold mb-4">
             {t('systemOverview')}
           </h1>
+
           <p className="text-xl mb-6 opacity-90">
             {t('intelligentSystem')}
           </p>
+
           <div className="flex flex-wrap justify-center gap-4">
             <span className="px-4 py-2 bg-white bg-opacity-20 rounded-full text-sm">
               {t('artificialIntelligence')}
@@ -55,59 +57,57 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
       </div>
 
       {/* Authors Section */}
-<div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-8`}>
-  <h2 className={`text-2xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
-    <Users className="h-6 w-6 mr-3 text-blue-500" />
-    {t('teamDevelopment')}
-  </h2>
-  
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-8`}>
+        <h2 className={`text-2xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
+          <Users className="h-6 w-6 mr-3 text-blue-500" />
+          {t('teamDevelopment')}
+        </h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Vitor */}
+          <div className={`text-center p-6 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
+            <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-2 ring-gray-300">
+              <img src="/vitor.png" alt="Vitor Lorenzo Cerutti" className="w-full h-full object-cover" />
+            </div>
+            <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+              {t('vitorLorenzo')}
+            </h3>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              {t('principalDeveloper')}
+            </p>
+          </div>
 
-    {/* Vitor */}
-    <div className={`text-center p-6 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
-      <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-2 ring-gray-300">
-        <img src="/vitor.png" alt="Vitor Lorenzo Cerutti" className="w-full h-full object-cover" />
+          {/* Bernardo */}
+          <div className={`text-center p-6 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
+            <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-2 ring-gray-300">
+              <img src="/bernardo.png" alt="Bernardo Krauspenhar Paganin" className="w-full h-full object-cover" />
+            </div>
+            <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+              {t('bernardoKrauspenhar')}
+            </h3>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              {t('dataAnalyst')}
+            </p>
+          </div>
+
+          {/* Lorenzo */}
+          <div className={`text-center p-6 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
+            <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-2 ring-gray-300">
+              <img src="/zatta.png" alt="Lorenzo Zatta Santini" className="w-full h-full object-cover" />
+            </div>
+            <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+              {t('lorenzoZatta')}
+            </h3>
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              {t('aiResearcher')}
+            </p>
+          </div>
+        </div>
       </div>
-      <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-        {t('vitorLorenzo')}
-      </h3>
-      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-        {t('principalDeveloper')}
-      </p>
-    </div>
 
-    {/* Bernardo */}
-    <div className={`text-center p-6 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
-      <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-2 ring-gray-300">
-        <img src="/bernardo.png" alt="Bernardo Krauspenhar Paganin" className="w-full h-full object-cover" />
-      </div>
-      <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-        {t('bernardoKrauspenhar')}
-      </h3>
-      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-        {t('dataAnalyst')}
-      </p>
-    </div>
-
-    {/* Lorenzo */}
-    <div className={`text-center p-6 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
-      <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-2 ring-gray-300">
-        <img src="/zatta.png" alt="Lorenzo Zatta Santini" className="w-full h-full object-cover" />
-      </div>
-      <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-        {t('lorenzoZatta')}
-      </h3>
-      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-        {t('aiResearcher')}
-      </p>
-    </div>
-
-  </div>
-</div>
-
-
-      {/* Project Overview */}
+      {/* Project Overview (2 colunas) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Coluna 1 – Sobre o Projeto */}
         <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-8`}>
           <h2 className={`text-2xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
             <Target className="h-6 w-6 mr-3 text-green-500" />
@@ -122,7 +122,7 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
             </p>
             
             <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'} leading-relaxed`}>
-              O sistema utiliza técnicas avançadas de <strong>Machine Learning</strong> e <strong>Inteligência Artificial </strong> 
+              O sistema utiliza técnicas avançadas de <strong>Machine Learning</strong> e <strong>Inteligência Artificial</strong> 
               para otimizar parâmetros críticos do processo metalúrgico, resultando em maior qualidade do produto final 
               e redução de custos operacionais.
             </p>
@@ -134,6 +134,7 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
                   Parceria Estratégica
                 </h3>
               </div>
+
               <p className={`text-sm ${isDark ? 'text-blue-200' : 'text-blue-700'}`}>
                 Dados fornecidos pelo Centro Tecnológico Randon, garantindo autenticidade e aplicabilidade real 
                 dos algoritmos desenvolvidos.
@@ -142,12 +143,16 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
               {/* Logo do CTR */}
               <div className="flex justify-center mt-4">
                 <img 
-                    src="/logoCTR.svg"
-                    alt="Logo Centro Tecnológico Randon"
-                    className="h-12 w-auto"
-               />
+                  src="/logoCTR.svg"
+                  alt="Logo Centro Tecnológico Randon"
+                  className="h-12 w-auto"
+                />
+              </div>
             </div>
+          </div>
+        </div> {/* <-- FECHA o card da esquerda (faltava) */}
 
+        {/* Coluna 2 – Inovação e Tecnologia */}
         <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-8`}>
           <h2 className={`text-2xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
             <Lightbulb className="h-6 w-6 mr-3 text-yellow-500" />
@@ -198,7 +203,7 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
             </div>
           </div>
         </div>
-      </div>
+      </div> {/* <-- FECHA a grid de 2 colunas */}
 
       {/* Industry Applications */}
       <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg p-8`}>
