@@ -30,7 +30,7 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
              src="/Metalyicscerta.svg" 
              alt="MetaLytics" 
              className="mx-auto"
-             style={{ height: "50px", width: "auto" }}
+             style={{ height: "150px", width: "auto" }}
              />
 
           </div>
