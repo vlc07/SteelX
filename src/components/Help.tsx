@@ -52,11 +52,7 @@ export const Help: React.FC<HelpProps> = ({ t, isDark }) => {
         <h2 className={`text-2xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
           <HelpCircle className="h-6 w-6 mr-2 text-blue-500" />
           <span>{t('help')} & FAQ - </span>
-          <img 
-            src="/metalyics-logo.svg" 
-            alt="MetaLytics" 
-            className="h-7 w-auto ml-2"
-          />
+          
         </h2>
 
         {/* Quick Start Guide */}
