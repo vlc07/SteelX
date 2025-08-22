@@ -256,11 +256,11 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
               </li>
               <li className="flex items-center">
                 <span className="w-2 h-2 bg-yellow-500 rounded-full mr-3"></span>
-                <strong>Pressão:</strong>   95 - 110 kPa
+                <strong>Pressão:</strong>95 - 110 kPa
               </li>
               <li className="flex items-center">
                 <span className="w-2 h-2 bg-purple-500 rounded-full mr-3"></span>
-                <strong>Velocidade de Rotação:</strong>   250 - 350 rpm
+                <strong>Velocidade de Rotação:</strong>250 - 350 rpm
               </li>
             </ul>
           </div>
