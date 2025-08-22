@@ -46,6 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             
             <div className="flex items-center space-x-2">
+              
               <img 
              src="/Metalyicscerta.png" 
              alt="MetaLytics" 
