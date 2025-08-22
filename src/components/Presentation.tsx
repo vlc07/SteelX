@@ -65,7 +65,7 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
     {/* Vitor */}
     <div className={`text-center p-6 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
       <div className="w-24 h-24 mx-auto mb-4 rounded-full overflow-hidden ring-2 ring-gray-300">
-        <img src="/team/vitor.png" alt="Vitor Lorenzo Cerutti" className="w-full h-full object-cover" />
+        <img src="/vitor.png" alt="Vitor Lorenzo Cerutti" className="w-full h-full object-cover" />
       </div>
       <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
         {t('vitorLorenzo')}
