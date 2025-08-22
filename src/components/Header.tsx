@@ -52,6 +52,7 @@ export const Header: React.FC<HeaderProps> = ({
              alt="MetaLytics" 
              className="mx-auto"
              style={{ height: "20px", width: "auto" }}
+                
              />
               
           </div>
