@@ -27,10 +27,12 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
         <div className="text-center">
           <div className="flex justify-center mb-8">
             <img 
-              src="/metalyics-logo.svg" 
-              alt="MetaLytics" 
-              className="h-20 w-auto"
-            />
+             src="/metalyics-logo.svg" 
+             alt="MetaLytics" 
+             className="mx-auto"
+             style={{ height: "150px", width: "auto" }}
+             />
+
           </div>
           <h1 className="text-4xl font-bold mb-4">
             {t('systemOverview')}
