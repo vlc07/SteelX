@@ -145,7 +145,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
              src="/Metalyicscerta.png" 
              alt="MetaLytics" 
              className="mx-auto"
-             style={{ height: "50px", width: "auto" }}
+             style={{ height: "20px", width: "auto" }}
              />
         </div>
         
