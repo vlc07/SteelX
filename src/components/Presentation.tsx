@@ -115,7 +115,7 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
             </p>
             
             <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'} leading-relaxed`}>
-              O sistema utiliza técnicas avançadas de <strong>Machine Learning</strong> e <strong>Inteligência Artificial</strong> 
+              O sistema utiliza técnicas avançadas de <strong>Machine Learning</strong> e <strong>Inteligência Artificial </strong> 
               para otimizar parâmetros críticos do processo metalúrgico, resultando em maior qualidade do produto final 
               e redução de custos operacionais.
             </p>
