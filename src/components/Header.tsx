@@ -47,10 +47,14 @@ export const Header: React.FC<HeaderProps> = ({
             
             <div className="flex items-center space-x-2">
               <img 
-                src="/Metalyicscerta.png" 
-                alt="Metalyics" 
-                className="mx-auto"
-                style={{ height: "20px", width: "auto" }}
+              <img 
+                src="/metalyics-logo.svg" 
+                alt="MetaLytics" 
+                className="h-10 w-auto"
+                onError={(e) => {
+                  console.error('Header logo failed to load');
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             </div>
           </div>

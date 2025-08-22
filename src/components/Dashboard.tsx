@@ -142,10 +142,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`} data-tour="header">
         <div className="flex items-center justify-center mb-4">
           <img 
-            src="/Metalyicscerta.png" 
-                alt="Metalyics" 
-                className="mx-auto"
-                style={{ height: "30px", width: "auto" }}
+            src="/metalyics-logo.svg" 
+            alt="MetaLytics" 
+            className="h-16 w-auto mx-auto"
+            onError={(e) => {
+              console.error('Dashboard logo failed to load');
+              e.currentTarget.style.display = 'none';
+            }}
           />
         </div>
         
