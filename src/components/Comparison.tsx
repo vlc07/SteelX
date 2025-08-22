@@ -69,7 +69,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
             src="/Metalyicscerta.png" 
                 alt="Metalyics" 
                 className="mx-auto"
-                style={{ height: 15px", width: "auto" }}"
+                style={{ height: 30px", width: "auto" }}"
           />
         </h2>
 
