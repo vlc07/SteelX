@@ -27,7 +27,7 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
         <div className="text-center">
           <div className="flex justify-center mb-8">
             <img 
-                src="/Metalyicscerta.png" 
+                src="/Metalyicscerta (1).png" 
                 alt="Metalyics" 
                 className="mx-auto"
                 style={{ height: "50px", width: "auto" }}
