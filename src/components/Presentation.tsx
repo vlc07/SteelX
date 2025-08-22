@@ -145,7 +145,7 @@ export const Presentation: React.FC<PresentationProps> = ({ t, isDark }) => {
                 <img 
                   src="/logoCTR.svg"
                   alt="Logo Centro Tecnológico Randon"
-                  className="h-12 w-auto"
+                  className="h-15 w-auto"
                 />
               </div>
             </div>
