@@ -195,7 +195,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
         <div className="flex items-center justify-between mb-6">
           <h2 className={`text-2xl font-bold flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
             <FileText className="h-6 w-6 mr-2 text-blue-500" />
-            <span>Resultados e Relatórios - </span>
+            <span>Resultados e Relatórios </span>
             
           </h2>
           
