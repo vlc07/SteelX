@@ -297,14 +297,14 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
       }
       
       if (nextParams) {
-        const quality = calculateQuality(nextParams.temperatura, nextParams.tempo, nextParams.pressao, nextParams.velocidade);
-        samples.push({ params: nextParams, quality });
+        const result = calculateQualityAndEnergy(nextParams.temperatura, nextParams.tempo, nextParams.pressao, nextParams.velocidade);
+        samples.push({ params: nextParams, quality: result.quality, energy: result.energy });
         evaluations++;
         
-        if (quality > bestQuality) {
-          bestQuality = quality;
+        if (result.quality > bestQuality) {
+          bestQuality = result.quality;
           bestParams = nextParams;
-          log.push(`Iteração ${iter + 1}: nova melhor solução = ${bestQuality.toFixed(2)}`);
+          log.push(`Iteração ${iter + 1}: nova melhor solução = Q:${bestQuality.toFixed(2)}, E:${result.energy.toFixed(1)}kWh`);
         }
       }
       

@@ -334,6 +334,10 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
                       'Parâmetros atuais produzem boa qualidade' :
                       'Parâmetros atuais precisam de otimização'
                     }</li>
+                    <li>• Consumo energético atual: {currentParams.energia.toFixed(1)} kWh/ton ({
+                      currentParams.energia < 500 ? 'muito eficiente' :
+                      currentParams.energia < 600 ? 'eficiente' : 'ineficiente'
+                    })</li>
                   </ul>
                 </div>
                 <div>
@@ -350,6 +354,10 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
                       'Dados suficientes coletados para análise confiável'
                     }</li>
                     <li>• Monitore a temperatura de perto - é o parâmetro mais crítico</li>
+                    <li>• {currentParams.energia > 600 ? 
+                       'Considere reduzir temperatura ou tempo para economizar energia' :
+                       'Consumo energético está em nível aceitável'
+                     }</li>
                   </ul>
                 </div>
               </div>

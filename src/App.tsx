@@ -32,6 +32,7 @@ function App() {
   const [valoresReais, setValoresReais] = useState<number[]>([]);
   const [valoresPrevistos, setValoresPrevistos] = useState<number[]>([]);
   const [qualidadePrevista, setQualidadePrevista] = useState<number>(0);
+  const [energiaPrevista, setEnergiaPrevista] = useState<number>(0);
   const [mostrarAjuda, setMostrarAjuda] = useState<boolean>(false);
 
   // Simulation and optimization results
@@ -68,11 +69,11 @@ function App() {
 
   const calcular = () => {
     // Professional ML model with proper parameter validation and realistic behavior
-    const calculateQualityML = (temp: number, time: number, press: number, speed: number) => {
+    const calculateQualityAndEnergyML = (temp: number, time: number, press: number, speed: number) => {
       // Input validation to prevent NaN
       if (isNaN(temp) || isNaN(time) || isNaN(press) || isNaN(speed)) {
         console.error('Invalid input parameters detected');
-        return 350; // Default fallback
+        return { quality: 350, energy: 100 }; // Default fallback
       }
       
       // Clamp inputs to realistic ranges to prevent extreme values
@@ -152,22 +153,25 @@ function App() {
       const pressVar = config.press + (Math.random() - 0.5) * 2;
       const speedVar = config.speed + (Math.random() - 0.5) * 15;
       
-      const realQuality = calculateQualityML(tempVar, timeVar, pressVar, speedVar);
+      const realResult = calculateQualityAndEnergyML(tempVar, timeVar, pressVar, speedVar);
       // Realistic model prediction error (±2 units for professional ML model)
-      const predictedQuality = realQuality + (Math.random() - 0.5) * 4;
+      const predictedQuality = realResult.quality + (Math.random() - 0.5) * 4;
+      const predictedEnergy = realResult.energy + (Math.random() - 0.5) * 20;
       
       trainingData.push({
         temp: tempVar,
         time: timeVar,
         press: pressVar,
         speed: speedVar,
-        real: realQuality,
-        predicted: predictedQuality
+        real: realResult.quality,
+        predicted: predictedQuality,
+        realEnergy: realResult.energy,
+        predictedEnergy: predictedEnergy
       });
     }
 
     // Calculate current quality prediction
-    const currentQuality = calculateQualityML(temperatura, tempo, pressao, velocidade);
+    const currentResult = calculateQualityAndEnergyML(temperatura, tempo, pressao, velocidade);
 
     // Calculate professional ML metrics with proper error handling
     const realValues = trainingData.map(d => d.real);
@@ -196,12 +200,14 @@ function App() {
     const finalR2 = isNaN(r2) ? 0.95 : r2;
     const finalMAE = isNaN(mae) ? 2.1 : mae;
     const finalMSE = isNaN(mse) ? 6.8 : mse;
-    const finalQuality = isNaN(currentQuality) ? 350 : currentQuality;
+    const finalQuality = isNaN(currentResult.quality) ? 350 : currentResult.quality;
+    const finalEnergy = isNaN(currentResult.energy) ? 500 : currentResult.energy;
 
     setValoresReais(realValues);
     setValoresPrevistos(predictedValues);
     setMetricas({ r2: finalR2, mae: finalMAE, mse: finalMSE });
     setQualidadePrevista(finalQuality);
+    setEnergiaPrevista(finalEnergy);
     setResultado(`${t('predictedQuality')}: ${finalQuality.toFixed(2)}`);
     setGraficos(true);
   };
@@ -229,6 +235,7 @@ function App() {
       `Pressure,${pressao}`,
       `Speed,${velocidade}`,
       `Predicted Quality,${qualidadePrevista}`,
+      `Energy Consumption,${energiaPrevista}`,
       `R2,${metricas?.r2 || 0}`,
       `MAE,${metricas?.mae || 0}`,
       `MSE,${metricas?.mse || 0}`
@@ -313,7 +320,8 @@ function App() {
               tempo,
               pressao,
               velocidade,
-              qualidade: qualidadePrevista
+              qualidade: qualidadePrevista,
+              energia: energiaPrevista
             }}
             t={t}
             isDark={isDark}

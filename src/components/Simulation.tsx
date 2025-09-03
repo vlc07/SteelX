@@ -621,6 +621,14 @@ export const Simulation: React.FC<SimulationProps> = ({
                 </div>
               </div>
               <div className="text-center">
+                <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Energia Média</div>
+                <div className="text-2xl font-bold text-orange-600">
+                  {(simulationResults.filter(r => r.type === 'batch').reduce((sum, r) => sum + r.energy, 0) / 
+                    simulationResults.filter(r => r.type === 'batch').length).toFixed(1)}
+                </div>
+                <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>kWh/ton</div>
+              </div>
+              <div className="text-center">
                 <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Melhor Qualidade</div>
                 <div className="text-2xl font-bold text-green-600">
                   {Math.max(...simulationResults.filter(r => r.type === 'batch').map(r => r.quality)).toFixed(2)}
