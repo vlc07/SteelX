@@ -691,15 +691,29 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
               </div>
             </div>
 
-            <div className="text-center mb-4">
-              <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'} mb-1`}>
-                Qualidade Otimizada
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="text-center">
+                <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'} mb-1`}>
+                  Qualidade Otimizada
+                </div>
+                <div className={`text-3xl font-bold ${isDark ? 'text-green-200' : 'text-green-800'}`}>
+                  {optimizedResult.quality.toFixed(2)}
+                </div>
+                <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                  +{optimizedResult.improvement.toFixed(1)} unidades de melhoria
+                </div>
               </div>
-              <div className={`text-3xl font-bold ${isDark ? 'text-green-200' : 'text-green-800'}`}>
-                {optimizedResult.quality.toFixed(2)}
-              </div>
-              <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>
-                +{optimizedResult.improvement.toFixed(1)} unidades de melhoria
+              
+              <div className="text-center">
+                <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                  Consumo Energético
+                </div>
+                <div className={`text-2xl font-bold ${isDark ? 'text-green-200' : 'text-green-800'}`}>
+                  {optimizedResult.energy ? optimizedResult.energy.toFixed(1) : 'N/A'}
+                </div>
+                <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                  kWh/ton
+                </div>
               </div>
             </div>
 

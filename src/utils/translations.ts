@@ -442,6 +442,7 @@ export const translations: Translations = {
     
     // Quality
     predictedQuality: 'Calidad Prevista',
+    predictedEnergy: 'Energía Prevista',
     poorQuality: 'Calidad Mala',
     goodQuality: 'Calidad Buena',
     excellentQuality: 'Calidad Excelente',
