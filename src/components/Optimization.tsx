@@ -2,7 +2,7 @@
 import React from 'react';
 import {
   Play, Beaker, Dna, Brain, Gauge, AlertCircle, Trophy,
-  Thermometer, Timer, Activity, Wind
+  Thermometer, Timer, Wind
 } from 'lucide-react';
 import type { OptimizeMethod } from '../optim/runner';
 import { runOptimization } from '../optim/runner';
@@ -39,13 +39,48 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   const sub = isDark ? 'text-gray-400' : 'text-gray-600';
   const card = `${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-5`;
 
-  // bounds para compor as barras de posição
+  // bounds para compor barras e unidades
   const bounds = {
     temperatura: { min: 1400, max: 1600, unit: 'ºC', icon: <Thermometer className="h-4 w-4" /> },
     tempo:       { min:   10, max:  120, unit: 'min', icon: <Timer className="h-4 w-4" /> },
     pressao:     { min:   95, max:  110, unit: 'un',  icon: <Gauge className="h-4 w-4" /> },
     velocidade:  { min:  250, max:  350, unit: 'rpm', icon: <Wind className="h-4 w-4" /> },
   } as const;
+
+  // janelas "ótimas" (ajuste se necessário)
+  const ideal = {
+    temperatura: { low: 1470, high: 1530 }, // ótimo ~1500
+    tempo:       { low: 55,   high: 75   }, // ótimo ~65
+    pressao:     { low: 100,  high: 106  }, // ótimo ~103
+    velocidade:  { low: 290,  high: 310  }, // ótimo ~300
+  } as const;
+
+  // classificação -> badge
+  function badgeFor(name: keyof typeof bounds, v: number) {
+    const id = ideal[name];
+    if (v < id.low) {
+      return {
+        label: 'Baixo',
+        class: isDark
+          ? 'bg-amber-900/50 text-amber-200 border border-amber-700'
+          : 'bg-amber-100 text-amber-700 border border-amber-200',
+      };
+    }
+    if (v > id.high) {
+      return {
+        label: 'Alto',
+        class: isDark
+          ? 'bg-rose-900/50 text-rose-200 border border-rose-700'
+          : 'bg-rose-100 text-rose-700 border border-rose-200',
+      };
+    }
+    return {
+      label: 'Ótimo',
+      class: isDark
+        ? 'bg-emerald-900/50 text-emerald-200 border border-emerald-700'
+        : 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+    };
+  }
 
   const pct = (name: keyof typeof bounds, v: number) => {
     const b = bounds[name];
@@ -283,113 +318,60 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
                 <div className={`mt-1 text-lg font-semibold ${text}`}>{last.evaluations}</div>
               </div>
 
-              {/* === Parâmetros otimizados (visual) === */}
+              {/* === Parâmetros otimizados com badges === */}
               <div className={`md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4`}>
                 {/* Temperatura */}
-                <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className={`p-2 rounded-md ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                        {bounds.temperatura.icon}
-                      </div>
-                      <span className="text-xs uppercase tracking-wide text-gray-500">Temperatura</span>
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {bounds.temperatura.min}–{bounds.temperatura.max} {bounds.temperatura.unit}
-                    </span>
-                  </div>
-                  <div className="flex items-end justify-between">
-                    <div className={`text-2xl font-extrabold ${text}`}>
-                      {Number(last.x.temperatura).toFixed(1)} <span className="text-sm font-semibold text-gray-500">{bounds.temperatura.unit}</span>
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <div className={`h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                      <div
-                        className={`h-2 rounded-full ${isDark ? 'bg-green-600' : 'bg-green-500'}`}
-                        style={{ width: `${pct('temperatura', Number(last.x.temperatura))}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
+                <ParamCard
+                  title="Temperatura"
+                  name="temperatura"
+                  value={Number(last.x.temperatura)}
+                  unit={bounds.temperatura.unit}
+                  min={bounds.temperatura.min}
+                  max={bounds.temperatura.max}
+                  badge={badgeFor('temperatura', Number(last.x.temperatura))}
+                  icon={bounds.temperatura.icon}
+                  isDark={isDark}
+                  pct={pct('temperatura', Number(last.x.temperatura))}
+                />
                 {/* Tempo */}
-                <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className={`p-2 rounded-md ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                        {bounds.tempo.icon}
-                      </div>
-                      <span className="text-xs uppercase tracking-wide text-gray-500">Tempo</span>
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {bounds.tempo.min}–{bounds.tempo.max} {bounds.tempo.unit}
-                    </span>
-                  </div>
-                  <div className={`text-2xl font-extrabold ${text}`}>
-                    {Number(last.x.tempo).toFixed(1)} <span className="text-sm font-semibold text-gray-500">{bounds.tempo.unit}</span>
-                  </div>
-                  <div className="mt-3">
-                    <div className={`h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                      <div
-                        className={`h-2 rounded-full ${isDark ? 'bg-green-600' : 'bg-green-500'}`}
-                        style={{ width: `${pct('tempo', Number(last.x.tempo))}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
+                <ParamCard
+                  title="Tempo"
+                  name="tempo"
+                  value={Number(last.x.tempo)}
+                  unit={bounds.tempo.unit}
+                  min={bounds.tempo.min}
+                  max={bounds.tempo.max}
+                  badge={badgeFor('tempo', Number(last.x.tempo))}
+                  icon={bounds.tempo.icon}
+                  isDark={isDark}
+                  pct={pct('tempo', Number(last.x.tempo))}
+                />
                 {/* Pressão */}
-                <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className={`p-2 rounded-md ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                        {bounds.pressao.icon}
-                      </div>
-                      <span className="text-xs uppercase tracking-wide text-gray-500">Pressão</span>
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {bounds.pressao.min}–{bounds.pressao.max} {bounds.pressao.unit}
-                    </span>
-                  </div>
-                  <div className={`text-2xl font-extrabold ${text}`}>
-                    {Number(last.x.pressao).toFixed(1)} <span className="text-sm font-semibold text-gray-500">{bounds.pressao.unit}</span>
-                  </div>
-                  <div className="mt-3">
-                    <div className={`h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                      <div
-                        className={`h-2 rounded-full ${isDark ? 'bg-green-600' : 'bg-green-500'}`}
-                        style={{ width: `${pct('pressao', Number(last.x.pressao))}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
+                <ParamCard
+                  title="Pressão"
+                  name="pressao"
+                  value={Number(last.x.pressao)}
+                  unit={bounds.pressao.unit}
+                  min={bounds.pressao.min}
+                  max={bounds.pressao.max}
+                  badge={badgeFor('pressao', Number(last.x.pressao))}
+                  icon={bounds.pressao.icon}
+                  isDark={isDark}
+                  pct={pct('pressao', Number(last.x.pressao))}
+                />
                 {/* Velocidade */}
-                <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className={`p-2 rounded-md ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                        {bounds.velocidade.icon}
-                      </div>
-                      <span className="text-xs uppercase tracking-wide text-gray-500">Velocidade</span>
-                    </div>
-                    <span className="text-xs text-gray-500">
-                      {bounds.velocidade.min}–{bounds.velocidade.max} {bounds.velocidade.unit}
-                    </span>
-                  </div>
-                  <div className={`text-2xl font-extrabold ${text}`}>
-                    {Number(last.x.velocidade).toFixed(1)} <span className="text-sm font-semibold text-gray-500">{bounds.velocidade.unit}</span>
-                  </div>
-                  <div className="mt-3">
-                    <div className={`h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                      <div
-                        className={`h-2 rounded-full ${isDark ? 'bg-green-600' : 'bg-green-500'}`}
-                        style={{ width: `${pct('velocidade', Number(last.x.velocidade))}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
+                <ParamCard
+                  title="Velocidade"
+                  name="velocidade"
+                  value={Number(last.x.velocidade)}
+                  unit={bounds.velocidade.unit}
+                  min={bounds.velocidade.min}
+                  max={bounds.velocidade.max}
+                  badge={badgeFor('velocidade', Number(last.x.velocidade))}
+                  icon={bounds.velocidade.icon}
+                  isDark={isDark}
+                  pct={pct('velocidade', Number(last.x.velocidade))}
+                />
               </div>
             </div>
 
@@ -411,3 +393,52 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     </div>
   );
 };
+
+/** Mini-card reutilizável para cada parâmetro com badge e barra de posição */
+function ParamCard(props: {
+  title: string;
+  name: string;
+  value: number;
+  unit: string;
+  min: number;
+  max: number;
+  badge: { label: string; class: string };
+  icon: React.ReactNode;
+  isDark: boolean;
+  pct: number; // 0..100
+}) {
+  const { title, value, unit, min, max, badge, icon, isDark, pct } = props;
+  return (
+    <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className={`p-2 rounded-md ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+            {icon}
+          </div>
+          <span className="text-xs uppercase tracking-wide text-gray-500">{title}</span>
+        </div>
+        <span className="text-xs text-gray-500">
+          {min}–{max} {unit}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <div className={`${isDark ? 'text-gray-100' : 'text-gray-900'} text-2xl font-extrabold`}>
+          {value.toFixed(1)} <span className="text-sm font-semibold text-gray-500">{unit}</span>
+        </div>
+        <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${badge.class}`}>
+          {badge.label}
+        </span>
+      </div>
+
+      <div className="mt-3">
+        <div className={`h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
+          <div
+            className={`h-2 rounded-full ${isDark ? 'bg-emerald-600' : 'bg-emerald-500'}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
