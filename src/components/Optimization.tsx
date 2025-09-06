@@ -15,10 +15,10 @@ type Props = {
 
 type Method = 'grid' | 'ga' | 'bo';
 
-export default function Optimization({ t, isDark, onOptimizationComplete }: Props) {
+export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplete }) => {
   const [method, setMethod] = React.useState<Method>('grid');
   const [budget, setBudget] = React.useState<number>(200);
-  const [lambda, setLambda] = React.useState<number>(0.15); // penalização da energia
+  const [lambda, setLambda] = React.useState<number>(0.15); // penalização de energia
   const [useQualityConstraint, setUseQualityConstraint] = React.useState<boolean>(false);
   const [qualityMin, setQualityMin] = React.useState<number>(365);
   const [running, setRunning] = React.useState<boolean>(false);
@@ -31,7 +31,7 @@ export default function Optimization({ t, isDark, onOptimizationComplete }: Prop
   // Modelo de inferência (produção)
   const model = React.useMemo(() => getModel('inference'), []);
 
-  // Limites coerentes com a sua UI
+  // Limites coerentes com sua UI
   const bounds: Bounds[] = React.useMemo(
     () => [
       { name: 'temperatura', min: 1400, max: 1600, step: 5 },
@@ -42,7 +42,7 @@ export default function Optimization({ t, isDark, onOptimizationComplete }: Prop
     []
   );
 
-  // Função-objetivo: MAIOR é melhor
+  // Função-objetivo (maximização)
   const objective: ObjectiveFn = React.useCallback((x) => {
     const { quality, energy } = model.predict({
       temp: x.temperatura,
@@ -51,13 +51,9 @@ export default function Optimization({ t, isDark, onOptimizationComplete }: Prop
       speed: x.velocidade,
     });
 
-    // restrição dura opcional de qualidade mínima
-    if (useQualityConstraint && quality < qualityMin) {
-      return -1e9; // inviável
-    }
+    if (useQualityConstraint && quality < qualityMin) return -1e9; // inviável
 
-    // objetivo padrão: maximizar qualidade penalizando energia
-    // (ajuste λ conforme necessidade)
+    // qualidade − λ·(energia − 500)
     return quality - lambda * (energy - 500);
   }, [model, lambda, useQualityConstraint, qualityMin]);
 
@@ -73,14 +69,12 @@ export default function Optimization({ t, isDark, onOptimizationComplete }: Prop
 
       const res = await opt.run({ objective, bounds, budget, seed: 2025 });
 
-      // resumo local
       setLastSummary({
         method,
         best: res.best,
         evaluations: res.evaluations,
       });
 
-      // entrega para a tela de Resultados
       onOptimizationComplete({
         method,
         bestParams: res.best.x,
@@ -102,6 +96,7 @@ export default function Optimization({ t, isDark, onOptimizationComplete }: Prop
 
   const labelClass = isDark ? 'text-gray-300' : 'text-gray-700';
   const textClass = isDark ? 'text-gray-200' : 'text-gray-800';
+  const subTextClass = isDark ? 'text-gray-400' : 'text-gray-600';
   const cardClass = `${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-5`;
 
   return (
@@ -112,8 +107,8 @@ export default function Optimization({ t, isDark, onOptimizationComplete }: Prop
           <Atom className="h-5 w-5 text-blue-500" />
           <h2 className={`text-xl font-semibold ${textClass}`}>Otimização de Parâmetros (ML)</h2>
         </div>
-        <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>
-          Selecione o método (Grid Search, Algoritmo Genético, Otimização Bayesiana), ajuste o orçamento de avaliações e os critérios.
+        <p className={`${subTextClass} text-sm`}>
+          Selecione o método (Grid Search, Algoritmo Genético, Otimização Bayesiana), ajuste o orçamento e os critérios.
         </p>
       </div>
 
@@ -127,33 +122,15 @@ export default function Optimization({ t, isDark, onOptimizationComplete }: Prop
           </div>
           <div className="space-y-2">
             <label className={`flex items-center gap-2 ${labelClass}`}>
-              <input
-                type="radio"
-                name="method"
-                value="grid"
-                checked={method === 'grid'}
-                onChange={() => setMethod('grid')}
-              />
+              <input type="radio" name="method" value="grid" checked={method === 'grid'} onChange={() => setMethod('grid')} />
               Grid Search
             </label>
             <label className={`flex items-center gap-2 ${labelClass}`}>
-              <input
-                type="radio"
-                name="method"
-                value="ga"
-                checked={method === 'ga'}
-                onChange={() => setMethod('ga')}
-              />
+              <input type="radio" name="method" value="ga" checked={method === 'ga'} onChange={() => setMethod('ga')} />
               Algoritmo Genético
             </label>
             <label className={`flex items-center gap-2 ${labelClass}`}>
-              <input
-                type="radio"
-                name="method"
-                value="bo"
-                checked={method === 'bo'}
-                onChange={() => setMethod('bo')}
-              />
+              <input type="radio" name="method" value="bo" checked={method === 'bo'} onChange={() => setMethod('bo')} />
               Otimização Bayesiana
             </label>
           </div>
@@ -181,9 +158,7 @@ export default function Optimization({ t, isDark, onOptimizationComplete }: Prop
           </div>
 
           <div>
-            <label className={`block text-sm mb-1 ${labelClass}`}>
-              λ (penalização de energia) — maior ⇒ otimiza mais energia
-            </label>
+            <label className={`block text-sm mb-1 ${labelClass}`}>λ (penalização de energia)</label>
             <input
               type="range"
               min={0}
@@ -239,12 +214,13 @@ export default function Optimization({ t, isDark, onOptimizationComplete }: Prop
           <Play className="h-5 w-5" />
           {running ? 'Executando…' : 'Executar Otimização'}
         </button>
+
         {lastSummary && (
           <div className={`mt-4 p-3 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
             <div className={`text-sm ${labelClass}`}>
               <div><b>Método:</b> {lastSummary.method.toUpperCase()}</div>
               <div><b>Avaliações:</b> {lastSummary.evaluations}</div>
-              <div className="mt-1"><b>Melhor ponto (score):</b> {lastSummary.best.y.toFixed(2)}</div>
+              <div className="mt-1"><b>Melhor score:</b> {lastSummary.best.y.toFixed(2)}</div>
               <div className="mt-1">
                 <b>Parâmetros:</b>{' '}
                 temperatura={lastSummary.best.x.temperatura?.toFixed(1)};{' '}
@@ -259,11 +235,11 @@ export default function Optimization({ t, isDark, onOptimizationComplete }: Prop
 
       {/* Notas */}
       <div className={cardClass}>
-        <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-xs leading-relaxed`}>
-          Observação: a função-objetivo é <i>qualidade − λ·(energia − 500)</i>. Ative a restrição para exigir qualidade mínima (ex.: 365).
+        <p className={`${subTextClass} text-xs leading-relaxed`}>
+          Objetivo: <i>qualidade − λ·(energia − 500)</i>. Ative a restrição para exigir qualidade mínima (ex.: 365).
           Grid Search usa o <i>step</i> dos limites; Genético e Bayesiano são estocásticos (determinísticos via semente).
         </p>
       </div>
     </div>
   );
-}
+};
