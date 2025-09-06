@@ -1,4 +1,4 @@
-/// src/components/SimulationPanel.tsx
+// src/components/SimulationPanel.tsx
 import React from 'react';
 import { Play, TrendingUp, Zap, AlertCircle, Brain, Sparkles } from 'lucide-react';
 import {
@@ -233,6 +233,51 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     return { estabilidade, bullets, headline: 'Resumo da IA (Lote)' };
   }, [batchStats]);
 
+  /* ===== Recomendações Inteligentes (dinâmicas) ===== */
+  type RecType = 'success' | 'efficiency' | 'warning' | 'critical';
+  type Recommendation = { type: RecType; icon: string; message: string };
+
+  const buildRecommendations = (q?: number, e?: number): Recommendation[] => {
+    const recs: Recommendation[] = [];
+    if (typeof q === 'number') {
+      if (q < 355) recs.push({ type: 'critical', icon: '📉', message: 'Qualidade baixa: aumente levemente tempo ou temperatura.' });
+      else if (q < 365) recs.push({ type: 'warning', icon: '🛠️', message: 'Qualidade aceitável: ajustes finos podem levar ao nível excelente.' });
+      else recs.push({ type: 'success', icon: '✅', message: 'Qualidade excelente: mantenha esta faixa como baseline.' });
+    }
+    if (typeof e === 'number') {
+      if (e >= 600) recs.push({ type: 'efficiency', icon: '🔌', message: 'Consumo alto: tente reduzir o pico de temperatura ou o tempo de residência.' });
+      else if (e >= 500) recs.push({ type: 'efficiency', icon: '♻️', message: 'Consumo aceitável: otimize pressão/velocidade para ganhar eficiência.' });
+      else recs.push({ type: 'success', icon: '🌱', message: 'Consumo otimizado: bom equilíbrio entre qualidade e energia.' });
+    }
+    if (typeof q === 'number' && typeof e === 'number') {
+      if (q >= 365 && e >= 550) recs.push({ type: 'efficiency', icon: '⚖️', message: 'Alta qualidade com energia elevada: avalie reduzir temperatura em ~1–3%.' });
+      if (q < 365 && e < 550) recs.push({ type: 'warning', icon: '🧪', message: 'Eficiência boa, mas qualidade baixa: aumente levemente o tempo ou a pressão.' });
+    }
+    return recs;
+  };
+
+  const RecList = ({ items }: { items: Recommendation[] }) => (
+    <div className="space-y-2">
+      {items.map((r, i) => (
+        <div
+          key={i}
+          className={`p-3 rounded-lg border flex items-start gap-2 ${
+            r.type === 'success'
+              ? isDark ? 'bg-green-900/30 border-green-800 text-green-200' : 'bg-green-50 border-green-200 text-green-700'
+              : r.type === 'efficiency'
+              ? isDark ? 'bg-emerald-900/30 border-emerald-800 text-emerald-200' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+              : r.type === 'warning'
+              ? isDark ? 'bg-yellow-900/30 border-yellow-800 text-yellow-200' : 'bg-yellow-50 border-yellow-200 text-yellow-700'
+              : isDark ? 'bg-red-900/30 border-red-800 text-red-200' : 'bg-red-50 border-red-200 text-red-700'
+          }`}
+        >
+          <span className="text-lg leading-none">{r.icon}</span>
+          <span className="text-sm">{r.message}</span>
+        </div>
+      ))}
+    </div>
+  );
+
   /* ===== Helpers Chart/Style ===== */
   const axisColor = isDark ? '#e5e7eb' : '#374151';
   const gridColor = isDark ? '#374151' : '#e5e7eb';
@@ -460,9 +505,10 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
             <Sparkles className="h-5 w-5 text-blue-500" />
             <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Resultado da Simulação</h3>
           </div>
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-5">
             {(() => {
               const last = getLastOfType(simulationResults, 'single')!;
+              const recs = buildRecommendations(last.quality, last.energy);
               return (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -474,6 +520,8 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
                       accent={last.quality >= 365 ? 'emerald' : last.quality >= 355 ? 'yellow' : 'rose'}
                     />
                   </div>
+
+                  {/* Análise IA */}
                   {aiInsightSingle && (
                     <AIInsightCard
                       headline={aiInsightSingle.headline}
@@ -482,6 +530,14 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
                       tone="blue"
                       isDark={isDark}
                     />
+                  )}
+
+                  {/* Recomendações Inteligentes */}
+                  {recs.length > 0 && (
+                    <div className={`${isDark ? 'bg-gray-800' : 'bg-gray-50'} rounded-xl p-4`}>
+                      <h4 className={`font-semibold mb-3 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>🎯 Recomendações Inteligentes</h4>
+                      <RecList items={recs} />
+                    </div>
                   )}
                 </>
               );
@@ -497,13 +553,15 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
             <Sparkles className="h-5 w-5 text-emerald-500" />
             <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Resultados do Lote</h3>
           </div>
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <KPI title="Qualidade Média" value={batchStats.meanQ.toFixed(2)} accent="blue" />
               <KPI title="Energia Média" value={`${batchStats.meanE.toFixed(1)} kWh/ton`} accent="orange" />
               <KPI title="Desvio Padrão" value={batchStats.stdQ.toFixed(2)} accent="slate" />
               <KPI title="R² (consistência interna)" value={batchStats.r2.toFixed(3)} accent="blue" />
             </div>
+
+            {/* Análise IA */}
             {aiInsightBatch && (
               <AIInsightCard
                 headline={aiInsightBatch.headline}
@@ -513,6 +571,12 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
                 isDark={isDark}
               />
             )}
+
+            {/* Recomendações Inteligentes (com base nas médias do lote) */}
+            <div className={`${isDark ? 'bg-gray-800' : 'bg-gray-50'} rounded-xl p-4`}>
+              <h4 className={`font-semibold mb-3 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>🎯 Recomendações Inteligentes</h4>
+              <RecList items={buildRecommendations(batchStats.meanQ, batchStats.meanE)} />
+            </div>
           </div>
         </div>
       )}
@@ -520,7 +584,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
       {/* Sensibilidade */}
       {activeTab === 'sensitivity' && sensitivityResults && (
         <div className="space-y-6">
-          {/* Análise IA geral no topo (posição ajustada) */}
+          {/* Análise IA geral no topo */}
           <AIInsightCard
             headline="Análise IA — Visão Geral da Sensibilidade"
             bullets={[
@@ -532,6 +596,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
             tone="purple"
             isDark={isDark}
           />
+
           {/* Gráficos por parâmetro */}
           <SensitivityRow
             title="Temperatura (°C)"
