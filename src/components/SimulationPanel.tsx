@@ -5,6 +5,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement
 import { Line } from "react-chartjs-2";
 import { ParameterInput } from "./ParameterInput";
 import { validateAllParameters, validateParameterCombination } from "../utils/parameterValidation";
+export const SimulationPanel: React.FC<SimulationPanelProps> = (/* ... */) => { /* ... */ };
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -234,4 +235,4 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
   );
 };
 
-export default SimulationPanel;
+
