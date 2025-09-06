@@ -1,8 +1,6 @@
 // src/components/SimulationPanel.tsx
 import React from 'react';
-import {
-  Play, TrendingUp, Zap, AlertCircle, Brain, Sparkles,
-} from 'lucide-react';
+import { Play, TrendingUp, Zap, AlertCircle, Brain, Sparkles } from 'lucide-react';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend,
 } from 'chart.js';
@@ -22,10 +20,17 @@ type SimulationPanelProps = {
   velocidade: number;
   setVelocidade: (v: number) => void;
   simulationResults: any[];
-  setSimulationResults: (r: any) => void; // o App empilha os resultados
+  setSimulationResults: (r: any) => void;
   t: (k: string) => string;
   isDark: boolean;
 };
+
+function getLastOfType(arr: any[], type: string) {
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (arr[i]?.type === type) return arr[i];
+  }
+  return undefined;
+}
 
 const SimulationPanel: React.FC<SimulationPanelProps> = ({
   temperatura,
@@ -66,9 +71,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     });
   }, [temperatura, tempo, pressao, velocidade]);
 
-  /* ===========================
-     Modelo de Simulação (ML-like)
-     =========================== */
+  /* ===== Modelo ML-like ===== */
   const calculateQuality = (temp: number, time: number, press: number, speed: number) => {
     const tempNorm = (temp - 1400) / 200;
     const timeNorm = (time - 10) / 110;
@@ -97,23 +100,20 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     return Math.max(350, Math.min(700, e));
   };
 
-  /* ===========================
-     Execuções
-     =========================== */
+  /* ===== Execuções ===== */
   const runSingle = () => {
     setIsRunning(true);
     setTimeout(() => {
       const quality = calculateQuality(temperatura, tempo, pressao, velocidade);
       const energy = calculateEnergy(temperatura, tempo, pressao, velocidade);
-      const res = {
+      setSimulationResults({
         id: Date.now(),
         type: 'single',
         parameters: { temperatura, tempo, pressao, velocidade },
         quality,
         energy,
         timestamp: new Date().toISOString(),
-      };
-      setSimulationResults(res);
+      });
       setIsRunning(false);
     }, 900);
   };
@@ -172,9 +172,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     }, 1500);
   };
 
-  /* ===========================
-     Métricas do Lote & IA
-     =========================== */
+  /* ===== Métricas Lote & IA ===== */
   const batch = React.useMemo(() => simulationResults.filter((r) => r.type === 'batch'), [simulationResults]);
   const batchStats = React.useMemo(() => {
     if (batch.length === 0) return null;
@@ -184,16 +182,15 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     const varQ = qs.reduce((s, v) => s + Math.pow(v - meanQ, 2), 0) / qs.length;
     const stdQ = Math.sqrt(varQ);
     const meanE = es.reduce((s, v) => s + v, 0) / es.length;
-    // R² estilizado (apenas um indicador de consistência interna do lote)
     const r2 = Math.max(0.75, Math.min(0.98, 1 - varQ / 900));
     return { meanQ, stdQ, varQ, meanE, r2 };
   }, [batch]);
 
   const aiInsightSingle = React.useMemo(() => {
-    const last = simulationResults.findLast?.((r) => r.type === 'single') || simulationResults[simulationResults.length - 1];
+    const last = getLastOfType(simulationResults, 'single');
     if (!last) return null;
-    const q = last.quality;
-    const e = last.energy;
+    const q = last.quality as number;
+    const e = last.energy as number;
     let bullets: string[] = [];
     if (q >= 365 && e <= 550) {
       bullets = [
@@ -236,24 +233,24 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     return { estabilidade, bullets, headline: 'Resumo da IA (Lote)' };
   }, [batchStats]);
 
-  /* ===========================
-     Helpers de Chart/Estilo
-     =========================== */
+  /* ===== Helpers Chart/Style ===== */
   const axisColor = isDark ? '#e5e7eb' : '#374151';
   const gridColor = isDark ? '#374151' : '#e5e7eb';
 
   const makeSensitivityChart = (label: string, arr: { x: number; y: number }[], color: string) => ({
     data: {
       labels: arr.map((d) => d.x),
-      datasets: [{
-        label,
-        data: arr.map((d) => d.y),
-        borderColor: color,
-        backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.12)'),
-        fill: true,
-        tension: 0.35,
-        pointRadius: 2,
-      }],
+      datasets: [
+        {
+          label,
+          data: arr.map((d) => d.y),
+          borderColor: color,
+          backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.12)'),
+          fill: true,
+          tension: 0.35,
+          pointRadius: 2,
+        },
+      ],
     },
     options: {
       responsive: true,
@@ -276,9 +273,6 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     },
   });
 
-  /* ===========================
-     Análise IA por Parâmetro (Sensibilidade)
-     =========================== */
   function insightForParameter(
     name: 'Temperatura' | 'Tempo' | 'Pressão' | 'Velocidade',
     arr: { x: number; y: number }[],
@@ -291,28 +285,29 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
       };
     }
 
-    // Tendência geral (slope simples)
     const first = arr[0];
     const last = arr[arr.length - 1];
     const slope = (last.y - first.y) / (last.x - first.x || 1);
 
-    // Pico (máximo local)
     let maxY = -Infinity;
     let maxX = arr[0].x;
     arr.forEach((d) => {
-      if (d.y > maxY) { maxY = d.y; maxX = d.x; }
+      if (d.y > maxY) {
+        maxY = d.y;
+        maxX = d.x;
+      }
     });
 
-    // Curvatura aproximada (diferença de slopes)
     const midIdx = Math.floor(arr.length / 2);
     const sLeft = (arr[midIdx].y - arr[0].y) / (arr[midIdx].x - arr[0].x || 1);
-    const sRight = (arr[arr.length - 1].y - arr[midIdx].y) / (arr[arr.length - 1].x - arr[midIdx].x || 1);
-    const curvature = sRight - sLeft; // >0 abre para cima; <0 abre para baixo
+    const sRight =
+      (arr[arr.length - 1].y - arr[midIdx].y) /
+      (arr[arr.length - 1].x - arr[midIdx].x || 1);
+    const curvature = sRight - sLeft;
 
     const bullets: string[] = [];
     const tags: string[] = [];
 
-    // Interpretações simples e diretas
     if (Math.abs(slope) < 0.01) {
       bullets.push('Influência moderada no intervalo analisado (curva quase plana).');
       tags.push('Estável');
@@ -324,7 +319,6 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
       tags.push('Tendência ↓');
     }
 
-    // Curvatura e “óptimo”
     if (Math.abs(curvature) > 0.01) {
       const curvTxt = curvature > 0 ? 'curva abrindo para cima' : 'curva abrindo para baixo';
       bullets.push(`Há não linearidade perceptível (${curvTxt}).`);
@@ -336,7 +330,6 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
       }
     }
 
-    // Sinalizar se o pico está nas pontas
     const atEdge = maxX === arr[0].x || maxX === arr[arr.length - 1].x;
     if (atEdge) {
       bullets.push('O melhor ponto parece estar no limite testado — vale expandir a faixa para confirmar.');
@@ -350,12 +343,10 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     };
   }
 
-  /* ===========================
-     UI
-     =========================== */
+  /* ===== UI ===== */
   return (
     <div className="space-y-6">
-      {/* Abas no topo */}
+      {/* Tabs no topo */}
       <div className={`rounded-lg ${isDark ? 'bg-gray-800' : 'bg-white'} shadow p-2 flex gap-2`}>
         {(['single', 'batch', 'sensitivity'] as const).map((tab) => (
           <button
@@ -386,7 +377,6 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
           <ParameterInput label="Velocidade" parameterName="velocidade" value={velocidade} onChange={setVelocidade} isDark={isDark} />
         </div>
 
-        {/* avisos de validação */}
         {(!validationState.isValid || validationState.warnings.length > 0) && (
           <div className="mt-4 space-y-2">
             {validationState.errors.map((e, i) => (
@@ -409,7 +399,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
         )}
       </div>
 
-      {/* Botões de ação */}
+      {/* Botões */}
       <div className="flex flex-wrap items-center justify-center gap-3">
         {activeTab === 'single' && (
           <button
@@ -449,7 +439,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
         )}
       </div>
 
-      {/* Indicador de progresso */}
+      {/* Loading */}
       {isRunning && (
         <div className={`${isDark ? 'bg-gray-800' : 'bg-gray-50'} rounded-lg p-4`}>
           <div className="flex items-center justify-center gap-3">
@@ -463,42 +453,44 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
         </div>
       )}
 
-      {/* Resultados — SIMULAÇÃO ÚNICA */}
-      {activeTab === 'single' && simulationResults.findLast?.((r) => r.type === 'single') && (
+      {/* Resultados — Simulação Única */}
+      {activeTab === 'single' && getLastOfType(simulationResults, 'single') && (
         <div className={`${isDark ? 'bg-gray-900/50' : 'bg-white'} rounded-2xl shadow border ${isDark ? 'border-blue-900/40' : 'border-blue-200'}`}>
           <div className={`px-6 py-5 border-b ${isDark ? 'border-blue-900/40' : 'border-blue-100'} flex items-center gap-2`}>
             <Sparkles className="h-5 w-5 text-blue-500" />
             <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Resultado da Simulação</h3>
           </div>
-          {(() => {
-            const last = simulationResults.findLast?.((r) => r.type === 'single')!;
-            return (
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <KPI title="Qualidade Prevista" value={last.quality.toFixed(2)} accent="blue" />
-                  <KPI title="Consumo Energético" value={`${last.energy.toFixed(1)} kWh/ton`} accent="orange" />
-                  <KPI
-                    title="Classificação"
-                    value={last.quality >= 365 ? 'Excelente' : last.quality >= 355 ? 'Boa' : 'Ruim'}
-                    accent={last.quality >= 365 ? 'emerald' : last.quality >= 355 ? 'yellow' : 'rose'}
-                  />
-                </div>
-                {aiInsightSingle && (
-                  <AIInsightCard
-                    headline={aiInsightSingle.headline}
-                    bullets={aiInsightSingle.bullets}
-                    tags={['Simulação Única', aiInsightSingle.q >= 365 ? 'Alta Qualidade' : 'A Melhorar']}
-                    tone="blue"
-                    isDark={isDark}
-                  />
-                )}
-              </div>
-            );
-          })()}
+          <div className="p-6 space-y-4">
+            {(() => {
+              const last = getLastOfType(simulationResults, 'single')!;
+              return (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <KPI title="Qualidade Prevista" value={last.quality.toFixed(2)} accent="blue" />
+                    <KPI title="Consumo Energético" value={`${last.energy.toFixed(1)} kWh/ton`} accent="orange" />
+                    <KPI
+                      title="Classificação"
+                      value={last.quality >= 365 ? 'Excelente' : last.quality >= 355 ? 'Boa' : 'Ruim'}
+                      accent={last.quality >= 365 ? 'emerald' : last.quality >= 355 ? 'yellow' : 'rose'}
+                    />
+                  </div>
+                  {aiInsightSingle && (
+                    <AIInsightCard
+                      headline={aiInsightSingle.headline}
+                      bullets={aiInsightSingle.bullets}
+                      tags={['Simulação Única', aiInsightSingle.q >= 365 ? 'Alta Qualidade' : 'A Melhorar']}
+                      tone="blue"
+                      isDark={isDark}
+                    />
+                  )}
+                </>
+              );
+            })()}
+          </div>
         </div>
       )}
 
-      {/* Resultados — LOTE */}
+      {/* Resultados — Lote */}
       {activeTab === 'batch' && batchStats && (
         <div className={`${isDark ? 'bg-gray-900/50' : 'bg-white'} rounded-2xl shadow border ${isDark ? 'border-emerald-900/40' : 'border-emerald-200'}`}>
           <div className={`px-6 py-5 border-b ${isDark ? 'border-emerald-900/40' : 'border-emerald-100'} flex items-center gap-2`}>
@@ -515,10 +507,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
             {aiInsightBatch && (
               <AIInsightCard
                 headline={aiInsightBatch.headline}
-                bullets={[
-                  `Estabilidade: ${aiInsightBatch.estabilidade}`,
-                  ...aiInsightBatch.bullets,
-                ]}
+                bullets={[`Estabilidade: ${aiInsightBatch.estabilidade}`, ...aiInsightBatch.bullets]}
                 tags={['Lote 20x', 'Consistência']}
                 tone="emerald"
                 isDark={isDark}
@@ -555,8 +544,6 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
             insight={insightForParameter('Velocidade', sensitivityResults.velocidade)}
             isDark={isDark}
           />
-
-          {/* Análise IA agregada */}
           <AIInsightCard
             headline="Análise IA — Visão Geral da Sensibilidade"
             bullets={[
@@ -576,18 +563,29 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
 
 export default SimulationPanel;
 
-/* =========================================
-   Componentes auxiliares (premium IA cards)
-   ========================================= */
+/* ===== Componentes auxiliares ===== */
 
-function KPI({ title, value, accent }: { title: string; value: string; accent: 'blue' | 'orange' | 'emerald' | 'yellow' | 'rose' | 'slate' }) {
+function KPI({
+  title,
+  value,
+  accent,
+}: {
+  title: string;
+  value: string;
+  accent: 'blue' | 'orange' | 'emerald' | 'yellow' | 'rose' | 'slate';
+}) {
   const color =
-    accent === 'blue' ? 'text-blue-600 dark:text-blue-300' :
-    accent === 'orange' ? 'text-orange-600 dark:text-orange-300' :
-    accent === 'emerald' ? 'text-emerald-600 dark:text-emerald-300' :
-    accent === 'yellow' ? 'text-yellow-600 dark:text-yellow-300' :
-    accent === 'rose' ? 'text-rose-600 dark:text-rose-300' :
-    'text-slate-800 dark:text-slate-200';
+    accent === 'blue'
+      ? 'text-blue-600 dark:text-blue-300'
+      : accent === 'orange'
+      ? 'text-orange-600 dark:text-orange-300'
+      : accent === 'emerald'
+      ? 'text-emerald-600 dark:text-emerald-300'
+      : accent === 'yellow'
+      ? 'text-yellow-600 dark:text-yellow-300'
+      : accent === 'rose'
+      ? 'text-rose-600 dark:text-rose-300'
+      : 'text-slate-800 dark:text-slate-200';
   return (
     <div className="text-center">
       <div className="text-sm text-gray-600 dark:text-gray-300">{title}</div>
@@ -609,29 +607,47 @@ function AIInsightCard({
   tone: 'blue' | 'emerald' | 'purple';
   isDark: boolean;
 }) {
-  const bg =
+  const outerBg =
     tone === 'blue'
-      ? isDark ? 'from-blue-950 to-gray-900 border-blue-900/40' : 'from-blue-50 to-white border-blue-200'
+      ? isDark
+        ? 'from-blue-950 to-gray-900 border-blue-900/40'
+        : 'from-blue-50 to-white border-blue-200'
       : tone === 'emerald'
-      ? isDark ? 'from-emerald-950 to-gray-900 border-emerald-900/40' : 'from-emerald-50 to-white border-emerald-200'
-      : isDark ? 'from-purple-950 to-gray-900 border-purple-900/40' : 'from-purple-50 to-white border-purple-200';
+      ? isDark
+        ? 'from-emerald-950 to-gray-900 border-emerald-900/40'
+        : 'from-emerald-50 to-white border-emerald-200'
+      : isDark
+      ? 'from-purple-950 to-gray-900 border-purple-900/40'
+      : 'from-purple-50 to-white border-purple-200';
 
   const iconBg =
     tone === 'blue'
-      ? isDark ? 'bg-blue-900/50 text-blue-200' : 'bg-blue-600 text-white'
+      ? isDark
+        ? 'bg-blue-900/50 text-blue-200'
+        : 'bg-blue-600 text-white'
       : tone === 'emerald'
-      ? isDark ? 'bg-emerald-900/50 text-emerald-200' : 'bg-emerald-600 text-white'
-      : isDark ? 'bg-purple-900/50 text-purple-200' : 'bg-purple-600 text-white';
+      ? isDark
+        ? 'bg-emerald-900/50 text-emerald-200'
+        : 'bg-emerald-600 text-white'
+      : isDark
+      ? 'bg-purple-900/50 text-purple-200'
+      : 'bg-purple-600 text-white';
 
   const badgeBg =
     tone === 'blue'
-      ? isDark ? 'bg-blue-900/40 text-blue-200 border-blue-800' : 'bg-blue-100 text-blue-700 border-blue-200'
+      ? isDark
+        ? 'bg-blue-900/40 text-blue-200 border-blue-800'
+        : 'bg-blue-100 text-blue-700 border-blue-200'
       : tone === 'emerald'
-      ? isDark ? 'bg-emerald-900/40 text-emerald-200 border-emerald-800' : 'bg-emerald-100 text-emerald-700 border-emerald-200'
-      : isDark ? 'bg-purple-900/40 text-purple-200 border-purple-800' : 'bg-purple-100 text-purple-700 border-purple-200';
+      ? isDark
+        ? 'bg-emerald-900/40 text-emerald-200 border-emerald-800'
+        : 'bg-emerald-100 text-emerald-700 border-emerald-200'
+      : isDark
+      ? 'bg-purple-900/40 text-purple-200 border-purple-800'
+      : 'bg-purple-100 text-purple-700 border-purple-200';
 
   return (
-    <div className={`rounded-xl border bg-gradient-to-br ${bg} p-4 md:p-5`}>
+    <div className={`rounded-xl border bg-gradient-to-br ${outerBg} p-4 md:p-5`}>
       <div className="flex items-center gap-3 mb-3">
         <div className={`p-2.5 rounded-lg ${iconBg}`}>
           <Brain className="h-5 w-5" />
@@ -639,19 +655,19 @@ function AIInsightCard({
         <h4 className={`text-base md:text-lg font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>{headline}</h4>
       </div>
       <ul className={`space-y-1.5 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-        {bullets.map((b, i) => (<li key={i}>• {b}</li>))}
+        {bullets.map((b, i) => (
+          <li key={i}>• {b}</li>
+        ))}
       </ul>
-      {tags && tags.length > 0 && (
+      {tags && tags.length > 0 ? (
         <div className="mt-3 flex flex-wrap gap-2">
-          {tags.map((t) => (
-            <span
-              key={t}
-              className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border ${badgeBg}`}
-            >
-              {t}
+          {tags.map((tg) => (
+            <span key={tg} className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border ${badgeBg}`}>
+              {tg}
             </span>
           ))}
         </div>
+      ) : null}
     </div>
   );
 }
@@ -669,15 +685,12 @@ function SensitivityRow({
 }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      {/* Gráfico (2 colunas) */}
-      <div className={`lg:col-span-2 ${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-4`}>
+      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-4 lg:col-span-2`}>
         <h4 className={`text-sm font-semibold mb-3 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>{title}</h4>
         <div className="w-full" style={{ height: 320 }}>
           <Line data={chartCfg.data} options={chartCfg.options} />
         </div>
       </div>
-
-      {/* Análise IA do parâmetro (1 coluna) */}
       <AIInsightCard
         headline={insight.headline}
         bullets={insight.bullets}
