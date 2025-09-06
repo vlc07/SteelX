@@ -1,10 +1,12 @@
+// src/App.tsx
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
-import { Dashboard } from './components/Dashboard';
+// import { Dashboard } from './components/Dashboard';           // <- removido
+// import Simulation from './components/Simulation';              // <- removido
+import { SimulationPanel } from './components/SimulationPanel';   // <- novo painel unificado
 import { Presentation } from './components/Presentation';
 import { TechnicalDocs } from './components/TechnicalDocs';
-import Simulation from './components/Simulation';
 import { Comparison } from './components/Comparison';
 import { Optimization } from './components/Optimization';
 import { Results } from './components/Results';
@@ -58,7 +60,7 @@ function App() {
     localStorage.setItem('language', language);
   }, [language]);
 
-  // === Modelo de Qualidade & Energia (corrigido para retornar OBJETO) ===
+  // === Modelo de Qualidade & Energia (retorna OBJETO) ===
   const calculateQualityAndEnergyML = (temp: number, time: number, press: number, speed: number) => {
     if (isNaN(temp) || isNaN(time) || isNaN(press) || isNaN(speed)) {
       console.error('Invalid input parameters detected');
@@ -211,9 +213,12 @@ function App() {
 
   const renderContent = () => {
     switch (activeTab) {
+      // Qualquer uma das abas antigas abre o Painel de Simulação unificado
       case 'dashboard':
+      case 'simulation':
+      case 'sim-panel':
         return (
-          <Dashboard
+          <SimulationPanel
             temperatura={temperatura} setTemperatura={setTemperatura}
             tempo={tempo} setTempo={setTempo}
             pressao={pressao} setPressao={setPressao}
@@ -224,36 +229,30 @@ function App() {
             valoresReais={valoresReais}
             valoresPrevistos={valoresPrevistos}
             qualidadePrevista={qualidadePrevista}
-            energiaPrevista={energiaPrevista}  // <-- ADICIONADO
+            energiaPrevista={energiaPrevista}
             mostrarAjuda={mostrarAjuda}
             setMostrarAjuda={setMostrarAjuda}
             calcular={calcular}
             onDownloadResults={downloadResults}
             t={t}
             isDark={isDark}
-          />
-        );
-      case 'presentation':
-        return <Presentation t={t} isDark={isDark} />;
-      case 'technical-docs':
-        return <TechnicalDocs t={t} isDark={isDark} />;
-      case 'simulation':
-        return (
-          <Simulation
-            temperatura={temperatura} setTemperatura={setTemperatura}
-            tempo={tempo} setTempo={setTempo}
-            pressao={pressao} setPressao={setPressao}
-            velocidade={velocidade} setVelocidade={setVelocidade}
             simulationResults={simulationResults}
             setSimulationResults={(newResult: any) => setSimulationResults((prev) => [...prev, newResult])}
-            t={t}
-            isDark={isDark}
           />
         );
+
+      case 'presentation':
+        return <Presentation t={t} isDark={isDark} />;
+
+      case 'technical-docs':
+        return <TechnicalDocs t={t} isDark={isDark} />;
+
       case 'comparison':
         return <Comparison t={t} isDark={isDark} />;
+
       case 'optimization':
         return <Optimization t={t} isDark={isDark} onOptimizationComplete={setOptimizationResults} />;
+
       case 'results':
         return (
           <Results
@@ -265,19 +264,23 @@ function App() {
               pressao,
               velocidade,
               qualidade: qualidadePrevista,
-              energia: energiaPrevista
+              energia: energiaPrevista,
             }}
             t={t}
             isDark={isDark}
           />
         );
+
       case 'help':
         return <Help t={t} isDark={isDark} />;
+
       case 'glossary':
         return <Glossary t={t} isDark={isDark} />;
+
       default:
+        // Default também cai no painel unificado
         return (
-          <Dashboard
+          <SimulationPanel
             temperatura={temperatura} setTemperatura={setTemperatura}
             tempo={tempo} setTempo={setTempo}
             pressao={pressao} setPressao={setPressao}
@@ -288,13 +291,15 @@ function App() {
             valoresReais={valoresReais}
             valoresPrevistos={valoresPrevistos}
             qualidadePrevista={qualidadePrevista}
-            energiaPrevista={energiaPrevista}  // <-- ADICIONADO
+            energiaPrevista={energiaPrevista}
             mostrarAjuda={mostrarAjuda}
             setMostrarAjuda={setMostrarAjuda}
             calcular={calcular}
             onDownloadResults={downloadResults}
             t={t}
             isDark={isDark}
+            simulationResults={simulationResults}
+            setSimulationResults={(newResult: any) => setSimulationResults((prev) => [...prev, newResult])}
           />
         );
     }
@@ -303,9 +308,23 @@ function App() {
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-blue-100'} transition-colors duration-200`}>
       <div className="flex h-screen">
-        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} t={t} isDark={isDark} />
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          t={t}
+          isDark={isDark}
+        />
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} isDark={isDark} onThemeToggle={() => setIsDark(!isDark)} language={language} onLanguageChange={setLanguage} t={t} />
+          <Header
+            onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+            isDark={isDark}
+            onThemeToggle={() => setIsDark(!isDark)}
+            language={language}
+            onLanguageChange={setLanguage}
+            t={t}
+          />
           <main className="flex-1 overflow-auto p-4 lg:p-6">{renderContent()}</main>
         </div>
       </div>
