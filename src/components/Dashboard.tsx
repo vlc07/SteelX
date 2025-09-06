@@ -146,8 +146,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     ],
   };
 
-  const classificacao = obterClassificacaoQualidade(qualidadePrevista);
-  const energyClassification = obterClassificacaoEnergia(energiaPrevista);
+const classificacao = typeof qualidadePrevista === 'number' ? obterClassificacaoQualidade(qualidadePrevista) : null;
+const energyClassification = typeof energiaPrevista === 'number' ? obterClassificacaoEnergia(energiaPrevista) : null;
 
   return (
     <div className="space-y-6">
@@ -292,96 +292,107 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* Resultado com Classificação */}
-          {resultado && (
-            <div className="mt-6 space-y-4">
-              <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
-                <p className={`text-center font-bold text-lg ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
-                  {resultado}
-                </p>
-              </div>
-              
-              <div className={`p-4 rounded-lg ${classificacao.fundo} border`}>
-                <div className="text-center">
-                  <p className={`font-bold text-xl ${classificacao.cor}`}>
-                    {classificacao.texto}
-                  </p>
-                  <p className={`text-sm mt-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                    {qualidadePrevista < 355 && "Considere ajustar os parâmetros para melhorar a qualidade"}
-                    {qualidadePrevista >= 355 && qualidadePrevista < 365 && "Qualidade aceitável, mas pode ser melhorada"}
-                    {qualidadePrevista >= 365 && "Excelente! Estes parâmetros produzem alta qualidade"}
-                  </p>
-                </div>
-              </div>
-              
-              {/* Energy Consumption Result */}
-              <div className={`p-4 rounded-lg ${energyClassification.fundo} border`}>
-                <div className="text-center">
-                  <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'} mb-1`}>
-                    Consumo Energético Previsto
-                  </p>
-                  <p className={`font-bold text-xl ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    {energiaPrevista.toFixed(1)} kWh/ton
-                  </p>
-                  <p className={`font-medium text-lg ${energyClassification.cor}`}>
-                    {energyClassification.texto}
-                  </p>
-                  <p className={`text-sm mt-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                    {energiaPrevista < 500 && "Consumo energético otimizado"}
-                    {energiaPrevista >= 500 && energiaPrevista < 600 && "Consumo energético aceitável"}
-                    {energiaPrevista >= 600 && "Alto consumo - considere otimizar parâmetros"}
-                  </p>
-                </div>
-              </div>
+{resultado && (
+  <div className="mt-6 space-y-4">
+    <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+      <p className={`text-center font-bold text-lg ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+        {resultado}
+      </p>
+    </div>
+    
+    {/* Bloco de Classificação de Qualidade com verificação */}
+    {classificacao && (
+      <div className={`p-4 rounded-lg ${classificacao.fundo} border`}>
+        <div className="text-center">
+          <p className={`font-bold text-xl ${classificacao.cor}`}>
+            {classificacao.texto}
+          </p>
+          <p className={`text-sm mt-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+            {qualidadePrevista < 355 && "Considere ajustar os parâmetros para melhorar a qualidade"}
+            {qualidadePrevista >= 355 && qualidadePrevista < 365 && "Qualidade aceitável, mas pode ser melhorada"}
+            {qualidadePrevista >= 365 && "Excelente! Estes parâmetros produzem alta qualidade"}
+          </p>
+        </div>
+      </div>
+    )}
+    
+    {/* Bloco de Consumo Energético com verificação */}
+    {energyClassification && (
+      <div className={`p-4 rounded-lg ${energyClassification.fundo} border`}>
+        <div className="text-center">
+          <p className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'} mb-1`}>
+            Consumo Energético Previsto
+          </p>
+          <p className={`font-bold text-xl ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+            {/* CORREÇÃO APLICADA AQUI */}
+            {energiaPrevista?.toFixed(1) ?? 'N/A'} kWh/ton
+          </p>
+          <p className={`font-medium text-lg ${energyClassification.cor}`}>
+            {energyClassification.texto}
+          </p>
+          <p className={`text-sm mt-1 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+            {energiaPrevista < 500 && "Consumo energético otimizado"}
+            {energiaPrevista >= 500 && energiaPrevista < 600 && "Consumo energético aceitável"}
+            {energiaPrevista >= 600 && "Alto consumo - considere otimizar parâmetros"}
+          </p>
+        </div>
+      </div>
+    )}
 
-              {metricas && (
-                <div className={`p-4 rounded-lg border ${isDark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
-                  <h3 className={`font-semibold mb-3 flex items-center ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    <Info className="h-4 w-4 mr-2 text-blue-500" />
-                    Métricas do Modelo ML
-                  </h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>R² Score (Precisão):</span>
-                      <span className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                        {(metricas.r2 * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div className="bg-green-600 h-2 rounded-full" style={{ width: `${metricas.r2 * 100}%` }}></div>
-                    </div>
-                    <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                      {metricas.r2 > 0.9 ? "Modelo ML muito preciso" : metricas.r2 > 0.8 ? "Modelo ML preciso" : metricas.r2 > 0.7 ? "Modelo ML razoável" : "Modelo ML impreciso"}
-                    </p>
-                    
-                    <div className="flex justify-between mt-3">
-                      <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>MAE (Erro Médio):</span>
-                      <span className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                        {metricas.mae.toFixed(1)} {t('units')}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>MSE (Erro Quadrático):</span>
-                      <span className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                        {metricas.mse.toFixed(1)}
-                      </span>
-                    </div>
-                    <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                      Modelo treinado com {valoresReais.length} amostras. Erro médio: ±{metricas.mae.toFixed(1)} unidades
-                    </p>
-                  </div>
-                </div>
-              )}
+    {/* Bloco de Métricas com verificação (seu código já estava bom, mas vamos reforçar) */}
+    {metricas && (
+      <div className={`p-4 rounded-lg border ${isDark ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}>
+        <h3 className={`font-semibold mb-3 flex items-center ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+          <Info className="h-4 w-4 mr-2 text-blue-500" />
+          Métricas do Modelo ML
+        </h3>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>R² Score (Precisão):</span>
+            <span className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+              {/* CORREÇÃO APLICADA AQUI */}
+              {(metricas.r2 * 100)?.toFixed(0) ?? '0'}%
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="bg-green-600 h-2 rounded-full" style={{ width: `${metricas.r2 * 100}%` }}></div>
+          </div>
+          <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+            {metricas.r2 > 0.9 ? "Modelo ML muito preciso" : metricas.r2 > 0.8 ? "Modelo ML preciso" : metricas.r2 > 0.7 ? "Modelo ML razoável" : "Modelo ML impreciso"}
+          </p>
+          
+          <div className="flex justify-between mt-3">
+            <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>MAE (Erro Médio):</span>
+            <span className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+              {/* CORREÇÃO APLICADA AQUI */}
+              {metricas.mae?.toFixed(1) ?? '0.0'} {t('units')}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>MSE (Erro Quadrático):</span>
+            <span className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+              {/* CORREÇÃO APLICADA AQUI */}
+              {metricas.mse?.toFixed(1) ?? '0.0'}
+            </span>
+          </div>
+          <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+            {/* CORREÇÃO APLICADA AQUI */}
+            Modelo treinado com {valoresReais.length} amostras. Erro médio: ±{metricas.mae?.toFixed(1) ?? '0.0'} unidades
+          </p>
+        </div>
+      </div>
+    )}
 
-              {/* Botão de Download */}
-              <button
-                onClick={onDownloadResults}
-                className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition-colors flex items-center justify-center"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                {t('downloadResults')}
-              </button>
-            </div>
-          )}
+    {/* Botão de Download */}
+    <button
+      onClick={onDownloadResults}
+      className="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600 transition-colors flex items-center justify-center"
+    >
+      <Download className="h-4 w-4 mr-2" />
+      {t('downloadResults')}
+    </button>
+  </div>
+)}
         </div>
 
         {/* Gráficos */}
