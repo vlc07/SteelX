@@ -2,10 +2,11 @@
 import React from 'react';
 import {
   Play, Beaker, Dna, Brain, Gauge, AlertCircle, Trophy,
-  Thermometer, Timer, Wind
+  Thermometer, Timer, Wind, BatteryCharging
 } from 'lucide-react';
 import type { OptimizeMethod } from '../optim/runner';
 import { runOptimization } from '../optim/runner';
+import { getModel } from '../ml/engine';
 
 type Props = {
   t: (k: string) => string;
@@ -18,6 +19,8 @@ type LastSummary = {
   score: number;
   x: Record<string, number>;
   evaluations: number;
+  quality: number;
+  energy: number;
 };
 
 export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplete }) => {
@@ -39,6 +42,9 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   const sub = isDark ? 'text-gray-400' : 'text-gray-600';
   const card = `${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-5`;
 
+  // modelo de inferência para estimar qualidade/energia dos parâmetros ótimos
+  const model = React.useMemo(() => getModel('inference'), []);
+
   // bounds para compor barras e unidades
   const bounds = {
     temperatura: { min: 1400, max: 1600, unit: 'ºC', icon: <Thermometer className="h-4 w-4" /> },
@@ -49,10 +55,10 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
 
   // janelas "ótimas" (ajuste se necessário)
   const ideal = {
-    temperatura: { low: 1470, high: 1530 }, // ótimo ~1500
-    tempo:       { low: 55,   high: 75   }, // ótimo ~65
-    pressao:     { low: 100,  high: 106  }, // ótimo ~103
-    velocidade:  { low: 290,  high: 310  }, // ótimo ~300
+    temperatura: { low: 1470, high: 1530 },
+    tempo:       { low: 55,   high: 75   },
+    pressao:     { low: 100,  high: 106  },
+    velocidade:  { low: 290,  high: 310  },
   } as const;
 
   // classificação -> badge
@@ -82,6 +88,32 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     };
   }
 
+  // badges para energia (kWh/ton)
+  function energyBadge(e: number) {
+    if (e < 450) {
+      return {
+        label: 'Muito eficiente',
+        class: isDark
+          ? 'bg-emerald-900/50 text-emerald-200 border border-emerald-700'
+          : 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+      };
+    }
+    if (e < 550) {
+      return {
+        label: 'Eficiente',
+        class: isDark
+          ? 'bg-amber-900/50 text-amber-200 border border-amber-700'
+          : 'bg-amber-100 text-amber-700 border border-amber-200',
+      };
+    }
+    return {
+      label: 'Ineficiente',
+      class: isDark
+        ? 'bg-rose-900/50 text-rose-200 border border-rose-700'
+        : 'bg-rose-100 text-rose-700 border border-rose-200',
+    };
+  }
+
   const pct = (name: keyof typeof bounds, v: number) => {
     const b = bounds[name];
     const p = ((v - b.min) / (b.max - b.min)) * 100;
@@ -105,11 +137,21 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         seed: 2025,
       });
 
+      // calcula qualidade/energia dos melhores parâmetros para exibir no card
+      const qe = model.predict({
+        temp: Number(res.best.x.temperatura),
+        time: Number(res.best.x.tempo),
+        press: Number(res.best.x.pressao),
+        speed: Number(res.best.x.velocidade),
+      });
+
       setLast({
         method,
         score: res.best.y,
         x: res.best.x,
         evaluations: res.evaluations,
+        quality: qe.quality,
+        energy: qe.energy,
       });
 
       onOptimizationComplete({
@@ -296,88 +338,109 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
               </div>
             </div>
 
-            {/* Score em destaque */}
+            {/* Score em destaque + decomposição */}
             <div className="text-right">
               <div className={`text-xs ${sub}`}>Score</div>
               <div className={`text-4xl font-black ${isDark ? 'text-green-300' : 'text-green-700'}`}>
                 {last.score.toFixed(2)}
+              </div>
+              <div className={`text-[11px] mt-1 ${sub}`}>
+                {`${last.quality.toFixed(1)} − ${lambda.toFixed(2)} × (${last.energy.toFixed(1)} − 500)`}
               </div>
             </div>
           </div>
 
           {/* Body */}
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Métricas rápidas */}
-              <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
-                <div className="text-xs uppercase tracking-wide text-gray-500">Método</div>
-                <div className={`mt-1 text-lg font-semibold ${text}`}>{last.method.toUpperCase()}</div>
-              </div>
-              <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
-                <div className="text-xs uppercase tracking-wide text-gray-500">Avaliações</div>
-                <div className={`mt-1 text-lg font-semibold ${text}`}>{last.evaluations}</div>
+            {/* Métricas rápidas: qualidade & energia */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm flex items-center justify-between`}>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-gray-500">Método</div>
+                  <div className={`mt-1 text-lg font-semibold ${text}`}>{last.method.toUpperCase()}</div>
+                  <div className="text-xs text-gray-500 mt-1">Avaliações: <b>{last.evaluations}</b></div>
+                </div>
               </div>
 
-              {/* === Parâmetros otimizados com badges === */}
-              <div className={`md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4`}>
-                {/* Temperatura */}
-                <ParamCard
-                  title="Temperatura"
-                  name="temperatura"
-                  value={Number(last.x.temperatura)}
-                  unit={bounds.temperatura.unit}
-                  min={bounds.temperatura.min}
-                  max={bounds.temperatura.max}
-                  badge={badgeFor('temperatura', Number(last.x.temperatura))}
-                  icon={bounds.temperatura.icon}
-                  isDark={isDark}
-                  pct={pct('temperatura', Number(last.x.temperatura))}
-                />
-                {/* Tempo */}
-                <ParamCard
-                  title="Tempo"
-                  name="tempo"
-                  value={Number(last.x.tempo)}
-                  unit={bounds.tempo.unit}
-                  min={bounds.tempo.min}
-                  max={bounds.tempo.max}
-                  badge={badgeFor('tempo', Number(last.x.tempo))}
-                  icon={bounds.tempo.icon}
-                  isDark={isDark}
-                  pct={pct('tempo', Number(last.x.tempo))}
-                />
-                {/* Pressão */}
-                <ParamCard
-                  title="Pressão"
-                  name="pressao"
-                  value={Number(last.x.pressao)}
-                  unit={bounds.pressao.unit}
-                  min={bounds.pressao.min}
-                  max={bounds.pressao.max}
-                  badge={badgeFor('pressao', Number(last.x.pressao))}
-                  icon={bounds.pressao.icon}
-                  isDark={isDark}
-                  pct={pct('pressao', Number(last.x.pressao))}
-                />
-                {/* Velocidade */}
-                <ParamCard
-                  title="Velocidade"
-                  name="velocidade"
-                  value={Number(last.x.velocidade)}
-                  unit={bounds.velocidade.unit}
-                  min={bounds.velocidade.min}
-                  max={bounds.velocidade.max}
-                  badge={badgeFor('velocidade', Number(last.x.velocidade))}
-                  icon={bounds.velocidade.icon}
-                  isDark={isDark}
-                  pct={pct('velocidade', Number(last.x.velocidade))}
-                />
+              <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm flex items-center justify-between`}>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-gray-500">Qualidade prevista</div>
+                  <div className={`mt-1 text-2xl font-extrabold ${text}`}>{last.quality.toFixed(1)}</div>
+                </div>
+                <div className={`p-2 rounded-md ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  <Gauge className="h-5 w-5" />
+                </div>
               </div>
+
+              <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm flex items-center justify-between md:col-span-2`}>
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-gray-500">Consumo energético</div>
+                  <div className={`mt-1 text-2xl font-extrabold ${text}`}>
+                    {last.energy.toFixed(1)} <span className="text-sm font-semibold text-gray-500">kWh/ton</span>
+                  </div>
+                  <span className={`inline-block mt-2 px-2.5 py-1 rounded-full text-[11px] font-semibold ${energyBadge(last.energy).class}`}>
+                    <BatteryCharging className="inline h-3 w-3 mr-1" />
+                    {energyBadge(last.energy).label}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* === Parâmetros otimizados (badges + barras) === */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <ParamCard
+                title="Temperatura"
+                name="temperatura"
+                value={Number(last.x.temperatura)}
+                unit={bounds.temperatura.unit}
+                min={bounds.temperatura.min}
+                max={bounds.temperatura.max}
+                badge={badgeFor('temperatura', Number(last.x.temperatura))}
+                icon={bounds.temperatura.icon}
+                isDark={isDark}
+                pct={pct('temperatura', Number(last.x.temperatura))}
+              />
+              <ParamCard
+                title="Tempo"
+                name="tempo"
+                value={Number(last.x.tempo)}
+                unit={bounds.tempo.unit}
+                min={bounds.tempo.min}
+                max={bounds.tempo.max}
+                badge={badgeFor('tempo', Number(last.x.tempo))}
+                icon={bounds.tempo.icon}
+                isDark={isDark}
+                pct={pct('tempo', Number(last.x.tempo))}
+              />
+              <ParamCard
+                title="Pressão"
+                name="pressao"
+                value={Number(last.x.pressao)}
+                unit={bounds.pressao.unit}
+                min={bounds.pressao.min}
+                max={bounds.pressao.max}
+                badge={badgeFor('pressao', Number(last.x.pressao))}
+                icon={bounds.pressao.icon}
+                isDark={isDark}
+                pct={pct('pressao', Number(last.x.pressao))}
+              />
+              <ParamCard
+                title="Velocidade"
+                name="velocidade"
+                value={Number(last.x.velocidade)}
+                unit={bounds.velocidade.unit}
+                min={bounds.velocidade.min}
+                max={bounds.velocidade.max}
+                badge={badgeFor('velocidade', Number(last.x.velocidade))}
+                icon={bounds.velocidade.icon}
+                isDark={isDark}
+                pct={pct('velocidade', Number(last.x.velocidade))}
+              />
             </div>
 
             {/* Nota para investidores/usuários */}
             <div className={`mt-6 text-sm ${sub}`}>
-              💡 A IA encontrou um conjunto de parâmetros promissor com poucas avaliações, reduzindo iterações experimentais e custo energético.
+              💡 O score combina qualidade e eficiência energética via λ. Ajuste o slider para priorizar custo/CO₂ (energia) ou qualidade.
             </div>
           </div>
         </div>
@@ -442,3 +505,4 @@ function ParamCard(props: {
     </div>
   );
 }
+
