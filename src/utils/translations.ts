@@ -204,7 +204,7 @@ export const translations: Translations = {
     processOptimization: 'Otimização de Processos',
     vitorLorenzo: 'Vitor Lorenzo Cerutti',
     bernardoKrauspenhar: 'Bernardo Krauspenhar Paganin',
-    lorenzoZatta: 'Lorenzo Zatta Santini'
+    otavioHorn: 'Otávio Susin Horn'
   },
   
   en: {
