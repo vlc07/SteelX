@@ -204,7 +204,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="text-center space-y-1">
             <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Vitor Lorenzo Cerutti</p>
             <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Bernardo Krauspenhar Paganin</p>
-            <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Lorenzo Zatta Santini</p>
+            <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Otávio Susin Horn</p>
           </div>
         </div>
         <div className="flex justify-center">
