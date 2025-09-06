@@ -1,6 +1,9 @@
 // src/components/Optimization.tsx
 import React from 'react';
-import { Play, Beaker, Dna, Brain, Gauge, AlertCircle, Trophy } from 'lucide-react';
+import {
+  Play, Beaker, Dna, Brain, Gauge, AlertCircle, Trophy,
+  Thermometer, Timer, Activity, Wind
+} from 'lucide-react';
 import type { OptimizeMethod } from '../optim/runner';
 import { runOptimization } from '../optim/runner';
 
@@ -35,6 +38,20 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   const text = isDark ? 'text-gray-200' : 'text-gray-800';
   const sub = isDark ? 'text-gray-400' : 'text-gray-600';
   const card = `${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-5`;
+
+  // bounds para compor as barras de posição
+  const bounds = {
+    temperatura: { min: 1400, max: 1600, unit: 'ºC', icon: <Thermometer className="h-4 w-4" /> },
+    tempo:       { min:   10, max:  120, unit: 'min', icon: <Timer className="h-4 w-4" /> },
+    pressao:     { min:   95, max:  110, unit: 'un',  icon: <Gauge className="h-4 w-4" /> },
+    velocidade:  { min:  250, max:  350, unit: 'rpm', icon: <Wind className="h-4 w-4" /> },
+  } as const;
+
+  const pct = (name: keyof typeof bounds, v: number) => {
+    const b = bounds[name];
+    const p = ((v - b.min) / (b.max - b.min)) * 100;
+    return Math.max(0, Math.min(100, p));
+  };
 
   async function executar(method: OptimizeMethod) {
     const setRun =
@@ -266,20 +283,112 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
                 <div className={`mt-1 text-lg font-semibold ${text}`}>{last.evaluations}</div>
               </div>
 
-              {/* Param chips (colspan) */}
-              <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm md:col-span-2`}>
-                <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">Parâmetros</div>
-                <div className="flex flex-wrap gap-2">
-                  {Object.entries(last.x).map(([k, v]) => (
-                    <span
-                      key={k}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        isDark ? 'bg-green-900/40 text-green-200' : 'bg-green-100 text-green-800'
-                      }`}
-                    >
-                      {k}={typeof v === 'number' ? v.toFixed(1) : String(v)}
+              {/* === Parâmetros otimizados (visual) === */}
+              <div className={`md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4`}>
+                {/* Temperatura */}
+                <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`p-2 rounded-md ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                        {bounds.temperatura.icon}
+                      </div>
+                      <span className="text-xs uppercase tracking-wide text-gray-500">Temperatura</span>
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {bounds.temperatura.min}–{bounds.temperatura.max} {bounds.temperatura.unit}
                     </span>
-                  ))}
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <div className={`text-2xl font-extrabold ${text}`}>
+                      {Number(last.x.temperatura).toFixed(1)} <span className="text-sm font-semibold text-gray-500">{bounds.temperatura.unit}</span>
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <div className={`h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                      <div
+                        className={`h-2 rounded-full ${isDark ? 'bg-green-600' : 'bg-green-500'}`}
+                        style={{ width: `${pct('temperatura', Number(last.x.temperatura))}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tempo */}
+                <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`p-2 rounded-md ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                        {bounds.tempo.icon}
+                      </div>
+                      <span className="text-xs uppercase tracking-wide text-gray-500">Tempo</span>
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {bounds.tempo.min}–{bounds.tempo.max} {bounds.tempo.unit}
+                    </span>
+                  </div>
+                  <div className={`text-2xl font-extrabold ${text}`}>
+                    {Number(last.x.tempo).toFixed(1)} <span className="text-sm font-semibold text-gray-500">{bounds.tempo.unit}</span>
+                  </div>
+                  <div className="mt-3">
+                    <div className={`h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                      <div
+                        className={`h-2 rounded-full ${isDark ? 'bg-green-600' : 'bg-green-500'}`}
+                        style={{ width: `${pct('tempo', Number(last.x.tempo))}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pressão */}
+                <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`p-2 rounded-md ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                        {bounds.pressao.icon}
+                      </div>
+                      <span className="text-xs uppercase tracking-wide text-gray-500">Pressão</span>
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {bounds.pressao.min}–{bounds.pressao.max} {bounds.pressao.unit}
+                    </span>
+                  </div>
+                  <div className={`text-2xl font-extrabold ${text}`}>
+                    {Number(last.x.pressao).toFixed(1)} <span className="text-sm font-semibold text-gray-500">{bounds.pressao.unit}</span>
+                  </div>
+                  <div className="mt-3">
+                    <div className={`h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                      <div
+                        className={`h-2 rounded-full ${isDark ? 'bg-green-600' : 'bg-green-500'}`}
+                        style={{ width: `${pct('pressao', Number(last.x.pressao))}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Velocidade */}
+                <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`p-2 rounded-md ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                        {bounds.velocidade.icon}
+                      </div>
+                      <span className="text-xs uppercase tracking-wide text-gray-500">Velocidade</span>
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {bounds.velocidade.min}–{bounds.velocidade.max} {bounds.velocidade.unit}
+                    </span>
+                  </div>
+                  <div className={`text-2xl font-extrabold ${text}`}>
+                    {Number(last.x.velocidade).toFixed(1)} <span className="text-sm font-semibold text-gray-500">{bounds.velocidade.unit}</span>
+                  </div>
+                  <div className="mt-3">
+                    <div className={`h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                      <div
+                        className={`h-2 rounded-full ${isDark ? 'bg-green-600' : 'bg-green-500'}`}
+                        style={{ width: `${pct('velocidade', Number(last.x.velocidade))}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
