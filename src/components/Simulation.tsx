@@ -39,6 +39,8 @@ interface SimulationProps {
   isDark: boolean;
 }
 
+type AnalysisTab = 'single' | 'batch' | 'sensitivity' | 'sensitivity_full';
+
 export const Simulation: React.FC<SimulationProps> = ({
   temperatura,
   setTemperatura,
@@ -54,7 +56,7 @@ export const Simulation: React.FC<SimulationProps> = ({
   isDark
 }) => {
   const [isRunning, setIsRunning] = useState(false);
-  const [activeAnalysis, setActiveAnalysis] = useState<'single' | 'batch' | 'sensitivity'>('single');
+  const [activeAnalysis, setActiveAnalysis] = useState<AnalysisTab>('single');
   const [sensitivityResults, setSensitivityResults] = useState<any>(null);
   const [validationState, setValidationState] = useState({
     isValid: true,
@@ -81,18 +83,12 @@ export const Simulation: React.FC<SimulationProps> = ({
     const speedNorm = (Math.max(250, Math.min(350, speed)) - 250) / 100;
 
     let quality = 300;
-    // temperatura (mais importante)
     quality += 50 * Math.pow(tempNorm, 1.2) + 20 * Math.sin(tempNorm * Math.PI);
-    // tempo (ótimo em ~0.6)
     const timeOptimal = 1 - Math.pow(timeNorm - 0.6, 2);
     quality += 30 * timeOptimal;
-    // pressão
     quality += 15 * pressNorm;
-    // velocidade
     quality += 10 * Math.sqrt(speedNorm);
-    // interações
     quality += 5 * tempNorm * timeNorm + 3 * pressNorm * speedNorm;
-    // ruído leve
     quality += (Math.random() - 0.5) * 4;
 
     return Math.max(300, Math.min(400, quality));
@@ -128,14 +124,11 @@ export const Simulation: React.FC<SimulationProps> = ({
     const speedNorm = (speedCl - 250) / 100;
 
     let quality = 320;
-
-    // ganhos levemente maiores para “aparecer” na curva
     const tempEffect = 55 * (0.3 + 0.7 * Math.pow(tempNorm, 0.9));
     const timeOptimal = Math.exp(-Math.pow(timeNorm - 0.65, 2) / 0.28);
     const timeEffect = 32 * timeOptimal;
     const pressEffect = 18 * (pressNorm + 0.25 * Math.sin(pressNorm * Math.PI * 2));
     const speedEffect = 12 * (Math.sqrt(speedNorm) + 0.15 * Math.cos(speedNorm * Math.PI));
-
     const interactions =
       7 * tempNorm * timeNorm +
       3.5 * pressNorm * speedNorm +
@@ -212,25 +205,18 @@ export const Simulation: React.FC<SimulationProps> = ({
         velocidade: [] as { x: number; y: number }[]
       };
 
-      // Temperatura (1400..1600)
       for (let temp = 1400; temp <= 1600; temp += 10) {
         const y = calculateQualityDet(temp, tempo, pressao, velocidade);
         results.temperatura.push({ x: temp, y });
       }
-
-      // Tempo (10..120)
       for (let time = 10; time <= 120; time += 5) {
         const y = calculateQualityDet(temperatura, time, pressao, velocidade);
         results.tempo.push({ x: time, y });
       }
-
-      // Pressão (95..110)
       for (let press = 95; press <= 110; press += 0.5) {
         const y = calculateQualityDet(temperatura, tempo, press, velocidade);
         results.pressao.push({ x: Number(press.toFixed(1)), y });
       }
-
-      // Velocidade (250..350)
       for (let speed = 250; speed <= 350; speed += 5) {
         const y = calculateQualityDet(temperatura, tempo, pressao, speed);
         results.velocidade.push({ x: speed, y });
@@ -242,144 +228,54 @@ export const Simulation: React.FC<SimulationProps> = ({
   };
 
   // ======== Helpers de gráfico ========
-  const getSensitivityChart = (parameter: string, data: any[], unit: string) => {
-    const chartData = {
+  const sensitivityChartOptions = (unit: string, title: string, tall = false) => ({
+    responsive: true,
+    maintainAspectRatio: !tall ? true : false,
+    plugins: {
+      legend: { labels: { color: isDark ? '#e5e7eb' : '#374151' } },
+      title: { display: true, text: title, color: isDark ? '#e5e7eb' : '#374151' }
+    },
+    scales: {
+      y: {
+        title: { display: true, text: 'Qualidade', color: isDark ? '#e5e7eb' : '#374151' },
+        ticks: { color: isDark ? '#e5e7eb' : '#374151' },
+        grid: { color: isDark ? '#374151' : '#e5e7eb' },
+        suggestedMin: 340,
+        suggestedMax: 380
+      },
+      x: {
+        title: { display: true, text: unit, color: isDark ? '#e5e7eb' : '#374151' },
+        ticks: { color: isDark ? '#e5e7eb' : '#374151' },
+        grid: { color: isDark ? '#374151' : '#e5e7eb' }
+      }
+    }
+  });
+
+  const seriesFor = (parameter: 'temperatura' | 'tempo' | 'pressao' | 'velocidade', data: any[]) => {
+    const color =
+      parameter === 'temperatura'
+        ? { b: 'rgb(239, 68, 68)', f: 'rgba(239, 68, 68, 0.1)' }
+        : parameter === 'tempo'
+        ? { b: 'rgb(59, 130, 246)', f: 'rgba(59, 130, 246, 0.1)' }
+        : parameter === 'pressao'
+        ? { b: 'rgb(34, 197, 94)', f: 'rgba(34, 197, 94, 0.1)' }
+        : { b: 'rgb(168, 85, 247)', f: 'rgba(168, 85, 247, 0.1)' };
+
+    return {
       labels: data.map((d) => d.x),
       datasets: [
         {
           label: `Qualidade vs ${parameter}`,
           data: data.map((d) => d.y),
-          borderColor:
-            parameter === 'temperatura'
-              ? 'rgb(239, 68, 68)'
-              : parameter === 'tempo'
-              ? 'rgb(59, 130, 246)'
-              : parameter === 'pressao'
-              ? 'rgb(34, 197, 94)'
-              : 'rgb(168, 85, 247)',
-          backgroundColor:
-            parameter === 'temperatura'
-              ? 'rgba(239, 68, 68, 0.1)'
-              : parameter === 'tempo'
-              ? 'rgba(59, 130, 246, 0.1)'
-              : parameter === 'pressao'
-              ? 'rgba(34, 197, 94, 0.1)'
-              : 'rgba(168, 85, 247, 0.1)',
-          tension: 0.4,
+          borderColor: color.b,
+          backgroundColor: color.f,
+          tension: 0.35,
           fill: true,
           pointRadius: 3,
-          pointHoverRadius: 6
+          pointHoverRadius: 5
         }
       ]
     };
-
-    const options = {
-      responsive: true,
-      plugins: {
-        legend: { labels: { color: isDark ? '#e5e7eb' : '#374151' } },
-        title: {
-          display: true,
-          text: `Análise de Sensibilidade: ${parameter.charAt(0).toUpperCase() + parameter.slice(1)}`,
-          color: isDark ? '#e5e7eb' : '#374151'
-        }
-      },
-      scales: {
-        y: {
-          title: { display: true, text: 'Qualidade', color: isDark ? '#e5e7eb' : '#374151' },
-          ticks: { color: isDark ? '#e5e7eb' : '#374151' },
-          grid: { color: isDark ? '#374151' : '#e5e7eb' },
-          suggestedMin: 340,
-          suggestedMax: 380
-        },
-        x: {
-          title: {
-            display: true,
-            text: `${parameter.charAt(0).toUpperCase() + parameter.slice(1)} (${unit})`,
-            color: isDark ? '#e5e7eb' : '#374151'
-          },
-          ticks: { color: isDark ? '#e5e7eb' : '#374151' },
-          grid: { color: isDark ? '#374151' : '#e5e7eb' }
-        }
-      }
-    };
-
-    return <Line data={chartData} options={options} />;
-  };
-
-  const getImpactAnalysis = () => {
-    if (!sensitivityResults) return null;
-
-    const impacts = {
-      temperatura:
-        Math.max(...sensitivityResults.temperatura.map((d: any) => d.y)) -
-        Math.min(...sensitivityResults.temperatura.map((d: any) => d.y)),
-      tempo:
-        Math.max(...sensitivityResults.tempo.map((d: any) => d.y)) -
-        Math.min(...sensitivityResults.tempo.map((d: any) => d.y)),
-      pressao:
-        Math.max(...sensitivityResults.pressao.map((d: any) => d.y)) -
-        Math.min(...sensitivityResults.pressao.map((d: any) => d.y)),
-      velocidade:
-        Math.max(...sensitivityResults.velocidade.map((d: any) => d.y)) -
-        Math.min(...sensitivityResults.velocidade.map((d: any) => d.y))
-    };
-
-    const sortedImpacts = Object.entries(impacts).sort(([, a], [, b]) => b - a);
-    const maxImpact = Math.max(...Object.values(impacts));
-
-    return (
-      <div className={`${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-4 mb-6`}>
-        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
-          Análise de Impacto dos Parâmetros
-        </h3>
-        <div className="space-y-3">
-          {sortedImpacts.map(([param, impact], index) => (
-            <div key={param} className="flex items-center justify-between">
-              <span className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                {index + 1}. {param.charAt(0).toUpperCase() + param.slice(1)}
-              </span>
-              <div className="flex items-center space-x-2">
-                <div className="w-32 bg-gray-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full ${
-                      index === 0
-                        ? 'bg-red-500'
-                        : index === 1
-                        ? 'bg-orange-500'
-                        : index === 2
-                        ? 'bg-yellow-500'
-                        : 'bg-green-500'
-                    }`}
-                    style={{ width: `${(impact / maxImpact) * 100}%` }}
-                  />
-                </div>
-                <span className={`text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Δ{impact.toFixed(1)}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className={`mt-4 p-3 rounded ${isDark ? 'bg-blue-900' : 'bg-blue-50'}`}>
-          <h4 className={`font-medium mb-2 ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>Importância das Features (ML):</h4>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            {sortedImpacts.map(([param, impact]) => (
-              <div key={param} className={`${isDark ? 'text-blue-200' : 'text-blue-700'}`}>
-                <strong>{param}:</strong> {((impact / maxImpact) * 100).toFixed(1)}%
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className={`mt-4 p-3 rounded ${isDark ? 'bg-blue-900' : 'bg-blue-50'}`}>
-          <p className={`text-sm ${isDark ? 'text-blue-200' : 'text-blue-700'}`}>
-            <strong>Interpretação ML:</strong> Quanto maior o Δ, maior a influência do parâmetro na qualidade final.
-            Use estes percentuais como guia de importância das variáveis no processo.
-          </p>
-        </div>
-      </div>
-    );
   };
 
   const getModelPerformanceMetrics = () => {
@@ -423,8 +319,7 @@ export const Simulation: React.FC<SimulationProps> = ({
         </div>
         <div className={`mt-3 p-3 rounded ${isDark ? 'bg-green-900' : 'bg-green-50'}`}>
           <p className={`${isDark ? 'text-green-200' : 'text-green-700'} text-sm`}>
-            <strong>Interpretação:</strong> R² = {(r2 * 100).toFixed(1)}% indica quanta variação o modelo explica.
-            MAE = {mae.toFixed(2)} significa erro médio de ±{mae.toFixed(2)} unidades nas predições.
+            <strong>Interpretação:</strong> R² alto indica que o modelo explica bem a variação da qualidade.
           </p>
         </div>
       </div>
@@ -441,37 +336,25 @@ export const Simulation: React.FC<SimulationProps> = ({
         </h2>
 
         {/* Selector */}
-        <div className="flex space-x-1 mb-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-          <button
-            onClick={() => setActiveAnalysis('single')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeAnalysis === 'single'
-                ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-            }`}
-          >
-            Simulação Única
-          </button>
-          <button
-            onClick={() => setActiveAnalysis('batch')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeAnalysis === 'batch'
-                ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-            }`}
-          >
-            Simulação em Lote
-          </button>
-          <button
-            onClick={() => setActiveAnalysis('sensitivity')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeAnalysis === 'sensitivity'
-                ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-            }`}
-          >
-            Análise de Sensibilidade
-          </button>
+        <div className="flex flex-wrap gap-1 mb-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+          {[
+            { key: 'single', label: 'Simulação Única' },
+            { key: 'batch', label: 'Simulação em Lote' },
+            { key: 'sensitivity', label: 'Sensibilidade' },
+            { key: 'sensitivity_full', label: 'Sensibilidade (Detalhada)' }
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveAnalysis(tab.key as AnalysisTab)}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeAnalysis === tab.key
+                  ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* Parâmetros */}
@@ -547,7 +430,7 @@ export const Simulation: React.FC<SimulationProps> = ({
             </button>
           )}
 
-        {activeAnalysis === 'sensitivity' && (
+          {(activeAnalysis === 'sensitivity' || activeAnalysis === 'sensitivity_full') && (
             <button
               onClick={runSensitivityAnalysis}
               disabled={isRunning || !validationState.isValid}
@@ -575,7 +458,7 @@ export const Simulation: React.FC<SimulationProps> = ({
               <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>
                 {activeAnalysis === 'single' && 'Executando modelo ML...'}
                 {activeAnalysis === 'batch' && 'Processando simulações em lote...'}
-                {activeAnalysis === 'sensitivity' && 'Analisando sensibilidade de parâmetros...'}
+                {(activeAnalysis === 'sensitivity' || activeAnalysis === 'sensitivity_full') && 'Analisando sensibilidade de parâmetros...'}
               </span>
             </div>
           </div>
@@ -606,11 +489,7 @@ export const Simulation: React.FC<SimulationProps> = ({
                       : 'text-red-600'
                   }`}
                 >
-                  {simulationResults[simulationResults.length - 1].quality >= 365
-                    ? 'Excelente'
-                    : simulationResults[simulationResults.length - 1].quality >= 355
-                    ? 'Boa'
-                    : 'Ruim'}
+                  {simulationResults[simulationResults.length - 1].quality >= 365 ? 'Excelente' : simulationResults[simulationResults.length - 1].quality >= 355 ? 'Boa' : 'Ruim'}
                 </div>
               </div>
               <div className="text-center">
@@ -633,9 +512,7 @@ export const Simulation: React.FC<SimulationProps> = ({
                 <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Qualidade Média</div>
                 <div className="text-2xl font-bold text-blue-600">
                   {(
-                    simulationResults
-                      .filter((r) => r.type === 'batch')
-                      .reduce((sum, r) => sum + r.quality, 0) /
+                    simulationResults.filter((r) => r.type === 'batch').reduce((sum, r) => sum + r.quality, 0) /
                     simulationResults.filter((r) => r.type === 'batch').length
                   ).toFixed(2)}
                 </div>
@@ -644,9 +521,7 @@ export const Simulation: React.FC<SimulationProps> = ({
                 <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Energia Média</div>
                 <div className="text-2xl font-bold text-orange-600">
                   {(
-                    simulationResults
-                      .filter((r) => r.type === 'batch')
-                      .reduce((sum, r) => sum + r.energy, 0) /
+                    simulationResults.filter((r) => r.type === 'batch').reduce((sum, r) => sum + r.energy, 0) /
                     simulationResults.filter((r) => r.type === 'batch').length
                   ).toFixed(1)}
                 </div>
@@ -676,51 +551,45 @@ export const Simulation: React.FC<SimulationProps> = ({
                 </div>
               </div>
             </div>
-            <div className={`p-3 rounded ${isDark ? 'bg-blue-900' : 'bg-blue-50'}`}>
-              <p className={`${isDark ? 'text-blue-200' : 'text-blue-700'} text-sm`}>
-                <strong>Análise ML:</strong> Menor variância indica predições mais consistentes e processo mais estável.
-              </p>
+          </div>
+        )}
+
+        {/* Resultado — Sensibilidade (compacto) */}
+        {activeAnalysis === 'sensitivity' && sensitivityResults && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
+                <Line data={seriesFor('temperatura', sensitivityResults.temperatura)} options={sensitivityChartOptions('Temperatura (°C)', 'Análise de Sensibilidade: Temperatura')} />
+              </div>
+              <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
+                <Line data={seriesFor('tempo', sensitivityResults.tempo)} options={sensitivityChartOptions('Tempo (min)', 'Análise de Sensibilidade: Tempo')} />
+              </div>
+              <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
+                <Line data={seriesFor('pressao', sensitivityResults.pressao)} options={sensitivityChartOptions('Pressão (kPa)', 'Análise de Sensibilidade: Pressão')} />
+              </div>
+              <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
+                <Line data={seriesFor('velocidade', sensitivityResults.velocidade)} options={sensitivityChartOptions('Velocidade (rpm)', 'Análise de Sensibilidade: Velocidade')} />
+              </div>
             </div>
           </div>
         )}
 
-        {/* Resultado — Sensibilidade */}
-        {activeAnalysis === 'sensitivity' && sensitivityResults && (
+        {/* Resultado — Sensibilidade (DETALHADA / tela cheia na própria aba) */}
+        {activeAnalysis === 'sensitivity_full' && sensitivityResults && (
           <div className="space-y-6">
-            {getImpactAnalysis()}
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                {getSensitivityChart('temperatura', sensitivityResults.temperatura, '°C')}
+            {[
+              { key: 'temperatura', unit: 'Temperatura (°C)', title: 'Análise de Sensibilidade: Temperatura' },
+              { key: 'tempo', unit: 'Tempo (min)', title: 'Análise de Sensibilidade: Tempo' },
+              { key: 'pressao', unit: 'Pressão (kPa)', title: 'Análise de Sensibilidade: Pressão' },
+              { key: 'velocidade', unit: 'Velocidade (rpm)', title: 'Análise de Sensibilidade: Velocidade' }
+            ].map(({ key, unit, title }) => (
+              <div key={key} className={`${isDark ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-200'}`} style={{ height: 360 }}>
+                <Line
+                  data={seriesFor(key as any, sensitivityResults[key])}
+                  options={sensitivityChartOptions(unit, title, true)}
+                />
               </div>
-
-              <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                {getSensitivityChart('tempo', sensitivityResults.tempo, 'min')}
-              </div>
-
-              <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                {getSensitivityChart('pressao', sensitivityResults.pressao, 'kPa')}
-              </div>
-
-              <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                {getSensitivityChart('velocidade', sensitivityResults.velocidade, 'rpm')}
-              </div>
-            </div>
-
-            <div className={`p-4 rounded-lg ${isDark ? 'bg-yellow-900' : 'bg-yellow-50'} border ${isDark ? 'border-yellow-700' : 'border-yellow-200'}`}>
-              <div className="flex items-start">
-                <AlertCircle className={`h-5 w-5 mr-2 mt-0.5 ${isDark ? 'text-yellow-300' : 'text-yellow-600'}`} />
-                <div>
-                  <h4 className={`font-semibold mb-2 ${isDark ? 'text-yellow-300' : 'text-yellow-800'}`}>Como interpretar:</h4>
-                  <ul className={`text-sm space-y-1 ${isDark ? 'text-yellow-200' : 'text-yellow-700'}`}>
-                    <li>• Curvas inclinadas ⇒ grande impacto na predição (alta importância)</li>
-                    <li>• Curvas planas ⇒ pouco impacto (baixa importância)</li>
-                    <li>• Curvas não-lineares ⇒ relações complexas capturadas pelo modelo</li>
-                    <li>• Ranking de impacto ⇒ análogo à importância das features em ML</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         )}
       </div>
