@@ -253,6 +253,7 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
     const maxIterations = 50;
     let evaluations = 0;
     let bestQuality = 0;
+    let bestEnergy = Infinity;
     let bestParams = null;
 
     log.push(`Otimização Bayesiana iniciada: ${maxIterations} iterações`);
@@ -266,12 +267,13 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
         pressao: ranges.pressao.min + Math.random() * (ranges.pressao.max - ranges.pressao.min),
         velocidade: ranges.velocidade.min + Math.random() * (ranges.velocidade.max - ranges.velocidade.min)
       };
-      const quality = calculateQuality(params.temperatura, params.tempo, params.pressao, params.velocidade);
-      samples.push({ params, quality });
+      const result = calculateQualityAndEnergy(params.temperatura, params.tempo, params.pressao, params.velocidade);
+      samples.push({ params, quality: result.quality, energy: result.energy });
       evaluations++;
       
-      if (quality > bestQuality) {
-        bestQuality = quality;
+      if (result.quality > bestQuality) {
+        bestQuality = result.quality;
+        bestEnergy = result.energy;
         bestParams = params;
       }
     }
@@ -323,6 +325,7 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
         
         if (result.quality > bestQuality) {
           bestQuality = result.quality;
+          bestEnergy = result.energy;
           bestParams = nextParams;
           log.push(`Iteração ${iter + 1}: nova melhor solução = Q:${bestQuality.toFixed(2)}, E:${result.energy.toFixed(1)}kWh`);
         }
@@ -341,6 +344,7 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
     return {
       bestParams,
       bestQuality,
+      bestEnergy,
       evaluations,
       method: 'Otimização Bayesiana'
     };
