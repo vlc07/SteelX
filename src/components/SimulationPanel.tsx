@@ -520,6 +520,19 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
       {/* Sensibilidade */}
       {activeTab === 'sensitivity' && sensitivityResults && (
         <div className="space-y-6">
+          {/* >>>>>>>>>>>>>  MOVIDO PARA CIMA  <<<<<<<<<<<<< */}
+          <AIInsightCard
+            headline="Análise IA — Visão Geral da Sensibilidade"
+            bullets={[
+              'Ranking por impacto: ver cartões de cada parâmetro abaixo.',
+              'Priorize o controle fino dos parâmetros com maior inclinação/curvatura.',
+              'Se o melhor ponto ficou no limite da faixa, amplie o intervalo e repita a análise.',
+            ]}
+            tags={['Sensibilidade', 'Prioridades de Controle']}
+            tone="purple"
+            isDark={isDark}
+          />
+          {/* Gráficos por parâmetro */}
           <SensitivityRow
             title="Temperatura (°C)"
             chartCfg={makeSensitivityChart('Qualidade vs Temperatura (°C)', sensitivityResults.temperatura, 'rgb(239, 68, 68)')}
@@ -542,17 +555,6 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
             title="Velocidade (rpm)"
             chartCfg={makeSensitivityChart('Qualidade vs Velocidade (rpm)', sensitivityResults.velocidade, 'rgb(168, 85, 247)')}
             insight={insightForParameter('Velocidade', sensitivityResults.velocidade)}
-            isDark={isDark}
-          />
-          <AIInsightCard
-            headline="Análise IA — Visão Geral da Sensibilidade"
-            bullets={[
-              'Ranking por impacto: ver cartões de cada parâmetro acima.',
-              'Priorize o controle fino dos parâmetros com maior inclinação/curvatura.',
-              'Se o melhor ponto ficou no limite da faixa, amplie o intervalo e repita a análise.',
-            ]}
-            tags={['Sensibilidade', 'Prioridades de Controle']}
-            tone="purple"
             isDark={isDark}
           />
         </div>
@@ -702,6 +704,7 @@ function SensitivityRow({
   );
 }
 
+export default SimulationPanel;
 
 
 
