@@ -1,6 +1,6 @@
 // src/components/SimulationPanel.tsx
 import React from 'react';
-import { Play, TrendingUp, Zap, AlertCircle, Brain, Sparkles } from 'lucide-react';
+import { Play, TrendingUp, Zap, AlertCircle, Brain, Sparkles, Target } from 'lucide-react';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend,
 } from 'chart.js';
@@ -256,28 +256,6 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     return recs;
   };
 
-  const RecList = ({ items }: { items: Recommendation[] }) => (
-    <div className="space-y-2">
-      {items.map((r, i) => (
-        <div
-          key={i}
-          className={`p-3 rounded-lg border flex items-start gap-2 ${
-            r.type === 'success'
-              ? isDark ? 'bg-green-900/30 border-green-800 text-green-200' : 'bg-green-50 border-green-200 text-green-700'
-              : r.type === 'efficiency'
-              ? isDark ? 'bg-emerald-900/30 border-emerald-800 text-emerald-200' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-              : r.type === 'warning'
-              ? isDark ? 'bg-yellow-900/30 border-yellow-800 text-yellow-200' : 'bg-yellow-50 border-yellow-200 text-yellow-700'
-              : isDark ? 'bg-red-900/30 border-red-800 text-red-200' : 'bg-red-50 border-red-200 text-red-700'
-          }`}
-        >
-          <span className="text-lg leading-none">{r.icon}</span>
-          <span className="text-sm">{r.message}</span>
-        </div>
-      ))}
-    </div>
-  );
-
   /* ===== Helpers Chart/Style ===== */
   const axisColor = isDark ? '#e5e7eb' : '#374151';
   const gridColor = isDark ? '#374151' : '#e5e7eb';
@@ -532,12 +510,14 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
                     />
                   )}
 
-                  {/* Recomendações Inteligentes */}
+                  {/* Recomendações Inteligentes - Premium */}
                   {recs.length > 0 && (
-                    <div className={`${isDark ? 'bg-gray-800' : 'bg-gray-50'} rounded-xl p-4`}>
-                      <h4 className={`font-semibold mb-3 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>🎯 Recomendações Inteligentes</h4>
-                      <RecList items={recs} />
-                    </div>
+                    <SmartRecommendations
+                      title="Recomendações Inteligentes"
+                      items={recs}
+                      isDark={isDark}
+                      tone="blue"
+                    />
                   )}
                 </>
               );
@@ -572,11 +552,13 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
               />
             )}
 
-            {/* Recomendações Inteligentes (com base nas médias do lote) */}
-            <div className={`${isDark ? 'bg-gray-800' : 'bg-gray-50'} rounded-xl p-4`}>
-              <h4 className={`font-semibold mb-3 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>🎯 Recomendações Inteligentes</h4>
-              <RecList items={buildRecommendations(batchStats.meanQ, batchStats.meanE)} />
-            </div>
+            {/* Recomendações Inteligentes — Premium */}
+            <SmartRecommendations
+              title="Recomendações Inteligentes"
+              items={buildRecommendations(batchStats.meanQ, batchStats.meanE)}
+              isDark={isDark}
+              tone="emerald"
+            />
           </div>
         </div>
       )}
@@ -737,6 +719,72 @@ function AIInsightCard({
   );
 }
 
+/** Card premium de Recomendações Inteligentes (harmonizado com AIInsightCard) */
+function SmartRecommendations({
+  title,
+  items,
+  isDark,
+  tone,
+}: {
+  title: string;
+  items: { type: 'success' | 'efficiency' | 'warning' | 'critical'; icon: string; message: string }[];
+  isDark: boolean;
+  tone: 'blue' | 'emerald';
+}) {
+  const outerBg =
+    tone === 'blue'
+      ? isDark
+        ? 'from-blue-950 to-gray-900 border-blue-900/40'
+        : 'from-blue-50 to-white border-blue-200'
+      : isDark
+      ? 'from-emerald-950 to-gray-900 border-emerald-900/40'
+      : 'from-emerald-50 to-white border-emerald-200';
+
+  const iconBg =
+    tone === 'blue'
+      ? isDark
+        ? 'bg-blue-900/50 text-blue-200'
+        : 'bg-blue-600 text-white'
+      : isDark
+      ? 'bg-emerald-900/50 text-emerald-200'
+      : 'bg-emerald-600 text-white';
+
+  const pill = (kind: string) =>
+    kind === 'success'
+      ? isDark
+        ? 'bg-green-900/40 text-green-200 border-green-800'
+        : 'bg-green-100 text-green-700 border-green-200'
+      : kind === 'efficiency'
+      ? isDark
+        ? 'bg-emerald-900/40 text-emerald-200 border-emerald-800'
+        : 'bg-emerald-100 text-emerald-700 border-emerald-200'
+      : kind === 'warning'
+      ? isDark
+        ? 'bg-yellow-900/40 text-yellow-200 border-yellow-800'
+        : 'bg-yellow-100 text-yellow-700 border-yellow-200'
+      : isDark
+      ? 'bg-rose-900/40 text-rose-200 border-rose-800'
+      : 'bg-rose-100 text-rose-700 border-rose-200';
+
+  return (
+    <div className={`rounded-xl border bg-gradient-to-br ${outerBg} p-4 md:p-5`}>
+      <div className="flex items-center gap-3 mb-4">
+        <div className={`p-2.5 rounded-lg ${iconBg}`}><Target className="h-5 w-5" /></div>
+        <h4 className={`text-base md:text-lg font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>{title}</h4>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {items.map((r, i) => (
+          <div key={i} className={`p-3 rounded-lg border flex items-start gap-2 ${pill(r.type)}`}>
+            <span className="text-lg leading-none">{r.icon}</span>
+            <span className="text-sm">{r.message}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function SensitivityRow({
   title,
   chartCfg,
@@ -768,6 +816,7 @@ function SensitivityRow({
 }
 
 export default SimulationPanel;
+
 
 
 
