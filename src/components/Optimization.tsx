@@ -312,14 +312,20 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
               </div>
             </div>
 
-            {/* Score + decomposição */}
+            {/* Score + tooltip explicativo */}
             <div className="text-right">
-              <div className={`text-xs ${sub}`}>Score</div>
+              <div className="flex items-center justify-end gap-2">
+                <span className={`text-xs ${sub}`}>Score</span>
+                <span
+                  className={`cursor-help text-xs ${isDark ? 'bg-blue-900/60 text-blue-200 border border-blue-800' : 'bg-blue-100 text-blue-700 border border-blue-200'} px-2 py-0.5 rounded-full`}
+                  title={`O score combina qualidade prevista e consumo de energia em um só valor.
+Valores menores do equilíbrio priorizam qualidade. Valores maiores priorizam economia de energia.`}
+                >
+                  ℹ️
+                </span>
+              </div>
               <div className={`text-4xl font-black ${isDark ? 'text-green-300' : 'text-green-700'}`}>
                 {last.score.toFixed(2)}
-              </div>
-              <div className={`text-[11px] mt-1 ${sub}`}>
-                {`${last.quality.toFixed(1)} − ${lambda.toFixed(2)} × (${last.energy.toFixed(1)} − 500)`}
               </div>
             </div>
           </div>
@@ -348,7 +354,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
               <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs uppercase tracking-wide text-gray-500">Consumo energético</span>
-                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${energyBadge(last.energy).class}`}>
+                <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${energyBadge(last.energy).class}`}>
                     <BatteryCharging className="inline h-3 w-3 mr-1" />
                     {energyBadge(last.energy).label}
                   </span>
@@ -413,8 +419,8 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
 
             {/* Nota contextual */}
             <div className={`text-sm ${sub}`}>
-              💡 O score combina qualidade e eficiência energética via “Equilíbrio entre qualidade e energia”.
-              Ajuste o controle para priorizar custo/CO₂ (energia) ou qualidade do produto.
+              💡 O score combina qualidade e eficiência energética via o controle “Equilíbrio entre qualidade e energia”.
+              Ajuste esse controle para priorizar custo/CO₂ (energia) ou qualidade do produto.
             </div>
           </div>
         </div>
@@ -479,3 +485,4 @@ function ParamCard(props: {
     </div>
   );
 }
+
