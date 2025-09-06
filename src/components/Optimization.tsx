@@ -1,6 +1,6 @@
 // src/components/Optimization.tsx
 import React from 'react';
-import { Play, Beaker, Dna, Brain, Gauge, AlertCircle } from 'lucide-react';
+import { Play, Beaker, Dna, Brain, Gauge, AlertCircle, Trophy } from 'lucide-react';
 import type { OptimizeMethod } from '../optim/runner';
 import { runOptimization } from '../optim/runner';
 
@@ -18,13 +18,13 @@ type LastSummary = {
 };
 
 export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplete }) => {
-  // controles globais (iguais para todos os métodos)
+  // Controles globais
   const [budget, setBudget] = React.useState<number>(200);
   const [lambda, setLambda] = React.useState<number>(0.15);
   const [useQualityConstraint, setUseQualityConstraint] = React.useState<boolean>(false);
   const [qualityMin, setQualityMin] = React.useState<number>(365);
 
-  // estados de execução por método (deixa cada botão independente)
+  // Estados de execução
   const [runningGrid, setRunningGrid] = React.useState(false);
   const [runningGA, setRunningGA] = React.useState(false);
   const [runningBO, setRunningBO] = React.useState(false);
@@ -53,7 +53,6 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         seed: 2025,
       });
 
-      // resumo rápido na própria tela
       setLast({
         method,
         score: res.best.y,
@@ -61,7 +60,6 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         evaluations: res.evaluations,
       });
 
-      // envia para a tela de Resultados (mantém compatível com seu App.tsx)
       onOptimizationComplete({
         method: res.method,
         bestParams: res.best.x,
@@ -146,7 +144,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
               <h3 className={`font-semibold ${text}`}>Otimização Bayesiana</h3>
             </div>
             <p className={`${sub} text-sm mb-4`}>
-              Modelo probabilístico (GP + EI) para explorar e explorar melhor com poucas avaliações (amostras).
+              Modelo probabilístico (GP + EI) para explorar e explorar melhor com poucas avaliações.
             </p>
             <button
               onClick={() => executar('bo')}
@@ -226,26 +224,73 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             />
             <div className={`${text} text-sm mt-1`}>{qualityMin}</div>
           </div>
+        </div>
+      </div>
 
-          {/* Resumo do último run */}
-          {last && (
-            <div className={`mt-5 p-3 rounded ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
-              <div className={`text-sm ${label}`}>
-                <div><b>Método:</b> {last.method.toUpperCase()}</div>
-                <div><b>Avaliações:</b> {last.evaluations}</div>
-                <div className="mt-1"><b>Melhor score:</b> {last.score.toFixed(2)}</div>
-                <div className="mt-1">
-                  <b>Parâmetros:</b>{' '}
-                  temperatura={last.x.temperatura?.toFixed(1)};{' '}
-                  tempo={last.x.tempo?.toFixed(1)};{' '}
-                  pressao={last.x.pressao?.toFixed(1)};{' '}
-                  velocidade={last.x.velocidade?.toFixed(1)}
+      {/* === Card de Resultado Premium === */}
+      {last && (
+        <div
+          className={`rounded-2xl border overflow-hidden ${isDark ? 'border-green-700 bg-gradient-to-br from-gray-800 to-gray-900' : 'border-green-200 bg-gradient-to-br from-green-50 to-white'}`}
+        >
+          {/* Header */}
+          <div className={`flex items-center justify-between px-6 py-5 ${isDark ? 'bg-gray-900/40' : 'bg-green-100/80'}`}>
+            <div className="flex items-center gap-3">
+              <div className={`p-3 rounded-full ${isDark ? 'bg-green-700/40' : 'bg-green-500'} text-white`}>
+                <Trophy className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className={`text-lg font-extrabold ${isDark ? 'text-green-300' : 'text-green-700'}`}>Melhor Resultado Encontrado</h3>
+                <p className={`${sub} text-xs`}>Otimização concluída com sucesso</p>
+              </div>
+            </div>
+
+            {/* Score em destaque */}
+            <div className="text-right">
+              <div className={`text-xs ${sub}`}>Score</div>
+              <div className={`text-4xl font-black ${isDark ? 'text-green-300' : 'text-green-700'}`}>
+                {last.score.toFixed(2)}
+              </div>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Métricas rápidas */}
+              <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
+                <div className="text-xs uppercase tracking-wide text-gray-500">Método</div>
+                <div className={`mt-1 text-lg font-semibold ${text}`}>{last.method.toUpperCase()}</div>
+              </div>
+              <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
+                <div className="text-xs uppercase tracking-wide text-gray-500">Avaliações</div>
+                <div className={`mt-1 text-lg font-semibold ${text}`}>{last.evaluations}</div>
+              </div>
+
+              {/* Param chips (colspan) */}
+              <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm md:col-span-2`}>
+                <div className="text-xs uppercase tracking-wide text-gray-500 mb-2">Parâmetros</div>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(last.x).map(([k, v]) => (
+                    <span
+                      key={k}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        isDark ? 'bg-green-900/40 text-green-200' : 'bg-green-100 text-green-800'
+                      }`}
+                    >
+                      {k}={typeof v === 'number' ? v.toFixed(1) : String(v)}
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>
-          )}
+
+            {/* Nota para investidores/usuários */}
+            <div className={`mt-6 text-sm ${sub}`}>
+              💡 A IA encontrou um conjunto de parâmetros promissor com poucas avaliações, reduzindo iterações experimentais e custo energético.
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Notas */}
       <div className={card}>
