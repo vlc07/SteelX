@@ -196,7 +196,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
               <h3 className={`font-semibold ${text}`}>Grid Search</h3>
             </div>
             <p className={`${sub} text-sm mb-4`}>
-              Varre uma grade de combinações de parâmetros conforme o passo (step) definido, limitada pelo budget.
+              Testa várias combinações de parâmetros de forma organizada, como se fosse uma tabela. É simples, mas pode levar mais tempo quando há muitas opções.
             </p>
             <button
               onClick={() => executar('grid')}
@@ -217,7 +217,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
               <h3 className={`font-semibold ${text}`}>Algoritmo Genético</h3>
             </div>
             <p className={`${sub} text-sm mb-4`}>
-              Busca estocástica por seleção, crossover e mutação. Bom para espaços contínuos e múltiplos ótimos locais.
+              Funciona parecido com a evolução da natureza: mistura e seleciona os melhores “parâmetros” a cada rodada. Assim, vai refinando até achar combinações mais fortes e equilibradas.
             </p>
             <button
               onClick={() => executar('ga')}
@@ -238,7 +238,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
               <h3 className={`font-semibold ${text}`}>Otimização Bayesiana</h3>
             </div>
             <p className={`${sub} text-sm mb-4`}>
-              Modelo probabilístico (GP + EI) para explorar e explorar melhor com poucas avaliações.
+              Usa inteligência estatística para aprender com cada teste feito. Com isso, consegue sugerir os próximos parâmetros de forma mais esperta, gastando menos tentativas pra achar bons resultados.
             </p>
             <button
               onClick={() => executar('bo')}
