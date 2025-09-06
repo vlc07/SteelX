@@ -278,8 +278,12 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           {/* Lambda */}
           <div className="mb-4">
             <label className={`block text-sm mb-1 ${label}`}>
-              λ — penalização de energia (maior ⇒ valoriza mais eficiência)
-            </label>
+  Equilíbrio entre qualidade e energia  
+  <span className="block text-xs text-gray-500">
+    Valores menores = foco em qualidade · Valores maiores = foco em economia de energia
+  </span>
+</label>
+
             <input
               type="range"
               min={0}
