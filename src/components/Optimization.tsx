@@ -347,7 +347,10 @@ Valores menores do equilíbrio priorizam qualidade. Valores maiores priorizam ec
                     {qualityBadge(last.quality).label}
                   </span>
                 </div>
-                <div className={`mt-1 text-2xl font-extrabold ${text}`}>{last.quality.toFixed(1)}</div>
+               <div className={`mt-1 text-2xl font-extrabold ${text}`}>
+  {last.quality.toFixed(1)}<span className="text-lg text-gray-500">/400</span>
+</div>
+
               </div>
 
               {/* Energia */}
