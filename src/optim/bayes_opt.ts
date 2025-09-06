@@ -22,6 +22,38 @@ function fromVec(bounds: Bounds[], v: number[]) {
 
 function argmax(arr: number[]) { let i = 0; for (let k = 1; k < arr.length; k++) if (arr[k] > arr[i]) i = k; return i; }
 
+// ---------- Funções especiais sem depender de Math.erf ----------
+/** Aproximação de erf(x) — Abramowitz & Stegun 7.1.26 */
+function erf(x: number): number {
+  const sign = x < 0 ? -1 : 1;
+  const ax = Math.abs(x);
+  const a1 = 0.254829592,
+        a2 = -0.284496736,
+        a3 = 1.421413741,
+        a4 = -1.453152027,
+        a5 = 1.061405429,
+        p  = 0.3275911;
+  const t = 1 / (1 + p * ax);
+  const y = 1 - (((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t) * Math.exp(-ax * ax);
+  return sign * y;
+}
+
+function normalPdf(x: number): number {
+  return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+}
+
+function normalCdf(x: number): number {
+  // Φ(x) = 0.5 * (1 + erf(x / √2))
+  return 0.5 * (1 + erf(x / Math.SQRT2));
+}
+
+// Expected Improvement (maximização)
+function expectedImprovement(mu: number, sigma: number, fBest: number, xi = 0.01) {
+  if (sigma < 1e-12) return 0;
+  const z = (mu - fBest - xi) / sigma;
+  return (mu - fBest - xi) * normalCdf(z) + sigma * normalPdf(z);
+}
+
 // Cholesky simples (matrizes pequenas)
 function cholesky(A: number[][]) {
   const n = A.length;
@@ -52,15 +84,6 @@ function solveCholesky(L: number[][], b: number[]) {
     x[i] = s / L[i][i];
   }
   return x;
-}
-
-// Expected Improvement (maximização)
-function expectedImprovement(mu: number, sigma: number, fBest: number, xi = 0.01) {
-  if (sigma < 1e-9) return 0;
-  const z = (mu - fBest - xi) / sigma;
-  const pdf = Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI);
-  const cdf = 0.5 * (1 + Math.erf(z / Math.SQRT2));
-  return (mu - fBest - xi) * cdf + sigma * pdf;
 }
 
 export class BayesianOptimizer implements Optimizer {
@@ -121,12 +144,12 @@ export class BayesianOptimizer implements Optimizer {
 
         // μ(z)
         const k = X.map(xi => rbf(xi, z, this.cfg.lengthScale, this.cfg.variance));
-        const mu = k.reduce((s, kv, i) => s + kv * alpha[i], 0);
+        const mu = k.reduce((sum, kv, i) => sum + kv * alpha[i], 0);
 
         // σ(z)
         const v = solveCholesky(L, k);
         const kzz = rbf(z, z, this.cfg.lengthScale, this.cfg.variance) + this.cfg.noise;
-        const sigma = Math.sqrt(Math.max(kzz - v.reduce((s, vi) => s + vi * vi, 0), 1e-12));
+        const sigma = Math.sqrt(Math.max(kzz - v.reduce((sum, vi) => sum + vi * vi, 0), 1e-12));
 
         const ei = expectedImprovement(mu, sigma, fBest, 0.01);
         if (ei > bestEI) { bestEI = ei; bestCand = z; }
@@ -139,3 +162,4 @@ export class BayesianOptimizer implements Optimizer {
     return { best: best!, history: hist, evaluations: y.length, meta: { method: 'bo', ...this.cfg } };
   }
 }
+
