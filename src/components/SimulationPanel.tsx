@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Play, TrendingUp, Zap, AlertCircle, BarChart3 } from 'lucide-react';
-import { Line } from 'react-chartjs-2';
+// src/components/SimulationPanel.tsx
+import React, { useState, useEffect, useMemo } from 'react';
+import { Play, TrendingUp, Zap, AlertCircle } from 'lucide-react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -9,8 +9,9 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend,
+  Legend
 } from 'chart.js';
+import { Line } from 'react-chartjs-2';
 import { ParameterInput } from './ParameterInput';
 import { validateAllParameters, validateParameterCombination } from '../utils/parameterValidation';
 
@@ -24,22 +25,24 @@ ChartJS.register(
   Legend
 );
 
-interface SimulationPanelProps {
+type Props = {
   temperatura: number;
-  setTemperatura: (value: number) => void;
+  setTemperatura: (v: number) => void;
   tempo: number;
-  setTempo: (value: number) => void;
+  setTempo: (v: number) => void;
   pressao: number;
-  setPressao: (value: number) => void;
+  setPressao: (v: number) => void;
   velocidade: number;
-  setVelocidade: (value: number) => void;
+  setVelocidade: (v: number) => void;
   simulationResults: any[];
-  setSimulationResults: (results: any) => void;
-  t: (key: string) => string;
+  setSimulationResults: (r: any) => void; // recebe 1 resultado por vez (o chamador empilha)
+  t: (k: string) => string;
   isDark: boolean;
-}
+};
 
-const SimulationPanel: React.FC<SimulationPanelProps> = ({
+type ValidationState = { isValid: boolean; errors: string[]; warnings: string[] };
+
+const SimulationPanel: React.FC<Props> = ({
   temperatura,
   setTemperatura,
   tempo,
@@ -51,221 +54,359 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
   simulationResults,
   setSimulationResults,
   t,
-  isDark,
+  isDark
 }) => {
-  const [activeTab, setActiveTab] = useState<'single' | 'batch' | 'sensitivity'>('single');
+  const [tab, setTab] = useState<'single' | 'batch' | 'sensitivity'>('single');
   const [isRunning, setIsRunning] = useState(false);
-  const [sensitivityResults, setSensitivityResults] = useState<any>(null);
-  const [validationState, setValidationState] = useState({
-    isValid: true,
-    errors: [] as string[],
-    warnings: [] as string[],
-  });
+  const [validation, setValidation] = useState<ValidationState>({ isValid: true, errors: [], warnings: [] });
+  const palette = {
+    text: isDark ? 'text-gray-200' : 'text-gray-800',
+    sub: isDark ? 'text-gray-400' : 'text-gray-600',
+    card: `${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`
+  };
 
-  // validação
+  // ======= Validação =======
   useEffect(() => {
-    const paramValidation = validateAllParameters({ temperatura, tempo, pressao, velocidade });
-    const combinationValidation = validateParameterCombination({ temperatura, tempo, pressao, velocidade });
-
-    setValidationState({
-      isValid: paramValidation.isValid && combinationValidation.isValid,
-      errors: paramValidation.errors,
-      warnings: combinationValidation.warnings,
-    });
+    const v1 = validateAllParameters({ temperatura, tempo, pressao, velocidade });
+    const v2 = validateParameterCombination({ temperatura, tempo, pressao, velocidade });
+    setValidation({ isValid: v1.isValid && v2.isValid, errors: v1.errors, warnings: v2.warnings });
   }, [temperatura, tempo, pressao, velocidade]);
 
-  // cálculo de qualidade fictício (simulação ML)
+  // ======= Modelo simples ML (mesmo cálculo do app para coerência) =======
   const calculateQuality = (temp: number, time: number, press: number, speed: number) => {
-    let quality = 300;
     const tempNorm = (temp - 1400) / 200;
     const timeNorm = (time - 10) / 110;
     const pressNorm = (press - 95) / 15;
     const speedNorm = (speed - 250) / 100;
 
-    quality += 50 * Math.pow(tempNorm, 1.2);
-    quality += 30 * (1 - Math.pow(timeNorm - 0.6, 2));
-    quality += 15 * pressNorm;
-    quality += 10 * Math.sqrt(speedNorm);
-    quality += 5 * tempNorm * timeNorm + 3 * pressNorm * speedNorm;
-    quality += (Math.random() - 0.5) * 4;
-
-    return Math.max(300, Math.min(400, quality));
+    let q = 320;
+    q += 50 * Math.pow(Math.max(0, Math.min(1, tempNorm)), 1.1);
+    q += 30 * (1 - Math.pow(timeNorm - 0.6, 2));
+    q += 15 * pressNorm;
+    q += 10 * Math.sqrt(Math.max(0, speedNorm));
+    q += 5 * tempNorm * timeNorm + 3 * pressNorm * speedNorm;
+    q += (Math.random() - 0.5) * 3.5;
+    return Math.max(300, Math.min(400, q));
   };
 
-  const runSingleSimulation = () => {
+  // ======= Ações =======
+  const runSingle = () => {
     setIsRunning(true);
     setTimeout(() => {
       const quality = calculateQuality(temperatura, tempo, pressao, velocidade);
-      const newResult = {
+      setSimulationResults({
         id: Date.now(),
         parameters: { temperatura, tempo, pressao, velocidade },
         quality,
         timestamp: new Date().toISOString(),
-        type: 'single',
-      };
-      setSimulationResults(newResult);
+        type: 'single'
+      });
       setIsRunning(false);
-    }, 1000);
+    }, 700);
   };
 
-  const runBatchSimulation = () => {
+  const runBatch = () => {
     setIsRunning(true);
     setTimeout(() => {
-      const batchResults = [];
-      for (let i = 0; i < 20; i++) {
-        const tempVar = temperatura + (Math.random() - 0.5) * 30;
-        const timeVar = tempo + (Math.random() - 0.5) * 20;
-        const pressVar = pressao + (Math.random() - 0.5) * 2;
-        const speedVar = velocidade + (Math.random() - 0.5) * 20;
-
-        const quality = calculateQuality(tempVar, timeVar, pressVar, speedVar);
-        batchResults.push({
+      const N = 20;
+      for (let i = 0; i < N; i++) {
+        const tVar = Math.max(1400, Math.min(1600, temperatura + (Math.random() - 0.5) * 25));
+        const tiVar = Math.max(10, Math.min(120, tempo + (Math.random() - 0.5) * 15));
+        const pVar = Math.max(95, Math.min(110, pressao + (Math.random() - 0.5) * 1.8));
+        const vVar = Math.max(250, Math.min(350, velocidade + (Math.random() - 0.5) * 18));
+        const quality = calculateQuality(tVar, tiVar, pVar, vVar);
+        setSimulationResults({
           id: Date.now() + i,
-          parameters: { temperatura: tempVar, tempo: timeVar, pressao: pressVar, velocidade: speedVar },
+          parameters: { temperatura: tVar, tempo: tiVar, pressao: pVar, velocidade: vVar },
           quality,
           timestamp: new Date().toISOString(),
           type: 'batch',
+          batchIndex: i + 1
         });
       }
-      batchResults.forEach((r) => setSimulationResults(r));
       setIsRunning(false);
-    }, 3000);
+    }, 1200);
   };
 
-  const runSensitivityAnalysis = () => {
+  // ======= Sensibilidade =======
+  const [sensitivity, setSensitivity] = useState<null | {
+    temperatura: { x: number; y: number }[];
+    tempo: { x: number; y: number }[];
+    pressao: { x: number; y: number }[];
+    velocidade: { x: number; y: number }[];
+  }>(null);
+
+  const runSensitivity = () => {
     setIsRunning(true);
     setTimeout(() => {
-      const results = {
-        temperatura: [] as any[],
-        tempo: [] as any[],
-        pressao: [] as any[],
-        velocidade: [] as any[],
+      const res = {
+        temperatura: [] as { x: number; y: number }[],
+        tempo: [] as { x: number; y: number }[],
+        pressao: [] as { x: number; y: number }[],
+        velocidade: [] as { x: number; y: number }[]
       };
-      for (let temp = 1400; temp <= 1600; temp += 20) {
-        results.temperatura.push({ x: temp, y: calculateQuality(temp, tempo, pressao, velocidade) });
-      }
-      for (let time = 10; time <= 120; time += 10) {
-        results.tempo.push({ x: time, y: calculateQuality(temperatura, time, pressao, velocidade) });
-      }
-      for (let press = 95; press <= 110; press += 1) {
-        results.pressao.push({ x: press, y: calculateQuality(temperatura, tempo, press, velocidade) });
-      }
-      for (let speed = 250; speed <= 350; speed += 10) {
-        results.velocidade.push({ x: speed, y: calculateQuality(temperatura, tempo, pressao, speed) });
-      }
-      setSensitivityResults(results);
+
+      for (let tVal = 1400; tVal <= 1600; tVal += 20) res.temperatura.push({ x: tVal, y: calculateQuality(tVal, tempo, pressao, velocidade) });
+      for (let tiVal = 10; tiVal <= 120; tiVal += 10) res.tempo.push({ x: tiVal, y: calculateQuality(temperatura, tiVal, pressao, velocidade) });
+      for (let pVal = 95; pVal <= 110; pVal += 1) res.pressao.push({ x: pVal, y: calculateQuality(temperatura, tempo, pVal, velocidade) });
+      for (let vVal = 250; vVal <= 350; vVal += 10) res.velocidade.push({ x: vVal, y: calculateQuality(temperatura, tempo, pressao, vVal) });
+
+      setSensitivity(res);
       setIsRunning(false);
-    }, 3000);
+    }, 1200);
   };
 
-  // gráfico de sensibilidade
-  const getSensitivityChart = (parameter: string, data: any[], unit: string) => {
+  // ======= UI helpers =======
+  const TabButton: React.FC<{ id: typeof tab; label: string }> = ({ id, label }) => (
+    <button
+      onClick={() => setTab(id)}
+      className={`flex-1 py-3 px-4 rounded-md text-sm font-medium transition-colors ${
+        tab === id
+          ? 'bg-white dark:bg-gray-600 text-blue-500 shadow-sm'
+          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+      }`}
+    >
+      {label}
+    </button>
+  );
+
+  const ActionBar: React.FC = () => (
+    <div className="flex justify-center gap-4">
+      {tab === 'single' && (
+        <button
+          onClick={runSingle}
+          disabled={isRunning || !validation.isValid}
+          className={`flex items-center px-6 py-3 rounded-lg font-medium ${
+            isRunning || !validation.isValid ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'
+          }`}
+        >
+          <Play className="h-5 w-5 mr-2" /> {isRunning ? 'Simulando...' : 'Executar Simulação'}
+        </button>
+      )}
+      {tab === 'batch' && (
+        <button
+          onClick={runBatch}
+          disabled={isRunning || !validation.isValid}
+          className={`flex items-center px-6 py-3 rounded-lg font-medium ${
+            isRunning || !validation.isValid ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600'
+          }`}
+        >
+          <TrendingUp className="h-5 w-5 mr-2" /> {isRunning ? 'Executando Lote...' : 'Executar Lote (20x)'}
+        </button>
+      )}
+      {tab === 'sensitivity' && (
+        <button
+          onClick={runSensitivity}
+          disabled={isRunning || !validation.isValid}
+          className={`flex items-center px-6 py-3 rounded-lg font-medium ${
+            isRunning || !validation.isValid ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-purple-500 text-white hover:bg-purple-600'
+          }`}
+        >
+          <Zap className="h-5 w-5 mr-2" /> {isRunning ? 'Analisando...' : 'Executar Análise de Sensibilidade'}
+        </button>
+      )}
+    </div>
+  );
+
+  // ======= Gráfico de sensibilidade (com limites de tamanho) =======
+  const getSensitivityChart = (parameter: 'temperatura' | 'tempo' | 'pressao' | 'velocidade', data: { x: number; y: number }[], unit: string) => {
     const chartData = {
-      labels: data.map((d) => d.x),
+      labels: data.map(d => d.x),
       datasets: [
         {
           label: `Qualidade vs ${parameter}`,
-          data: data.map((d) => d.y),
-          borderColor: 'rgb(59, 130, 246)',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          tension: 0.3,
+          data: data.map(d => d.y),
+          borderColor:
+            parameter === 'temperatura'
+              ? 'rgb(239, 68, 68)'
+              : parameter === 'tempo'
+              ? 'rgb(59, 130, 246)'
+              : parameter === 'pressao'
+              ? 'rgb(34, 197, 94)'
+              : 'rgb(168, 85, 247)',
+          backgroundColor:
+            parameter === 'temperatura'
+              ? 'rgba(239, 68, 68, 0.1)'
+              : parameter === 'tempo'
+              ? 'rgba(59, 130, 246, 0.1)'
+              : parameter === 'pressao'
+              ? 'rgba(34, 197, 94, 0.1)'
+              : 'rgba(168, 85, 247, 0.1)',
+          tension: 0.35,
           fill: true,
-        },
-      ],
+          pointRadius: 2,
+          pointHoverRadius: 5
+        }
+      ]
     };
-    return <Line data={chartData} />;
+
+    const options = {
+      responsive: true,
+      maintainAspectRatio: false, // << controla pela altura do container
+      plugins: {
+        legend: {
+          labels: { color: isDark ? '#e5e7eb' : '#374151' }
+        },
+        title: {
+          display: true,
+          text: `Análise de Sensibilidade: ${parameter.charAt(0).toUpperCase() + parameter.slice(1)}`,
+          color: isDark ? '#e5e7eb' : '#374151'
+        }
+      },
+      scales: {
+        y: {
+          title: { display: true, text: 'Qualidade', color: isDark ? '#e5e7eb' : '#374151' },
+          ticks: { color: isDark ? '#e5e7eb' : '#374151' },
+          grid: { color: isDark ? '#374151' : '#e5e7eb' }
+        },
+        x: {
+          title: { display: true, text: `${parameter} (${unit})`, color: isDark ? '#e5e7eb' : '#374151' },
+          ticks: { color: isDark ? '#e5e7eb' : '#374151' },
+          grid: { color: isDark ? '#374151' : '#e5e7eb' }
+        }
+      }
+    };
+
+    return (
+      <div className="w-full max-w-[720px] h-[320px] mx-auto">
+        <Line data={chartData} options={options as any} />
+      </div>
+    );
   };
+
+  // ======= Métricas do lote (se houver) =======
+  const batchStats = useMemo(() => {
+    const batch = simulationResults.filter(r => r.type === 'batch');
+    if (batch.length === 0) return null;
+    const q = batch.map((r: any) => r.quality);
+    const mean = q.reduce((s: number, v: number) => s + v, 0) / q.length;
+    const variance = q.reduce((s: number, v: number) => s + Math.pow(v - mean, 2), 0) / q.length;
+    const std = Math.sqrt(variance);
+    return { mean, variance, std, min: Math.min(...q), max: Math.max(...q), n: q.length };
+  }, [simulationResults]);
 
   return (
     <div className="space-y-6">
-      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
-        <h2 className={`text-2xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
-          <BarChart3 className="h-6 w-6 mr-2 text-blue-500" />
-          <span>Painel de Simulação</span>
-        </h2>
+      {/* Tabs no topo */}
+      <div className="bg-gray-100 dark:bg-gray-700 rounded-2xl p-1 flex gap-1">
+        <TabButton id="single" label="Simulação Única" />
+        <TabButton id="batch" label="Simulação em Lote" />
+        <TabButton id="sensitivity" label="Análise de Sensibilidade" />
+      </div>
 
-        {/* Abas no topo */}
-        <div className="flex space-x-1 mb-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-          <button
-            onClick={() => setActiveTab('single')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium ${
-              activeTab === 'single' ? 'bg-white dark:bg-gray-600 text-blue-600' : 'text-gray-600 dark:text-gray-300'
-            }`}
-          >
-            Simulação Única
-          </button>
-          <button
-            onClick={() => setActiveTab('batch')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium ${
-              activeTab === 'batch' ? 'bg-white dark:bg-gray-600 text-blue-600' : 'text-gray-600 dark:text-gray-300'
-            }`}
-          >
-            Simulação em Lote
-          </button>
-          <button
-            onClick={() => setActiveTab('sensitivity')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium ${
-              activeTab === 'sensitivity' ? 'bg-white dark:bg-gray-600 text-blue-600' : 'text-gray-600 dark:text-gray-300'
-            }`}
-          >
-            Análise de Sensibilidade
-          </button>
+      {/* Parâmetros */}
+      <div className={palette.card}>
+        <h3 className={`text-lg font-semibold mb-4 ${palette.text}`}>Parâmetros do Processo</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ParameterInput label="Temperatura" parameterName="temperatura" value={temperatura} onChange={setTemperatura} isDark={isDark} />
+          <ParameterInput label="Tempo" parameterName="tempo" value={tempo} onChange={setTempo} isDark={isDark} />
+          <ParameterInput label="Pressão" parameterName="pressao" value={pressao} onChange={setPressao} isDark={isDark} />
+          <ParameterInput label="Velocidade" parameterName="velocidade" value={velocidade} onChange={setVelocidade} isDark={isDark} />
         </div>
 
-        {/* Conteúdo de cada aba */}
-        {activeTab === 'single' && (
-          <div>
-            <ParameterInput label="Temperatura" parameterName="temperatura" value={temperatura} onChange={setTemperatura} isDark={isDark} />
-            <ParameterInput label="Tempo" parameterName="tempo" value={tempo} onChange={setTempo} isDark={isDark} />
-            <ParameterInput label="Pressão" parameterName="pressao" value={pressao} onChange={setPressao} isDark={isDark} />
-            <ParameterInput label="Velocidade" parameterName="velocidade" value={velocidade} onChange={setVelocidade} isDark={isDark} />
-            <button onClick={runSingleSimulation} className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg flex items-center">
-              <Play className="h-5 w-5 mr-2" /> Executar
-            </button>
-          </div>
-        )}
-
-        {activeTab === 'batch' && (
-          <div>
-            <button onClick={runBatchSimulation} className="px-6 py-3 bg-green-600 text-white rounded-lg flex items-center">
-              <TrendingUp className="h-5 w-5 mr-2" /> Executar Lote
-            </button>
-          </div>
-        )}
-
-        {activeTab === 'sensitivity' && (
-          <div>
-            <button onClick={runSensitivityAnalysis} className="px-6 py-3 bg-purple-600 text-white rounded-lg flex items-center">
-              <Zap className="h-5 w-5 mr-2" /> Executar Análise
-            </button>
-            {sensitivityResults && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                {getSensitivityChart('temperatura', sensitivityResults.temperatura, '°C')}
-                {getSensitivityChart('tempo', sensitivityResults.tempo, 'min')}
-                {getSensitivityChart('pressao', sensitivityResults.pressao, 'kPa')}
-                {getSensitivityChart('velocidade', sensitivityResults.velocidade, 'rpm')}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Validações */}
-        {(!validationState.isValid || validationState.warnings.length > 0) && (
+        {/* Mensagens de validação */}
+        {(!validation.isValid || validation.warnings.length > 0) && (
           <div className="mt-4 space-y-2">
-            {validationState.errors.map((e, i) => (
-              <div key={i} className="p-2 bg-red-100 text-red-700 rounded">{e}</div>
+            {validation.errors.map((e, i) => (
+              <div key={i} className={`p-3 rounded-lg ${isDark ? 'bg-red-900 text-red-200 border border-red-700' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                <div className="flex items-start"><AlertCircle className="h-5 w-5 mr-2 mt-0.5" /> <span className="text-sm">{e}</span></div>
+              </div>
             ))}
-            {validationState.warnings.map((w, i) => (
-              <div key={i} className="p-2 bg-yellow-100 text-yellow-700 rounded">{w}</div>
+            {validation.warnings.map((w, i) => (
+              <div key={i} className={`p-3 rounded-lg ${isDark ? 'bg-yellow-900 text-yellow-200 border border-yellow-700' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'}`}>
+                <div className="flex items-start"><AlertCircle className="h-5 w-5 mr-2 mt-0.5" /> <span className="text-sm">{w}</span></div>
+              </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Barra de ação */}
+      <ActionBar />
+
+      {/* Loader */}
+      {isRunning && (
+        <div className={`${isDark ? 'bg-gray-800' : 'bg-gray-50'} rounded-lg p-4`}>
+          <div className="flex items-center justify-center gap-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+            <span className={palette.sub}>
+              {tab === 'single' && 'Executando modelo ML...'}
+              {tab === 'batch' && 'Processando simulações em lote...'}
+              {tab === 'sensitivity' && 'Analisando sensibilidade dos parâmetros...'}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* CONTEÚDOS POR ABA */}
+      {tab === 'single' && simulationResults.filter(r => r.type === 'single').length > 0 && (
+        <div className={palette.card}>
+          <h3 className={`text-lg font-semibold mb-4 ${palette.text}`}>Resultado da Simulação</h3>
+          {(() => {
+            const last = simulationResults.filter(r => r.type === 'single').slice(-1)[0];
+            const cls = last.quality >= 365 ? 'text-green-600' : last.quality >= 355 ? 'text-yellow-600' : 'text-red-600';
+            const label = last.quality >= 365 ? 'Excelente' : last.quality >= 355 ? 'Boa' : 'Ruim';
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className={`${palette.sub} text-sm`}>Qualidade Prevista</div>
+                  <div className="text-2xl font-bold text-blue-600">{last.quality.toFixed(2)}</div>
+                </div>
+                <div className="text-center">
+                  <div className={`${palette.sub} text-sm`}>Classificação</div>
+                  <div className={`text-lg font-bold ${cls}`}>{label}</div>
+                </div>
+                <div className="text-center">
+                  <div className={`${palette.sub} text-sm`}>Confiança</div>
+                  <div className="text-lg font-bold text-green-600">{(88 + Math.random() * 6).toFixed(1)}%</div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {tab === 'batch' && batchStats && (
+        <div className={palette.card}>
+          <h3 className={`text-lg font-semibold mb-4 ${palette.text}`}>Resultados do Lote</h3>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <Stat label="Média" value={batchStats.mean.toFixed(2)} color="text-blue-600" />
+            <Stat label="Desvio Padrão" value={batchStats.std.toFixed(2)} color="text-purple-600" />
+            <Stat label="Melhor" value={batchStats.max.toFixed(2)} color="text-green-600" />
+            <Stat label="Pior" value={batchStats.min.toFixed(2)} color="text-red-600" />
+            <Stat label="N" value={batchStats.n} color="text-gray-600" />
+          </div>
+          <div className={`mt-3 p-3 rounded ${isDark ? 'bg-blue-900' : 'bg-blue-50'}`}>
+            <p className={`text-sm ${isDark ? 'text-blue-200' : 'text-blue-700'}`}>
+              <strong>Interpretação:</strong> menor desvio padrão ⇒ processo mais consistente.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {tab === 'sensitivity' && sensitivity && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div className={palette.card}>{getSensitivityChart('temperatura', sensitivity.temperatura, '°C')}</div>
+            <div className={palette.card}>{getSensitivityChart('tempo', sensitivity.tempo, 'min')}</div>
+            <div className={palette.card}>{getSensitivityChart('pressao', sensitivity.pressao, 'kPa')}</div>
+            <div className={palette.card}>{getSensitivityChart('velocidade', sensitivity.velocidade, 'rpm')}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
+const Stat: React.FC<{ label: string; value: string | number; color?: string }> = ({ label, value, color = 'text-gray-800' }) => (
+  <div className="text-center">
+    <div className="text-sm text-gray-500 dark:text-gray-400">{label}</div>
+    <div className={`text-2xl font-bold ${color}`}>{value}</div>
+  </div>
+);
+
 export default SimulationPanel;
+
 
 
 
