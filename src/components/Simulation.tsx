@@ -24,7 +24,7 @@ ChartJS.register(
   Legend
 );
 
-type AnalysisTab = 'single' | 'batch' | 'sensitivity' | 'sensitivity_full';
+type AnalysisTab = 'single' | 'batch' | 'sensitivity';
 
 interface SimulationProps {
   temperatura: number;
@@ -78,15 +78,15 @@ export const Simulation: React.FC<SimulationProps> = ({
   // ====== QUALITY MODEL (simulado) ======
   const calculateQuality = (temp: number, time: number, press: number, speed: number) => {
     const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
-    const t = clamp(temp, 1400, 1600);
-    const ti = clamp(time, 10, 120);
-    const p = clamp(press, 95, 110);
-    const s = clamp(speed, 250, 350);
+    const tval = clamp(temp, 1400, 1600);
+    const tim = clamp(time, 10, 120);
+    const prs = clamp(press, 95, 110);
+    const spd = clamp(speed, 250, 350);
 
-    const tempNorm = (t - 1400) / 200;
-    const timeNorm = (ti - 10) / 110;
-    const pressNorm = (p - 95) / 15;
-    const speedNorm = (s - 250) / 100;
+    const tempNorm = (tval - 1400) / 200;
+    const timeNorm = (tim - 10) / 110;
+    const pressNorm = (prs - 95) / 15;
+    const speedNorm = (spd - 250) / 100;
 
     let quality = 320;
     quality += 50 * Math.pow(tempNorm, 1.2) + 20 * Math.sin(tempNorm * Math.PI);
@@ -171,12 +171,11 @@ export const Simulation: React.FC<SimulationProps> = ({
       }
 
       setSensitivityResults(results);
-      setActiveAnalysis('sensitivity_full'); // leva direto para a visão detalhada
       setIsRunning(false);
     }, 1600);
   };
 
-  // ====== HELPERS PARA GRÁFICOS ======
+  // ====== GRÁFICOS ======
   const seriesFor = (param: 'temperatura' | 'tempo' | 'pressao' | 'velocidade', data: any[]) => {
     const palette: Record<string, { stroke: string; fill: string }> = {
       temperatura: { stroke: 'rgb(239, 68, 68)', fill: 'rgba(239, 68, 68, 0.1)' },
@@ -202,9 +201,9 @@ export const Simulation: React.FC<SimulationProps> = ({
     };
   };
 
-  const sensitivityChartOptions = (unit: string, title: string, tall = false) => ({
+  const chartOptions = (unit: string, title: string, tall = false) => ({
     responsive: true,
-    maintainAspectRatio: !tall ? true : false,
+    maintainAspectRatio: tall ? false : true,
     plugins: {
       legend: {
         labels: { color: isDark ? '#e5e7eb' : '#374151' }
@@ -215,9 +214,7 @@ export const Simulation: React.FC<SimulationProps> = ({
         color: isDark ? '#e5e7eb' : '#374151'
       },
       tooltip: {
-        callbacks: {
-          label: (ctx: any) => `Qualidade: ${Number(ctx.parsed.y).toFixed(2)}`
-        }
+        callbacks: { label: (ctx: any) => `Qualidade: ${Number(ctx.parsed.y).toFixed(2)}` }
       }
     },
     scales: {
@@ -234,11 +231,6 @@ export const Simulation: React.FC<SimulationProps> = ({
     }
   });
 
-  const getSensitivityChart = (parameter: string, data: any[], unit: string) => (
-    <Line data={seriesFor(parameter as any, data)} options={sensitivityChartOptions(unit, `Análise de Sensibilidade: ${parameter.charAt(0).toUpperCase() + parameter.slice(1)}`)} />
-  );
-
-  // ====== IMPACTO / IMPORTÂNCIA ======
   const getImpactAnalysis = () => {
     if (!sensitivityResults) return null;
 
@@ -257,14 +249,16 @@ export const Simulation: React.FC<SimulationProps> = ({
       <div className={`${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-4 mb-6`}>
         <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Análise de Impacto dos Parâmetros</h3>
         <div className="space-y-3">
-          {sorted.map(([param, impact], index) => (
+          {sorted.map(([param, impact], idx) => (
             <div key={param} className="flex items-center justify-between">
-              <span className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{index + 1}. {param.charAt(0).toUpperCase() + param.slice(1)}</span>
+              <span className={`font-medium ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                {idx + 1}. {param.charAt(0).toUpperCase() + param.slice(1)}
+              </span>
               <div className="flex items-center space-x-2">
                 <div className="w-32 bg-gray-200 rounded-full h-2">
                   <div
                     className={`h-2 rounded-full ${
-                      index === 0 ? 'bg-red-500' : index === 1 ? 'bg-orange-500' : index === 2 ? 'bg-yellow-500' : 'bg-green-500'
+                      idx === 0 ? 'bg-red-500' : idx === 1 ? 'bg-orange-500' : idx === 2 ? 'bg-yellow-500' : 'bg-green-500'
                     }`}
                     style={{ width: `${(Number(impact) / maxImpact) * 100}%` }}
                   />
@@ -274,133 +268,83 @@ export const Simulation: React.FC<SimulationProps> = ({
             </div>
           ))}
         </div>
-
-        <div className={`mt-4 p-3 rounded ${isDark ? 'bg-blue-900' : 'bg-blue-50'}`}>
-          <h4 className={`font-medium mb-2 ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>Importância das Features (ML):</h4>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            {sorted.map(([param, impact]) => (
-              <div key={param} className={`${isDark ? 'text-blue-200' : 'text-blue-700'}`}>
-                <strong>{param}:</strong> {((Number(impact) / maxImpact) * 100).toFixed(1)}%
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // ====== MÉTRICAS DO MODELO ======
-  const getModelPerformanceMetrics = () => {
-    const batch = simulationResults.filter((r) => r.type === 'batch');
-    if (batch.length === 0) return null;
-
-    const q = batch.map((r) => r.quality);
-    const mean = q.reduce((s, v) => s + v, 0) / q.length;
-    const variance = q.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / q.length;
-    const stdDev = Math.sqrt(variance);
-    const r2 = Math.max(0.85, 1 - variance / 1000);
-    const mae = stdDev * 0.8;
-    const mse = variance;
-
-    return (
-      <div className={`${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-4 mb-6`}>
-        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Métricas do Modelo ML</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center">
-            <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>R² Score</div>
-            <div className={`text-xl font-bold ${r2 > 0.9 ? 'text-green-600' : r2 > 0.8 ? 'text-yellow-600' : 'text-red-600'}`}>{r2.toFixed(3)}</div>
-            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-              <div className="bg-green-600 h-2 rounded-full" style={{ width: `${r2 * 100}%` }} />
-            </div>
-          </div>
-          <div className="text-center">
-            <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>MAE</div>
-            <div className={`${isDark ? 'text-gray-200' : 'text-gray-800'} text-xl font-bold`}>{mae.toFixed(2)}</div>
-          </div>
-          <div className="text-center">
-            <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>MSE</div>
-            <div className={`${isDark ? 'text-gray-200' : 'text-gray-800'} text-xl font-bold`}>{mse.toFixed(2)}</div>
-          </div>
-          <div className="text-center">
-            <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Std Dev</div>
-            <div className={`${isDark ? 'text-gray-200' : 'text-gray-800'} text-xl font-bold`}>{stdDev.toFixed(2)}</div>
-          </div>
-        </div>
-        <div className={`mt-3 p-3 rounded ${isDark ? 'bg-green-900' : 'bg-green-50'}`}>
-          <p className={`${isDark ? 'text-green-200' : 'text-green-700'} text-sm`}>
-            <strong>Interpretação:</strong> R² = {(r2 * 100).toFixed(1)}% indica o quanto o modelo explica a variância da qualidade.
-            MAE ≈ ±{mae.toFixed(2)} é o erro médio esperado das predições.
-          </p>
-        </div>
       </div>
     );
   };
 
   // ====== RENDER ======
+  const shellCard = `${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`;
+
   return (
     <div className="space-y-6">
-      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
-        <h2 className={`text-2xl font-bold mb-6 flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
+      {/* Header */}
+      <div className={shellCard}>
+        <h2 className={`text-2xl font-bold flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
           <BarChart3 className="h-6 w-6 mr-2 text-blue-500" />
-          <span>{t('simulation')} & Análise IA</span>
+          <span>{t('simulation')} &nbsp;|&nbsp; Painel de Simulação</span>
         </h2>
 
-        {/* Selector de abas */}
-        <div className="flex flex-wrap gap-1 mb-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-          {[
-            { key: 'single', label: 'Simulação Única' },
-            { key: 'batch', label: 'Simulação em Lote' },
-            { key: 'sensitivity', label: 'Sensibilidade (Resumo)' },
-            { key: 'sensitivity_full', label: 'Sensibilidade (Detalhada)' },
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setActiveAnalysis(key as AnalysisTab)}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                activeAnalysis === key
-                  ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Parâmetros */}
-        <div className={`${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-6 mb-6`}>
-          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Configuração de Parâmetros para Simulação</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <ParameterInput label="Temperatura" parameterName="temperatura" value={temperatura} onChange={setTemperatura} isDark={isDark} />
-            <ParameterInput label="Tempo" parameterName="tempo" value={tempo} onChange={setTempo} isDark={isDark} />
-            <ParameterInput label="Pressão" parameterName="pressao" value={pressao} onChange={setPressao} isDark={isDark} />
-            <ParameterInput label="Velocidade" parameterName="velocidade" value={velocidade} onChange={setVelocidade} isDark={isDark} />
+        {/* TAB BAR (topo) */}
+        <div className="mt-4">
+          <div className={`flex rounded-xl p-1 ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+            {[
+              { key: 'single', label: 'Simulação Única', icon: <Play className="h-4 w-4 mr-1" /> },
+              { key: 'batch', label: 'Simulação em Lote', icon: <TrendingUp className="h-4 w-4 mr-1" /> },
+              { key: 'sensitivity', label: 'Análise de Sensibilidade', icon: <Zap className="h-4 w-4 mr-1" /> }
+            ].map(({ key, label, icon }) => (
+              <button
+                key={key}
+                onClick={() => setActiveAnalysis(key as AnalysisTab)}
+                className={`flex-1 flex items-center justify-center px-4 py-3 rounded-lg text-sm font-semibold transition
+                  ${activeAnalysis === key
+                    ? `${isDark ? 'bg-gray-600 text-blue-400' : 'bg-white text-blue-600 shadow-sm'}`
+                    : `${isDark ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`
+                  }`}
+              >
+                {icon}{label}
+              </button>
+            ))}
           </div>
+        </div>
+      </div>
 
-          {(!validationState.isValid || validationState.warnings.length > 0) && (
-            <div className="mt-4 space-y-2">
-              {validationState.errors.map((error, i) => (
-                <div key={i} className={`p-3 rounded-lg ${isDark ? 'bg-red-900 text-red-200' : 'bg-red-50 text-red-700'} border ${isDark ? 'border-red-700' : 'border-red-200'}`}>
-                  <div className="flex items-start">
-                    <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">{error}</span>
-                  </div>
-                </div>
-              ))}
-              {validationState.warnings.map((w, i) => (
-                <div key={i} className={`p-3 rounded-lg ${isDark ? 'bg-yellow-900 text-yellow-200' : 'bg-yellow-50 text-yellow-700'} border ${isDark ? 'border-yellow-700' : 'border-yellow-200'}`}>
-                  <div className="flex items-start">
-                    <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">{w}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+      {/* PARÂMETROS (comuns às abas) */}
+      <div className={shellCard}>
+        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+          Configuração de Parâmetros
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ParameterInput label="Temperatura" parameterName="temperatura" value={temperatura} onChange={setTemperatura} isDark={isDark} />
+          <ParameterInput label="Tempo" parameterName="tempo" value={tempo} onChange={setTempo} isDark={isDark} />
+          <ParameterInput label="Pressão" parameterName="pressao" value={pressao} onChange={setPressao} isDark={isDark} />
+          <ParameterInput label="Velocidade" parameterName="velocidade" value={velocidade} onChange={setVelocidade} isDark={isDark} />
         </div>
 
-        {/* Ações */}
-        <div className="flex justify-center flex-wrap gap-4 mb-8">
+        {(!validationState.isValid || validationState.warnings.length > 0) && (
+          <div className="mt-4 space-y-2">
+            {validationState.errors.map((error, i) => (
+              <div key={i} className={`p-3 rounded-lg ${isDark ? 'bg-red-900 text-red-200' : 'bg-red-50 text-red-700'} border ${isDark ? 'border-red-700' : 'border-red-200'}`}>
+                <div className="flex items-start">
+                  <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">{error}</span>
+                </div>
+              </div>
+            ))}
+            {validationState.warnings.map((w, i) => (
+              <div key={i} className={`p-3 rounded-lg ${isDark ? 'bg-yellow-900 text-yellow-200' : 'bg-yellow-50 text-yellow-700'} border ${isDark ? 'border-yellow-700' : 'border-yellow-200'}`}>
+                <div className="flex items-start">
+                  <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">{w}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* AÇÕES, de acordo com a ABA */}
+      <div className={shellCard}>
+        <div className="flex justify-center flex-wrap gap-4">
           {activeAnalysis === 'single' && (
             <button
               onClick={runSingleSimulation}
@@ -413,6 +357,7 @@ export const Simulation: React.FC<SimulationProps> = ({
               {isRunning ? 'Simulando...' : 'Executar Simulação'}
             </button>
           )}
+
           {activeAnalysis === 'batch' && (
             <button
               onClick={runBatchSimulation}
@@ -425,6 +370,7 @@ export const Simulation: React.FC<SimulationProps> = ({
               {isRunning ? 'Executando Lote...' : 'Executar Lote (20x)'}
             </button>
           )}
+
           {activeAnalysis === 'sensitivity' && (
             <button
               onClick={runSensitivityAnalysis}
@@ -437,166 +383,151 @@ export const Simulation: React.FC<SimulationProps> = ({
               {isRunning ? 'Analisando...' : 'Executar Análise de Sensibilidade'}
             </button>
           )}
-          {activeAnalysis === 'sensitivity_full' && (
-            <button
-              onClick={runSensitivityAnalysis}
-              disabled={isRunning || !validationState.isValid}
-              className={`flex items-center px-6 py-3 rounded-lg font-medium ${
-                isRunning || !validationState.isValid ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-purple-500 text-white hover:bg-purple-600'
-              } transition-colors`}
-            >
-              <Zap className="h-5 w-5 mr-2" />
-              {isRunning ? 'Recalculando...' : 'Recalcular Sensibilidade'}
-            </button>
-          )}
         </div>
 
         {!validationState.isValid && (
-          <div className="text-center">
-            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Corrija os parâmetros acima para habilitar as simulações</p>
+          <div className="text-center mt-3">
+            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              Corrija os parâmetros acima para habilitar as ações
+            </p>
           </div>
         )}
 
-        {/* Loading */}
         {isRunning && (
-          <div className={`${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-4 mb-6`}>
+          <div className={`${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-4 mt-6`}>
             <div className="flex items-center justify-center space-x-3">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
               <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>
                 {activeAnalysis === 'single' && 'Executando modelo ML...'}
                 {activeAnalysis === 'batch' && 'Processando simulações em lote...'}
-                {(activeAnalysis === 'sensitivity' || activeAnalysis === 'sensitivity_full') && 'Analisando sensibilidade de parâmetros...'}
+                {activeAnalysis === 'sensitivity' && 'Analisando sensibilidade de parâmetros...'}
               </span>
             </div>
           </div>
         )}
-
-        {/* Métricas do modelo (apenas quando há lote) */}
-        {getModelPerformanceMetrics()}
-
-        {/* RESULTADOS: SINGLE */}
-        {activeAnalysis === 'single' && simulationResults.length > 0 && (
-          <div className={`${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-6`}>
-            <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Resultado da Simulação ML</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center">
-                <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Qualidade Prevista</div>
-                <div className="text-2xl font-bold text-blue-600">
-                  {simulationResults[simulationResults.length - 1].quality.toFixed(2)}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Classificação</div>
-                <div
-                  className={`text-lg font-bold ${
-                    simulationResults[simulationResults.length - 1].quality >= 365
-                      ? 'text-green-600'
-                      : simulationResults[simulationResults.length - 1].quality >= 355
-                      ? 'text-yellow-600'
-                      : 'text-red-600'
-                  }`}
-                >
-                  {simulationResults[simulationResults.length - 1].quality >= 365
-                    ? 'Excelente'
-                    : simulationResults[simulationResults.length - 1].quality >= 355
-                    ? 'Boa'
-                    : 'Ruim'}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Confiança</div>
-                <div className="text-lg font-bold text-green-600">{(85 + Math.random() * 10).toFixed(1)}%</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* RESULTADOS: LOTE */}
-        {activeAnalysis === 'batch' && simulationResults.filter((r) => r.type === 'batch').length > 0 && (
-          <div className={`${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg p-6`}>
-            <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Resultados do Lote ML</h3>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-              <div className="text-center">
-                <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Qualidade Média</div>
-                <div className="text-2xl font-bold text-blue-600">
-                  {(
-                    simulationResults
-                      .filter((r) => r.type === 'batch')
-                      .reduce((sum, r) => sum + r.quality, 0) /
-                    simulationResults.filter((r) => r.type === 'batch').length
-                  ).toFixed(2)}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Melhor Qualidade</div>
-                <div className="text-2xl font-bold text-green-600">
-                  {Math.max(...simulationResults.filter((r) => r.type === 'batch').map((r) => r.quality)).toFixed(2)}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Pior Qualidade</div>
-                <div className="text-2xl font-bold text-red-600">
-                  {Math.min(...simulationResults.filter((r) => r.type === 'batch').map((r) => r.quality)).toFixed(2)}
-                </div>
-              </div>
-              <div className="text-center">
-                <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Variância</div>
-                <div className="text-2xl font-bold text-purple-600">
-                  {(() => {
-                    const q = simulationResults.filter((r) => r.type === 'batch').map((r) => r.quality);
-                    const m = q.reduce((s, v) => s + v, 0) / q.length;
-                    const v = q.reduce((s, v2) => s + Math.pow(v2 - m, 2), 0) / q.length;
-                    return v.toFixed(2);
-                  })()}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* SENSIBILIDADE (RESUMO) */}
-        {activeAnalysis === 'sensitivity' && sensitivityResults && (
-          <div className="space-y-6">
-            {getImpactAnalysis()}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                {getSensitivityChart('temperatura', sensitivityResults.temperatura, 'Temperatura (°C)')}
-              </div>
-              <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                {getSensitivityChart('tempo', sensitivityResults.tempo, 'Tempo (min)')}
-              </div>
-              <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                {getSensitivityChart('pressao', sensitivityResults.pressao, 'Pressão (kPa)')}
-              </div>
-              <div className={`${isDark ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                {getSensitivityChart('velocidade', sensitivityResults.velocidade, 'Velocidade (rpm)')}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* SENSIBILIDADE (DETALHADA – gráficos em altura cheia) */}
-        {activeAnalysis === 'sensitivity_full' && sensitivityResults && (
-          <div className="space-y-6">
-            {getImpactAnalysis()}
-
-            {[
-              { key: 'temperatura', unit: 'Temperatura (°C)', title: 'Análise de Sensibilidade: Temperatura' },
-              { key: 'tempo', unit: 'Tempo (min)', title: 'Análise de Sensibilidade: Tempo' },
-              { key: 'pressao', unit: 'Pressão (kPa)', title: 'Análise de Sensibilidade: Pressão' },
-              { key: 'velocidade', unit: 'Velocidade (rpm)', title: 'Análise de Sensibilidade: Velocidade' }
-            ].map(({ key, unit, title }) => (
-              <div
-                key={key}
-                className={`${isDark ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}
-                style={{ height: 360 }}
-              >
-                <Line data={seriesFor(key as any, sensitivityResults[key])} options={sensitivityChartOptions(unit, title, true)} />
-              </div>
-            ))}
-          </div>
-        )}
       </div>
+
+      {/* CONTEÚDOS ESPECÍFICOS DE CADA ABA */}
+      {activeAnalysis === 'single' && simulationResults.length > 0 && (
+        <div className={shellCard}>
+          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Resultado da Simulação ML</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center">
+              <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Qualidade Prevista</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {simulationResults[simulationResults.length - 1].quality.toFixed(2)}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Classificação</div>
+              <div
+                className={`text-lg font-bold ${
+                  simulationResults[simulationResults.length - 1].quality >= 365
+                    ? 'text-green-600'
+                    : simulationResults[simulationResults.length - 1].quality >= 355
+                    ? 'text-yellow-600'
+                    : 'text-red-600'
+                }`}
+              >
+                {simulationResults[simulationResults.length - 1].quality >= 365
+                  ? 'Excelente'
+                  : simulationResults[simulationResults.length - 1].quality >= 355
+                  ? 'Boa'
+                  : 'Ruim'}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Confiança</div>
+              <div className="text-lg font-bold text-green-600">{(85 + Math.random() * 10).toFixed(1)}%</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeAnalysis === 'batch' && simulationResults.filter((r) => r.type === 'batch').length > 0 && (
+        <div className={shellCard}>
+          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Resultados do Lote ML</h3>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Qualidade Média</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {(
+                  simulationResults
+                    .filter((r) => r.type === 'batch')
+                    .reduce((sum, r) => sum + r.quality, 0) /
+                  simulationResults.filter((r) => r.type === 'batch').length
+                ).toFixed(2)}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Melhor Qualidade</div>
+              <div className="text-2xl font-bold text-green-600">
+                {Math.max(...simulationResults.filter((r) => r.type === 'batch').map((r) => r.quality)).toFixed(2)}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Pior Qualidade</div>
+              <div className="text-2xl font-bold text-red-600">
+                {Math.min(...simulationResults.filter((r) => r.type === 'batch').map((r) => r.quality)).toFixed(2)}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Variância</div>
+              <div className="text-2xl font-bold text-purple-600">
+                {(() => {
+                  const q = simulationResults.filter((r) => r.type === 'batch').map((r) => r.quality);
+                  const m = q.reduce((s, v) => s + v, 0) / q.length;
+                  const v = q.reduce((s, v2) => s + Math.pow(v2 - m, 2), 0) / q.length;
+                  return v.toFixed(2);
+                })()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeAnalysis === 'sensitivity' && (
+        <div className={shellCard}>
+          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Análise de Sensibilidade</h3>
+
+          {/* Botão para gerar (ou regerar) os dados */}
+          <div className="mb-6">
+            <button
+              onClick={runSensitivityAnalysis}
+              disabled={isRunning || !validationState.isValid}
+              className={`px-6 py-3 rounded-lg font-medium ${
+                isRunning || !validationState.isValid ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-purple-500 text-white hover:bg-purple-600'
+              } transition-colors`}
+            >
+              {isRunning ? 'Calculando curvas...' : sensitivityResults ? 'Recalcular Sensibilidade' : 'Executar Análise de Sensibilidade'}
+            </button>
+          </div>
+
+          {/* Impacto + Gráficos (só quando há resultados) */}
+          {sensitivityResults && (
+            <>
+              {getImpactAnalysis()}
+
+              <div className="space-y-6">
+                {[
+                  { key: 'temperatura', unit: 'Temperatura (°C)', title: 'Análise de Sensibilidade: Temperatura' },
+                  { key: 'tempo', unit: 'Tempo (min)', title: 'Análise de Sensibilidade: Tempo' },
+                  { key: 'pressao', unit: 'Pressão (kPa)', title: 'Análise de Sensibilidade: Pressão' },
+                  { key: 'velocidade', unit: 'Velocidade (rpm)', title: 'Análise de Sensibilidade: Velocidade' }
+                ].map(({ key, unit, title }) => (
+                  <div
+                    key={key}
+                    className={`${isDark ? 'bg-gray-700' : 'bg-white'} p-4 rounded-lg border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}
+                    style={{ height: 360 }}
+                  >
+                    <Line data={seriesFor(key as any, sensitivityResults[key])} options={chartOptions(unit, title, true)} />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 };
