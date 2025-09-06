@@ -1,7 +1,7 @@
 // src/components/SimulationPanel.tsx
 import React from 'react';
 import {
-  Play, TrendingUp, Zap, AlertCircle,
+  Play, TrendingUp, Zap, AlertCircle, Brain, Sparkles,
 } from 'lucide-react';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend,
@@ -22,7 +22,7 @@ type SimulationPanelProps = {
   velocidade: number;
   setVelocidade: (v: number) => void;
   simulationResults: any[];
-  setSimulationResults: (r: any) => void; // recebe 1 resultado por chamada; o App empilha
+  setSimulationResults: (r: any) => void; // o App empilha os resultados
   t: (k: string) => string;
   isDark: boolean;
 };
@@ -56,7 +56,6 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     warnings: [] as string[],
   });
 
-  // validação contínua
   React.useEffect(() => {
     const v1 = validateAllParameters({ temperatura, tempo, pressao, velocidade });
     const v2 = validateParameterCombination({ temperatura, tempo, pressao, velocidade });
@@ -67,7 +66,9 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     });
   }, [temperatura, tempo, pressao, velocidade]);
 
-  // --- Modelo de simulação (qualidade + energia) ---
+  /* ===========================
+     Modelo de Simulação (ML-like)
+     =========================== */
   const calculateQuality = (temp: number, time: number, press: number, speed: number) => {
     const tempNorm = (temp - 1400) / 200;
     const timeNorm = (time - 10) / 110;
@@ -96,7 +97,9 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     return Math.max(350, Math.min(700, e));
   };
 
-  // --- Execuções ---
+  /* ===========================
+     Execuções
+     =========================== */
   const runSingle = () => {
     setIsRunning(true);
     setTimeout(() => {
@@ -169,7 +172,9 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     }, 1500);
   };
 
-  // --- Métricas do lote & IA ---
+  /* ===========================
+     Métricas do Lote & IA
+     =========================== */
   const batch = React.useMemo(() => simulationResults.filter((r) => r.type === 'batch'), [simulationResults]);
   const batchStats = React.useMemo(() => {
     if (batch.length === 0) return null;
@@ -178,12 +183,9 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     const meanQ = qs.reduce((s, v) => s + v, 0) / qs.length;
     const varQ = qs.reduce((s, v) => s + Math.pow(v - meanQ, 2), 0) / qs.length;
     const stdQ = Math.sqrt(varQ);
-
     const meanE = es.reduce((s, v) => s + v, 0) / es.length;
-
-    // R² “simulado” coerente com variação
+    // R² estilizado (apenas um indicador de consistência interna do lote)
     const r2 = Math.max(0.75, Math.min(0.98, 1 - varQ / 900));
-
     return { meanQ, stdQ, varQ, meanE, r2 };
   }, [batch]);
 
@@ -192,27 +194,51 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     if (!last) return null;
     const q = last.quality;
     const e = last.energy;
-    let msg = '';
-    if (q >= 365 && e <= 550) msg = 'Excelente equilíbrio: qualidade alta com consumo contido. Recomenda-se salvar esta configuração como referência.';
-    else if (q >= 365 && e > 550) msg = 'Qualidade alta, porém custo energético acima do ideal. Avalie reduzir levemente temperatura/tempo (1–3%).';
-    else if (q >= 355) msg = 'Qualidade boa. Pequenos ajustes em tempo/pressão podem levar ao nível excelente.';
-    else msg = 'Qualidade abaixo do desejado. Tente aumentar tempo ou temperatura com passos pequenos, mantendo pressão estável.';
-    return { q, e, msg };
+    let bullets: string[] = [];
+    if (q >= 365 && e <= 550) {
+      bullets = [
+        'Qualidade alta com energia controlada — ótimo equilíbrio.',
+        'Salve esta combinação como referência e valide em produção.',
+      ];
+    } else if (q >= 365 && e > 550) {
+      bullets = [
+        'Qualidade alta, mas energia acima do desejado.',
+        'Teste reduzir temperatura/tempo em ~1–3% para poupar kWh/ton.',
+      ];
+    } else if (q >= 355) {
+      bullets = [
+        'Qualidade boa.',
+        'Pequenos incrementos em tempo/pressão podem levar a “Excelente”.',
+      ];
+    } else {
+      bullets = [
+        'Qualidade abaixo do alvo.',
+        'Aumente gradualmente tempo/temperatura e mantenha pressão estável.',
+      ];
+    }
+    return { q, e, bullets, headline: 'Resumo da IA' };
   }, [simulationResults]);
 
   const aiInsightBatch = React.useMemo(() => {
     if (!batchStats) return null;
     const { meanQ, stdQ, meanE } = batchStats;
-    const estabilidade = stdQ < 3 ? 'alta' : stdQ < 6 ? 'média' : 'baixa';
-    let foco = '';
-    if (meanQ >= 365 && meanE <= 550) foco = 'Manter a faixa atual e validar em produção.';
-    else if (meanQ >= 365) foco = 'Buscar reduzir energia ~2–5% via menores picos de temperatura.';
-    else if (meanQ >= 355) foco = 'Elevar levemente o tempo/pressão para subir a média de qualidade.';
-    else foco = 'Necessário ajuste mais amplo—revise temperatura e tempo primeiro.';
-    return { meanQ, stdQ, meanE, estabilidade, foco };
+    const estabilidade = stdQ < 3 ? 'Alta' : stdQ < 6 ? 'Média' : 'Baixa';
+    const bullets: string[] = [];
+    if (meanQ >= 365 && meanE <= 550) {
+      bullets.push('Lote robusto: mantenha parâmetros e valide no chão de fábrica.');
+    } else if (meanQ >= 365) {
+      bullets.push('Qualidade média alta — foco: reduzir energia com menor pico térmico.');
+    } else if (meanQ >= 355) {
+      bullets.push('Qualidade média boa — aumente levemente tempo/pressão para cruzar o limiar de excelência.');
+    } else {
+      bullets.push('Qualidade média baixa — reavalie temperatura e tempo como primeiros drivers.');
+    }
+    return { estabilidade, bullets, headline: 'Resumo da IA (Lote)' };
   }, [batchStats]);
 
-  // --- helpers de chart ---
+  /* ===========================
+     Helpers de Chart/Estilo
+     =========================== */
   const axisColor = isDark ? '#e5e7eb' : '#374151';
   const gridColor = isDark ? '#374151' : '#e5e7eb';
 
@@ -250,6 +276,83 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     },
   });
 
+  /* ===========================
+     Análise IA por Parâmetro (Sensibilidade)
+     =========================== */
+  function insightForParameter(
+    name: 'Temperatura' | 'Tempo' | 'Pressão' | 'Velocidade',
+    arr: { x: number; y: number }[],
+  ) {
+    if (!arr || arr.length < 3) {
+      return {
+        headline: `Análise IA — ${name}`,
+        bullets: ['Dados insuficientes para uma leitura robusta.'],
+        tags: ['Coletar mais pontos'],
+      };
+    }
+
+    // Tendência geral (slope simples)
+    const first = arr[0];
+    const last = arr[arr.length - 1];
+    const slope = (last.y - first.y) / (last.x - first.x || 1);
+
+    // Pico (máximo local)
+    let maxY = -Infinity;
+    let maxX = arr[0].x;
+    arr.forEach((d) => {
+      if (d.y > maxY) { maxY = d.y; maxX = d.x; }
+    });
+
+    // Curvatura aproximada (diferença de slopes)
+    const midIdx = Math.floor(arr.length / 2);
+    const sLeft = (arr[midIdx].y - arr[0].y) / (arr[midIdx].x - arr[0].x || 1);
+    const sRight = (arr[arr.length - 1].y - arr[midIdx].y) / (arr[arr.length - 1].x - arr[midIdx].x || 1);
+    const curvature = sRight - sLeft; // >0 abre para cima; <0 abre para baixo
+
+    const bullets: string[] = [];
+    const tags: string[] = [];
+
+    // Interpretações simples e diretas
+    if (Math.abs(slope) < 0.01) {
+      bullets.push('Influência moderada no intervalo analisado (curva quase plana).');
+      tags.push('Estável');
+    } else if (slope > 0) {
+      bullets.push('Quanto maior o valor, maior tende a ser a qualidade nesta faixa.');
+      tags.push('Tendência ↑');
+    } else {
+      bullets.push('Reduzir este valor pode ajudar a elevar a qualidade nesta faixa.');
+      tags.push('Tendência ↓');
+    }
+
+    // Curvatura e “óptimo”
+    if (Math.abs(curvature) > 0.01) {
+      const curvTxt = curvature > 0 ? 'curva abrindo para cima' : 'curva abrindo para baixo';
+      bullets.push(`Há não linearidade perceptível (${curvTxt}).`);
+      if (curvature < 0) {
+        bullets.push(`Existe um ponto ótimo próximo de ${maxX.toFixed(1)} (qualidade ≈ ${maxY.toFixed(1)}).`);
+        tags.push('Ótimo local');
+      } else {
+        tags.push('Não linear');
+      }
+    }
+
+    // Sinalizar se o pico está nas pontas
+    const atEdge = maxX === arr[0].x || maxX === arr[arr.length - 1].x;
+    if (atEdge) {
+      bullets.push('O melhor ponto parece estar no limite testado — vale expandir a faixa para confirmar.');
+      tags.push('Expandir faixa');
+    }
+
+    return {
+      headline: `Análise IA — ${name}`,
+      bullets,
+      tags,
+    };
+  }
+
+  /* ===========================
+     UI
+     =========================== */
   return (
     <div className="space-y-6">
       {/* Abas no topo */}
@@ -362,42 +465,34 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
 
       {/* Resultados — SIMULAÇÃO ÚNICA */}
       {activeTab === 'single' && simulationResults.findLast?.((r) => r.type === 'single') && (
-        <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-6`}>
-          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Resultado da Simulação</h3>
+        <div className={`${isDark ? 'bg-gray-900/50' : 'bg-white'} rounded-2xl shadow border ${isDark ? 'border-blue-900/40' : 'border-blue-200'}`}>
+          <div className={`px-6 py-5 border-b ${isDark ? 'border-blue-900/40' : 'border-blue-100'} flex items-center gap-2`}>
+            <Sparkles className="h-5 w-5 text-blue-500" />
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Resultado da Simulação</h3>
+          </div>
           {(() => {
             const last = simulationResults.findLast?.((r) => r.type === 'single')!;
             return (
-              <>
+              <div className="p-6 space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className={`${isDark ? 'text-gray-300' : 'text-gray-600'} text-sm`}>Qualidade Prevista</div>
-                    <div className="text-2xl font-bold text-blue-600">{last.quality.toFixed(2)}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className={`${isDark ? 'text-gray-300' : 'text-gray-600'} text-sm`}>Consumo Energético</div>
-                    <div className="text-2xl font-bold text-orange-600">
-                      {last.energy.toFixed(1)} <span className="text-sm">kWh/ton</span>
-                    </div>
-                  </div>
-                  <div className="text-center">
-                    <div className={`${isDark ? 'text-gray-300' : 'text-gray-600'} text-sm`}>Classificação</div>
-                    <div className={`text-lg font-bold ${
-                      last.quality >= 365 ? 'text-green-600' : last.quality >= 355 ? 'text-yellow-600' : 'text-red-600'
-                    }`}>
-                      {last.quality >= 365 ? 'Excelente' : last.quality >= 355 ? 'Boa' : 'Ruim'}
-                    </div>
-                  </div>
+                  <KPI title="Qualidade Prevista" value={last.quality.toFixed(2)} accent="blue" />
+                  <KPI title="Consumo Energético" value={`${last.energy.toFixed(1)} kWh/ton`} accent="orange" />
+                  <KPI
+                    title="Classificação"
+                    value={last.quality >= 365 ? 'Excelente' : last.quality >= 355 ? 'Boa' : 'Ruim'}
+                    accent={last.quality >= 365 ? 'emerald' : last.quality >= 355 ? 'yellow' : 'rose'}
+                  />
                 </div>
-
-                {/* Análise IA */}
                 {aiInsightSingle && (
-                  <div className={`mt-4 p-3 rounded ${isDark ? 'bg-blue-900' : 'bg-blue-50'}`}>
-                    <p className={`${isDark ? 'text-blue-200' : 'text-blue-700'} text-sm`}>
-                      <strong>Análise IA:</strong> {aiInsightSingle.msg}
-                    </p>
-                  </div>
+                  <AIInsightCard
+                    headline={aiInsightSingle.headline}
+                    bullets={aiInsightSingle.bullets}
+                    tags={['Simulação Única', aiInsightSingle.q >= 365 ? 'Alta Qualidade' : 'A Melhorar']}
+                    tone="blue"
+                    isDark={isDark}
+                  />
                 )}
-              </>
+              </div>
             );
           })()}
         </div>
@@ -405,59 +500,74 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
 
       {/* Resultados — LOTE */}
       {activeTab === 'batch' && batchStats && (
-        <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-6`}>
-          <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Resultados do Lote</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-            <StatCard title="Qualidade Média" value={batchStats.meanQ.toFixed(2)} color="text-blue-600" />
-            <StatCard title="Energia Média" value={`${batchStats.meanE.toFixed(1)} kWh/ton`} color="text-orange-600" />
-            <StatCard title="Desvio Padrão" value={batchStats.stdQ.toFixed(2)} color={isDark ? 'text-gray-200' : 'text-gray-800'} />
-            <div className="text-center">
-              <div className={`${isDark ? 'text-gray-300' : 'text-gray-600'} text-sm`}>R²</div>
-              <div className={`text-2xl font-bold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
-                {batchStats.r2.toFixed(3)}
-              </div>
-            </div>
+        <div className={`${isDark ? 'bg-gray-900/50' : 'bg-white'} rounded-2xl shadow border ${isDark ? 'border-emerald-900/40' : 'border-emerald-200'}`}>
+          <div className={`px-6 py-5 border-b ${isDark ? 'border-emerald-900/40' : 'border-emerald-100'} flex items-center gap-2`}>
+            <Sparkles className="h-5 w-5 text-emerald-500" />
+            <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Resultados do Lote</h3>
           </div>
-
-          {/* Análise IA do lote */}
-          {aiInsightBatch && (
-            <div className={`p-3 rounded ${isDark ? 'bg-green-900' : 'bg-green-50'}`}>
-              <p className={`${isDark ? 'text-green-200' : 'text-green-700'} text-sm`}>
-                <strong>Análise IA:</strong> estabilidade {aiInsightBatch.estabilidade}.
-                {aiInsightBatch.meanQ >= 365 ? ' Qualidade média alta.' : aiInsightBatch.meanQ >= 355 ? ' Qualidade média boa.' : ' Qualidade média baixa.'}
-                {' '}Recomendação: {aiInsightBatch.foco}
-              </p>
+          <div className="p-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <KPI title="Qualidade Média" value={batchStats.meanQ.toFixed(2)} accent="blue" />
+              <KPI title="Energia Média" value={`${batchStats.meanE.toFixed(1)} kWh/ton`} accent="orange" />
+              <KPI title="Desvio Padrão" value={batchStats.stdQ.toFixed(2)} accent="slate" />
+              <KPI title="R² (consistência interna)" value={batchStats.r2.toFixed(3)} accent="blue" />
             </div>
-          )}
+            {aiInsightBatch && (
+              <AIInsightCard
+                headline={aiInsightBatch.headline}
+                bullets={[
+                  `Estabilidade: ${aiInsightBatch.estabilidade}`,
+                  ...aiInsightBatch.bullets,
+                ]}
+                tags={['Lote 20x', 'Consistência']}
+                tone="emerald"
+                isDark={isDark}
+              />
+            )}
+          </div>
         </div>
       )}
 
       {/* Sensibilidade */}
       {activeTab === 'sensitivity' && sensitivityResults && (
         <div className="space-y-6">
-          <SensitivityBlock
+          <SensitivityRow
             title="Temperatura (°C)"
-            dataCfg={makeSensitivityChart('Qualidade vs Temperatura (°C)', sensitivityResults.temperatura, 'rgb(239, 68, 68)')}
+            chartCfg={makeSensitivityChart('Qualidade vs Temperatura (°C)', sensitivityResults.temperatura, 'rgb(239, 68, 68)')}
+            insight={insightForParameter('Temperatura', sensitivityResults.temperatura)}
             isDark={isDark}
           />
-          <SensitivityBlock
+          <SensitivityRow
             title="Tempo (min)"
-            dataCfg={makeSensitivityChart('Qualidade vs Tempo (min)', sensitivityResults.tempo, 'rgb(59, 130, 246)')}
+            chartCfg={makeSensitivityChart('Qualidade vs Tempo (min)', sensitivityResults.tempo, 'rgb(59, 130, 246)')}
+            insight={insightForParameter('Tempo', sensitivityResults.tempo)}
             isDark={isDark}
           />
-          <SensitivityBlock
+          <SensitivityRow
             title="Pressão (kPa)"
-            dataCfg={makeSensitivityChart('Qualidade vs Pressão (kPa)', sensitivityResults.pressao, 'rgb(34, 197, 94)')}
+            chartCfg={makeSensitivityChart('Qualidade vs Pressão (kPa)', sensitivityResults.pressao, 'rgb(34, 197, 94)')}
+            insight={insightForParameter('Pressão', sensitivityResults.pressao)}
             isDark={isDark}
           />
-          <SensitivityBlock
+          <SensitivityRow
             title="Velocidade (rpm)"
-            dataCfg={makeSensitivityChart('Qualidade vs Velocidade (rpm)', sensitivityResults.velocidade, 'rgb(168, 85, 247)')}
+            chartCfg={makeSensitivityChart('Qualidade vs Velocidade (rpm)', sensitivityResults.velocidade, 'rgb(168, 85, 247)')}
+            insight={insightForParameter('Velocidade', sensitivityResults.velocidade)}
             isDark={isDark}
           />
 
-          {/* Análise IA agregada da Sensibilidade */}
-          <SensitivityInsight results={sensitivityResults} isDark={isDark} />
+          {/* Análise IA agregada */}
+          <AIInsightCard
+            headline="Análise IA — Visão Geral da Sensibilidade"
+            bullets={[
+              'Ranking por impacto: ver cartões de cada parâmetro acima.',
+              'Priorize o controle fino dos parâmetros com maior inclinação/curvatura.',
+              'Se o melhor ponto ficou no limite da faixa, amplie o intervalo e repita a análise.',
+            ]}
+            tags={['Sensibilidade', 'Prioridades de Controle']}
+            tone="purple"
+            isDark={isDark}
+          />
         </div>
       )}
     </div>
@@ -466,81 +576,115 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
 
 export default SimulationPanel;
 
-/* ---------- auxiliares visuais ---------- */
+/* =========================================
+   Componentes auxiliares (premium IA cards)
+   ========================================= */
 
-function StatCard({ title, value, color }: { title: string; value: string; color?: string }) {
+function KPI({ title, value, accent }: { title: string; value: string; accent: 'blue' | 'orange' | 'emerald' | 'yellow' | 'rose' | 'slate' }) {
+  const color =
+    accent === 'blue' ? 'text-blue-600 dark:text-blue-300' :
+    accent === 'orange' ? 'text-orange-600 dark:text-orange-300' :
+    accent === 'emerald' ? 'text-emerald-600 dark:text-emerald-300' :
+    accent === 'yellow' ? 'text-yellow-600 dark:text-yellow-300' :
+    accent === 'rose' ? 'text-rose-600 dark:text-rose-300' :
+    'text-slate-800 dark:text-slate-200';
   return (
     <div className="text-center">
       <div className="text-sm text-gray-600 dark:text-gray-300">{title}</div>
-      <div className={`text-2xl font-bold ${color ?? 'text-gray-800 dark:text-gray-100'}`}>{value}</div>
+      <div className={`text-2xl font-extrabold ${color}`}>{value}</div>
     </div>
   );
 }
 
-function SensitivityBlock({
+function AIInsightCard({
+  headline,
+  bullets,
+  tags,
+  tone,
+  isDark,
+}: {
+  headline: string;
+  bullets: string[];
+  tags?: string[];
+  tone: 'blue' | 'emerald' | 'purple';
+  isDark: boolean;
+}) {
+  const bg =
+    tone === 'blue'
+      ? isDark ? 'from-blue-950 to-gray-900 border-blue-900/40' : 'from-blue-50 to-white border-blue-200'
+      : tone === 'emerald'
+      ? isDark ? 'from-emerald-950 to-gray-900 border-emerald-900/40' : 'from-emerald-50 to-white border-emerald-200'
+      : isDark ? 'from-purple-950 to-gray-900 border-purple-900/40' : 'from-purple-50 to-white border-purple-200';
+
+  const iconBg =
+    tone === 'blue'
+      ? isDark ? 'bg-blue-900/50 text-blue-200' : 'bg-blue-600 text-white'
+      : tone === 'emerald'
+      ? isDark ? 'bg-emerald-900/50 text-emerald-200' : 'bg-emerald-600 text-white'
+      : isDark ? 'bg-purple-900/50 text-purple-200' : 'bg-purple-600 text-white';
+
+  const badgeBg =
+    tone === 'blue'
+      ? isDark ? 'bg-blue-900/40 text-blue-200 border-blue-800' : 'bg-blue-100 text-blue-700 border-blue-200'
+      : tone === 'emerald'
+      ? isDark ? 'bg-emerald-900/40 text-emerald-200 border-emerald-800' : 'bg-emerald-100 text-emerald-700 border-emerald-200'
+      : isDark ? 'bg-purple-900/40 text-purple-200 border-purple-800' : 'bg-purple-100 text-purple-700 border-purple-200';
+
+  return (
+    <div className={`rounded-xl border bg-gradient-to-br ${bg} p-4 md:p-5`}>
+      <div className="flex items-center gap-3 mb-3">
+        <div className={`p-2.5 rounded-lg ${iconBg}`}>
+          <Brain className="h-5 w-5" />
+        </div>
+        <h4 className={`text-base md:text-lg font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>{headline}</h4>
+      </div>
+      <ul className={`space-y-1.5 text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+        {bullets.map((b, i) => (<li key={i}>• {b}</li>))}
+      </ul>
+      {tags && tags.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {tags.map((t) => (
+            <span
+              key={t}
+              className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border ${badgeBg}`}
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+    </div>
+  );
+}
+
+function SensitivityRow({
   title,
-  dataCfg,
+  chartCfg,
+  insight,
   isDark,
 }: {
   title: string;
-  dataCfg: { data: any; options: any };
+  chartCfg: { data: any; options: any };
+  insight: { headline: string; bullets: string[]; tags: string[] };
   isDark: boolean;
 }) {
   return (
-    <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-4`}>
-      <h4 className={`text-sm font-semibold mb-3 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>{title}</h4>
-      <div className="w-full" style={{ height: 320 }}>
-        <Line data={dataCfg.data} options={dataCfg.options} />
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* Gráfico (2 colunas) */}
+      <div className={`lg:col-span-2 ${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-4`}>
+        <h4 className={`text-sm font-semibold mb-3 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>{title}</h4>
+        <div className="w-full" style={{ height: 320 }}>
+          <Line data={chartCfg.data} options={chartCfg.options} />
+        </div>
       </div>
-    </div>
-  );
-}
 
-function SensitivityInsight({
-  results,
-  isDark,
-}: {
-  results: { [k: string]: { x: number; y: number }[] };
-  isDark: boolean;
-}) {
-  // calcula “inclinação média” para cada parâmetro
-  const slope = (arr: { x: number; y: number }[]) => {
-    if (arr.length < 2) return 0;
-    const first = arr[0];
-    const last = arr[arr.length - 1];
-    return (last.y - first.y) / (last.x - first.x || 1);
-    // simples aproximação para ranking
-  };
-
-  const sTemp = Math.abs(slope(results.temperatura));
-  const sTime = Math.abs(slope(results.tempo));
-  const sPress = Math.abs(slope(results.pressao));
-  const sSpeed = Math.abs(slope(results.velocidade));
-
-  const ranking = [
-    { name: 'Temperatura', score: sTemp },
-    { name: 'Tempo', score: sTime },
-    { name: 'Pressão', score: sPress },
-    { name: 'Velocidade', score: sSpeed },
-  ].sort((a, b) => b.score - a.score);
-
-  const top = ranking[0];
-
-  return (
-    <div className={`p-4 rounded ${isDark ? 'bg-blue-900' : 'bg-blue-50'}`}>
-      <p className={`${isDark ? 'text-blue-200' : 'text-blue-700'} text-sm`}>
-        <strong>Análise IA (Sensibilidade):</strong>{' '}
-        O parâmetro com maior impacto na qualidade nesta faixa é <strong>{top.name}</strong>. 
-        Quanto maior a inclinação do gráfico, maior a influência daquele parâmetro na variação da qualidade. 
-        Use esse ranking para priorizar controle fino e monitoramento.
-      </p>
-      <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-        {ranking.map((r) => (
-          <div key={r.name} className={`${isDark ? 'text-blue-300' : 'text-blue-800'}`}>
-            {r.name}: impacto relativo {(r.score / (ranking[0].score || 1) * 100).toFixed(0)}%
-          </div>
-        ))}
-      </div>
+      {/* Análise IA do parâmetro (1 coluna) */}
+      <AIInsightCard
+        headline={insight.headline}
+        bullets={insight.bullets}
+        tags={insight.tags}
+        tone="purple"
+        isDark={isDark}
+      />
     </div>
   );
 }
