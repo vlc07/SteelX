@@ -294,7 +294,9 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       {/* Resultado premium */}
       {last && (
         <div
-          className={`rounded-2xl border overflow-hidden ${isDark ? 'border-green-700 bg-gradient-to-br from-gray-800 to-gray-900' : 'border-green-200 bg-gradient-to-br from-green-50 to-white'}`}
+          className={`rounded-2xl border overflow-hidden ${
+            isDark ? 'border-green-700 bg-gradient-to-br from-gray-800 to-gray-900' : 'border-green-200 bg-gradient-to-br from-green-50 to-white'
+          }`}
         >
           {/* Header */}
           <div className={`flex items-center justify-between px-6 py-5 ${isDark ? 'bg-gray-900/40' : 'bg-green-100/80'}`}>
@@ -305,7 +307,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
               <div>
                 <h3 className={`text-lg font-extrabold ${isDark ? 'text-green-300' : 'text-green-700'}`}>Melhor Resultado Encontrado</h3>
                 <p className={`${sub} text-xs`}>
-                  Método: {fullMethodName(last.method)} · {last.evaluations} testes
+                  {last.evaluations} testes realizados
                 </p>
               </div>
             </div>
@@ -322,11 +324,16 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             </div>
           </div>
 
-          {/* Body: qualidade, energia, parâmetros */}
+          {/* Body: método, qualidade, energia */}
           <div className="p-6 space-y-6">
-            {/* Qualidade e Energia */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Qualidade */}
+              {/* Método usado (card ao lado da qualidade) */}
+              <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
+                <div className="text-xs uppercase tracking-wide text-gray-500">Método utilizado</div>
+                <div className={`mt-1 text-lg font-semibold ${text}`}>{fullMethodName(last.method)}</div>
+              </div>
+
+              {/* Qualidade prevista */}
               <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs uppercase tracking-wide text-gray-500">Qualidade prevista</span>
@@ -338,7 +345,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
               </div>
 
               {/* Energia */}
-              <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm md:col-span-2`}>
+              <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs uppercase tracking-wide text-gray-500">Consumo energético</span>
                   <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${energyBadge(last.energy).class}`}>
