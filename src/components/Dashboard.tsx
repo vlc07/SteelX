@@ -334,102 +334,135 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Gráficos */}
-        {graficos && (
-          <div className="space-y-6">
-            <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} p-4 rounded-lg shadow-lg`}>
-              <h3 className={`text-lg font-semibold mb-3 text-center ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>{t('realVsPredicted')} (ML)</h3>
-              <p className={`text-xs mb-3 text-center ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Este gráfico mostra como o modelo ML prevê comparado com dados reais de treinamento</p>
-              <Line
-                data={dadosComparacao}
-                options={{
-                  responsive: true,
-                  plugins: { legend: { position: 'top', labels: { color: isDark ? '#e5e7eb' : '#374151' } } },
-                  scales: {
-                    y: { title: { display: true, text: 'Qualidade', color: isDark ? '#e5e7eb' : '#374151' }, ticks: { color: isDark ? '#e5e7eb' : '#374151' }, grid: { color: isDark ? '#374151' : '#e5e7eb' } },
-                    x: { title: { display: true, text: 'Amostras', color: isDark ? '#e5e7eb' : '#374151' }, ticks: { color: isDark ? '#e5e7eb' : '#374151' }, grid: { color: isDark ? '#374151' : '#e5e7eb' } },
-                  },
-                }}
-              />
-            </div>
+{graficos && (
+  <div className="space-y-6">
+    {/* >>> 1) Recomendações Inteligentes (agora em primeiro) <<< */}
+    <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-lg`}>
+      <h3 className={`text-lg font-semibold mb-3 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>🎯 Recomendações Inteligentes</h3>
 
-            <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} p-4 rounded-lg shadow-lg`}>
-              <h3 className={`text-lg font-semibold mb-3 text-center ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>{t('currentParameters')}</h3>
-              <p className={`text-xs mb-3 text-center ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Visualização dos valores que você definiu</p>
-              <Bar
-                data={dadosParametros}
-                options={{
-                  responsive: true,
-                  plugins: { legend: { position: 'top', labels: { color: isDark ? '#e5e7eb' : '#374151' } } },
-                  scales: {
-                    y: { title: { display: true, text: 'Valor', color: isDark ? '#e5e7eb' : '#374151' }, ticks: { color: isDark ? '#e5e7eb' : '#374151' }, grid: { color: isDark ? '#374151' : '#e5e7eb' } },
-                    x: { title: { display: true, text: 'Parâmetros', color: isDark ? '#e5e7eb' : '#374151' }, ticks: { color: isDark ? '#e5e7eb' : '#374151' }, grid: { color: isDark ? '#374151' : '#e5e7eb' } },
-                  },
-                }}
-              />
-            </div>
-
-            <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-lg`}>
-              <h3 className={`text-lg font-semibold mb-3 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>🎯 Recomendações Inteligentes</h3>
-              <div className="space-y-3">
-                {dynamicRecommendations.length > 0 ? (
-                  dynamicRecommendations.map((rec, index) => (
-                    <div
-                      key={index}
-                      className={`p-3 rounded-lg border ${
-                        rec.type === 'critical'
-                          ? isDark ? 'bg-red-900 border-red-700' : 'bg-red-50 border-red-200'
-                          : rec.type === 'warning'
-                          ? isDark ? 'bg-yellow-900 border-yellow-700' : 'bg-yellow-50 border-yellow-200'
-                          : rec.type === 'efficiency'
-                          ? isDark ? 'bg-orange-900 border-orange-700' : 'bg-orange-50 border-orange-200'
-                          : isDark ? 'bg-green-900 border-green-700' : 'bg-green-50 border-green-200'
-                      }`}
-                    >
-                      <div className="flex items-start">
-                        <span className="text-lg mr-2">{rec.icon}</span>
-                        <span
-                          className={`text-sm ${
-                            rec.type === 'critical'
-                              ? isDark ? 'text-red-200' : 'text-red-700'
-                              : rec.type === 'warning'
-                              ? isDark ? 'text-yellow-200' : 'text-yellow-700'
-                              : rec.type === 'efficiency'
-                              ? isDark ? 'text-orange-200' : 'text-orange-700'
-                              : isDark ? 'text-green-200' : 'text-green-700'
-                          }`}
-                        >
-                          {rec.message}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className={`p-3 rounded-lg ${isDark ? 'bg-green-900' : 'bg-green-50'} border ${isDark ? 'border-green-700' : 'border-green-200'}`}>
-                    <div className="flex items-center">
-                      <span className="text-lg mr-2">✅</span>
-                      <span className={`text-sm ${isDark ? 'text-green-200' : 'text-green-700'}`}>Parâmetros estão bem configurados! Nenhuma recomendação crítica.</span>
-                    </div>
-                  </div>
-                )}
+      {/* Dynamic Recommendations */}
+      <div className="space-y-3">
+        {dynamicRecommendations.length > 0 ? (
+          dynamicRecommendations.map((rec, index) => (
+            <div
+              key={index}
+              className={`p-3 rounded-lg border ${
+                rec.type === 'critical'
+                  ? isDark ? 'bg-red-900 border-red-700' : 'bg-red-50 border-red-200'
+                  : rec.type === 'warning'
+                  ? isDark ? 'bg-yellow-900 border-yellow-700' : 'bg-yellow-50 border-yellow-200'
+                  : rec.type === 'efficiency'
+                  ? isDark ? 'bg-orange-900 border-orange-700' : 'bg-orange-50 border-orange-200'
+                  : isDark ? 'bg-green-900 border-green-700' : 'bg-green-50 border-green-200'
+              }`}
+            >
+              <div className="flex items-start">
+                <span className="text-lg mr-2">{rec.icon}</span>
+                <span
+                  className={`text-sm ${
+                    rec.type === 'critical'
+                      ? isDark ? 'text-red-200' : 'text-red-700'
+                      : rec.type === 'warning'
+                      ? isDark ? 'text-yellow-200' : 'text-yellow-700'
+                      : rec.type === 'efficiency'
+                      ? isDark ? 'text-orange-200' : 'text-orange-700'
+                      : isDark ? 'text-green-200' : 'text-green-700'
+                  }`}
+                >
+                  {rec.message}
+                </span>
               </div>
-
-              <div className={`mt-4 p-3 rounded ${isDark ? 'bg-blue-900' : 'bg-blue-50'}`}>
-                <h4 className={`font-medium mb-2 ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>📊 Análise Qualidade vs Energia:</h4>
-                <p className={`text-sm ${isDark ? 'text-blue-200' : 'text-blue-700'}`}>
-                  {qualidadePrevista >= 365 && energiaPrevista < 550
-                    ? 'Configuração ideal: alta qualidade com baixo consumo energético'
-                    : qualidadePrevista >= 365 && energiaPrevista >= 550
-                    ? 'Alta qualidade, mas considere reduzir consumo energético'
-                    : qualidadePrevista < 365 && energiaPrevista < 550
-                    ? 'Baixo consumo, mas qualidade pode ser melhorada'
-                    : 'Tanto qualidade quanto eficiência energética precisam de otimização'}
-                </p>
-              </div>
+            </div>
+          ))
+        ) : (
+          <div className={`p-3 rounded-lg ${isDark ? 'bg-green-900' : 'bg-green-50'} border ${isDark ? 'border-green-700' : 'border-green-200'}`}>
+            <div className="flex items-center">
+              <span className="text-lg mr-2">✅</span>
+              <span className={`text-sm ${isDark ? 'text-green-200' : 'text-green-700'}`}>
+                Parâmetros estão bem configurados! Nenhuma recomendação crítica.
+              </span>
             </div>
           </div>
         )}
       </div>
+
+      {/* Quality vs Energy Trade-off Analysis */}
+      <div className={`mt-4 p-3 rounded ${isDark ? 'bg-blue-900' : 'bg-blue-50'}`}>
+        <h4 className={`font-medium mb-2 ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>📊 Análise Qualidade vs Energia:</h4>
+        <p className={`text-sm ${isDark ? 'text-blue-200' : 'text-blue-700'}`}>
+          {qualidadePrevista >= 365 && energiaPrevista < 550
+            ? 'Configuração ideal: alta qualidade com baixo consumo energético'
+            : qualidadePrevista >= 365 && energiaPrevista >= 550
+            ? 'Alta qualidade, mas considere reduzir consumo energético'
+            : qualidadePrevista < 365 && energiaPrevista < 550
+            ? 'Baixo consumo, mas qualidade pode ser melhorada'
+            : 'Tanto qualidade quanto eficiência energética precisam de otimização'}
+        </p>
+      </div>
     </div>
-  );
-};
+
+    {/* >>> 2) Real vs Previsto (ML) <<< */}
+    <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} p-4 rounded-lg shadow-lg`}>
+      <h3 className={`text-lg font-semibold mb-3 text-center ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+        {t('realVsPredicted')} (ML)
+      </h3>
+      <p className={`text-xs mb-3 text-center ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+        Este gráfico mostra como o modelo ML prevê comparado com dados reais de treinamento
+      </p>
+      <Line
+        data={dadosComparacao}
+        options={{
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' as const, labels: { color: isDark ? '#e5e7eb' : '#374151' } },
+          },
+          scales: {
+            y: {
+              title: { display: true, text: 'Qualidade', color: isDark ? '#e5e7eb' : '#374151' },
+              ticks: { color: isDark ? '#e5e7eb' : '#374151' },
+              grid: { color: isDark ? '#374151' : '#e5e7eb' },
+            },
+            x: {
+              title: { display: true, text: 'Amostras', color: isDark ? '#e5e7eb' : '#374151' },
+              ticks: { color: isDark ? '#e5e7eb' : '#374151' },
+              grid: { color: isDark ? '#374151' : '#e5e7eb' },
+            },
+          },
+        }}
+      />
+    </div>
+
+    {/* >>> 3) Parâmetros Atuais <<< */}
+    <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} p-4 rounded-lg shadow-lg`}>
+      <h3 className={`text-lg font-semibold mb-3 text-center ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+        {t('currentParameters')}
+      </h3>
+      <p className={`text-xs mb-3 text-center ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+        Visualização dos valores que você definiu
+      </p>
+      <Bar
+        data={dadosParametros}
+        options={{
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' as const, labels: { color: isDark ? '#e5e7eb' : '#374151' } },
+          },
+          scales: {
+            y: {
+              title: { display: true, text: 'Valor', color: isDark ? '#e5e7eb' : '#374151' },
+              ticks: { color: isDark ? '#e5e7eb' : '#374151' },
+              grid: { color: isDark ? '#374151' : '#e5e7eb' },
+            },
+            x: {
+              title: { display: true, text: 'Parâmetros', color: isDark ? '#e5e7eb' : '#374151' },
+              ticks: { color: isDark ? '#e5e7eb' : '#374151' },
+              grid: { color: isDark ? '#374151' : '#e5e7eb' },
+            },
+          },
+        }}
+      />
+    </div>
+  </div>
+)}
+
 
