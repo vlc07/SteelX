@@ -1,6 +1,6 @@
 // src/components/SimulationPanel.tsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { Play, TrendingUp, Zap, AlertCircle } from 'lucide-react';
+import { Play, TrendingUp, Zap, AlertCircle, Brain } from 'lucide-react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -35,7 +35,7 @@ type Props = {
   velocidade: number;
   setVelocidade: (v: number) => void;
   simulationResults: any[];
-  setSimulationResults: (r: any) => void; // recebe 1 resultado por vez (o chamador empilha)
+  setSimulationResults: (r: any) => void; // quem chama empilha no array
   t: (k: string) => string;
   isDark: boolean;
 };
@@ -62,7 +62,8 @@ const SimulationPanel: React.FC<Props> = ({
   const palette = {
     text: isDark ? 'text-gray-200' : 'text-gray-800',
     sub: isDark ? 'text-gray-400' : 'text-gray-600',
-    card: `${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`
+    card: `${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`,
+    borderSubtle: isDark ? 'border-gray-700' : 'border-gray-200'
   };
 
   // ======= Validação =======
@@ -72,7 +73,7 @@ const SimulationPanel: React.FC<Props> = ({
     setValidation({ isValid: v1.isValid && v2.isValid, errors: v1.errors, warnings: v2.warnings });
   }, [temperatura, tempo, pressao, velocidade]);
 
-  // ======= Modelo simples ML (mesmo cálculo do app para coerência) =======
+  // ======= Modelo simples ML (coerente com o app) =======
   const calculateQuality = (temp: number, time: number, press: number, speed: number) => {
     const tempNorm = (temp - 1400) / 200;
     const timeNorm = (time - 10) / 110;
@@ -208,28 +209,118 @@ const SimulationPanel: React.FC<Props> = ({
     </div>
   );
 
-  // ======= Gráfico de sensibilidade (com limites de tamanho) =======
-  const getSensitivityChart = (parameter: 'temperatura' | 'tempo' | 'pressao' | 'velocidade', data: { x: number; y: number }[], unit: string) => {
+  // ======= Análises IA =======
+  function analyzeSingle(q: number, params: { temperatura: number; tempo: number; pressao: number; velocidade: number }) {
+    const cls =
+      q >= 365 ? { label: 'Excelente', tone: 'text-emerald-600', hint: 'Manter essa faixa como referência.' } :
+      q >= 355 ? { label: 'Boa', tone: 'text-amber-600', hint: 'Pequenos ajustes podem elevar para nível excelente.' } :
+                 { label: 'Baixa', tone: 'text-rose-600', hint: 'Recomenda-se ajustes imediatos.' };
+
+    // Heurísticas simples de ajuste
+    const tips: string[] = [];
+    if (q < 365) {
+      if (tempo < 60) tips.push('aumentar ligeiramente o tempo (≈ +5 a +10 min)');
+      if (temperatura < 1500) tips.push('subir a temperatura em ~10–20 °C');
+      if (pressao < 100) tips.push('subir a pressão para a faixa 100–106');
+      if (velocidade > 310) tips.push('reduzir um pouco a velocidade (mistura mais estável)');
+    } else {
+      tips.push('Monitore estabilidade; evite elevações desnecessárias de temperatura (custo/energia).');
+    }
+
+    return { cls, tips };
+  }
+
+  function analyzeBatch(stats: { mean: number; std: number; min: number; max: number; n: number }) {
+    const spread = stats.max - stats.min;
+    const consistency =
+      stats.std < 2 ? 'Muito consistente' :
+      stats.std < 4 ? 'Consistente' :
+      stats.std < 6 ? 'Variável' : 'Alta variabilidade';
+
+    const qualityBand =
+      stats.mean >= 365 ? 'nível excelente' :
+      stats.mean >= 355 ? 'nível bom' : 'abaixo do ideal';
+
+    const notes = [
+      `Média em ${qualityBand}.`,
+      `${consistency} (desvio ${stats.std.toFixed(2)}; amplitude ${spread.toFixed(2)}).`,
+      stats.mean >= 365
+        ? 'Há margem para reduzir um pouco a temperatura/tempo visando economia de energia.'
+        : 'Priorize aumentar ligeiramente temperatura/tempo e revisar pressão.'
+    ];
+    return { consistency, notes };
+  }
+
+  // Medidas auxiliares para sensibilidade
+  function summarizeCurve(data: { x: number; y: number }[]) {
+    if (!data || data.length < 2) return null;
+    const y0 = data[0].y, yN = data[data.length - 1].y;
+    const x0 = data[0].x, xN = data[data.length - 1].x;
+    const delta = yN - y0;
+    const slope = delta / (Number(xN) - Number(x0)); // variação por unidade
+    // “curvatura” aproximada (média do módulo da 2ª diferença)
+    let curvature = 0;
+    for (let i = 1; i < data.length - 1; i++) {
+      const d2 = data[i + 1].y - 2 * data[i].y + data[i - 1].y;
+      curvature += Math.abs(d2);
+    }
+    curvature /= Math.max(1, data.length - 2);
+    return { delta, slope, curvature, yMin: Math.min(...data.map(d => d.y)), yMax: Math.max(...data.map(d => d.y)) };
+  }
+
+  function sensitivityInsight(param: string, sum: ReturnType<typeof summarizeCurve>) {
+    if (!sum) return { title: 'Impacto', bullets: [] as string[] };
+    const dir = sum.delta > 0 ? 'aumenta' : sum.delta < 0 ? 'reduz' : 'quase não altera';
+    const strength =
+      Math.abs(sum.delta) > 15 ? 'impacto alto' :
+      Math.abs(sum.delta) > 8  ? 'impacto moderado' :
+      Math.abs(sum.delta) > 3  ? 'impacto leve' : 'impacto mínimo';
+    const nonlin =
+      sum.curvature > 1.2 ? 'com comportamento não-linear (há ponto ótimo na faixa)' :
+      sum.curvature > 0.4 ? 'com leve não-linearidade' : 'quase linear';
+
+    const bullets = [
+      `No intervalo testado, **${param} ${dir} a qualidade** (${strength}).`,
+      `Resposta ${nonlin}.`,
+      `Faixa de qualidade observada: ${sum.yMin.toFixed(1)} → ${sum.yMax.toFixed(1)}.`,
+      sum.delta > 0
+        ? `Se o objetivo é elevar a qualidade, **testar valores um pouco maiores de ${param}** pode ajudar (respeitando limites).`
+        : sum.delta < 0
+        ? `Valores maiores de **${param}** tendem a piorar; avalie trabalhar mais próximo do limite inferior seguro.`
+        : `Ajustes de **${param}** não devem ser prioridade neste cenário.`
+    ];
+    return { title: 'Impacto no processo', bullets };
+  }
+
+  // ======= Gráfico de sensibilidade + análise IA =======
+  const SensitivityCard: React.FC<{
+    title: string;
+    unit: string;
+    data: { x: number; y: number }[];
+  }> = ({ title, unit, data }) => {
+    const sum = summarizeCurve(data);
+    const insight = sensitivityInsight(title.toLowerCase(), sum!);
+
     const chartData = {
       labels: data.map(d => d.x),
       datasets: [
         {
-          label: `Qualidade vs ${parameter}`,
+          label: `Qualidade vs ${title.toLowerCase()}`,
           data: data.map(d => d.y),
           borderColor:
-            parameter === 'temperatura'
+            title === 'Temperatura'
               ? 'rgb(239, 68, 68)'
-              : parameter === 'tempo'
+              : title === 'Tempo'
               ? 'rgb(59, 130, 246)'
-              : parameter === 'pressao'
+              : title === 'Pressão'
               ? 'rgb(34, 197, 94)'
               : 'rgb(168, 85, 247)',
           backgroundColor:
-            parameter === 'temperatura'
+            title === 'Temperatura'
               ? 'rgba(239, 68, 68, 0.1)'
-              : parameter === 'tempo'
+              : title === 'Tempo'
               ? 'rgba(59, 130, 246, 0.1)'
-              : parameter === 'pressao'
+              : title === 'Pressão'
               ? 'rgba(34, 197, 94, 0.1)'
               : 'rgba(168, 85, 247, 0.1)',
           tension: 0.35,
@@ -242,16 +333,10 @@ const SimulationPanel: React.FC<Props> = ({
 
     const options = {
       responsive: true,
-      maintainAspectRatio: false, // << controla pela altura do container
+      maintainAspectRatio: false,
       plugins: {
-        legend: {
-          labels: { color: isDark ? '#e5e7eb' : '#374151' }
-        },
-        title: {
-          display: true,
-          text: `Análise de Sensibilidade: ${parameter.charAt(0).toUpperCase() + parameter.slice(1)}`,
-          color: isDark ? '#e5e7eb' : '#374151'
-        }
+        legend: { labels: { color: isDark ? '#e5e7eb' : '#374151' } },
+        title: { display: true, text: `Análise de Sensibilidade: ${title}`, color: isDark ? '#e5e7eb' : '#374151' }
       },
       scales: {
         y: {
@@ -260,7 +345,7 @@ const SimulationPanel: React.FC<Props> = ({
           grid: { color: isDark ? '#374151' : '#e5e7eb' }
         },
         x: {
-          title: { display: true, text: `${parameter} (${unit})`, color: isDark ? '#e5e7eb' : '#374151' },
+          title: { display: true, text: `${title} (${unit})`, color: isDark ? '#e5e7eb' : '#374151' },
           ticks: { color: isDark ? '#e5e7eb' : '#374151' },
           grid: { color: isDark ? '#374151' : '#e5e7eb' }
         }
@@ -268,8 +353,22 @@ const SimulationPanel: React.FC<Props> = ({
     };
 
     return (
-      <div className="w-full max-w-[720px] h-[320px] mx-auto">
-        <Line data={chartData} options={options as any} />
+      <div className={`${palette.card} space-y-4`}>
+        <div className="w-full max-w-[720px] h-[320px] mx-auto">
+          <Line data={chartData} options={options as any} />
+        </div>
+        {/* Análise IA ao lado/abaixo */}
+        <div className={`mt-2 border-t ${palette.borderSubtle} pt-3`}>
+          <div className="flex items-center gap-2 mb-1">
+            <Brain className="h-4 w-4 text-purple-500" />
+            <span className={`text-sm font-semibold ${palette.text}`}>Análise IA — {insight.title}</span>
+          </div>
+          <ul className={`text-sm list-disc ml-5 ${palette.sub}`}>
+            {insight.bullets.map((b, i) => (
+              <li key={i} dangerouslySetInnerHTML={{ __html: b }} />
+            ))}
+          </ul>
+        </div>
       </div>
     );
   };
@@ -304,7 +403,6 @@ const SimulationPanel: React.FC<Props> = ({
           <ParameterInput label="Velocidade" parameterName="velocidade" value={velocidade} onChange={setVelocidade} isDark={isDark} />
         </div>
 
-        {/* Mensagens de validação */}
         {(!validation.isValid || validation.warnings.length > 0) && (
           <div className="mt-4 space-y-2">
             {validation.errors.map((e, i) => (
@@ -338,37 +436,58 @@ const SimulationPanel: React.FC<Props> = ({
         </div>
       )}
 
-      {/* CONTEÚDOS POR ABA */}
+      {/* SIMULAÇÃO ÚNICA */}
       {tab === 'single' && simulationResults.filter(r => r.type === 'single').length > 0 && (
-        <div className={palette.card}>
-          <h3 className={`text-lg font-semibold mb-4 ${palette.text}`}>Resultado da Simulação</h3>
+        <div className={`${palette.card} space-y-4`}>
+          <h3 className={`text-lg font-semibold ${palette.text}`}>Resultado da Simulação</h3>
           {(() => {
             const last = simulationResults.filter(r => r.type === 'single').slice(-1)[0];
-            const cls = last.quality >= 365 ? 'text-green-600' : last.quality >= 355 ? 'text-yellow-600' : 'text-red-600';
-            const label = last.quality >= 365 ? 'Excelente' : last.quality >= 355 ? 'Boa' : 'Ruim';
+            const clsTone =
+              last.quality >= 365 ? 'text-green-600' :
+              last.quality >= 355 ? 'text-yellow-600' : 'text-red-600';
+
+            const analysis = analyzeSingle(last.quality, last.parameters);
+
             return (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className={`${palette.sub} text-sm`}>Qualidade Prevista</div>
-                  <div className="text-2xl font-bold text-blue-600">{last.quality.toFixed(2)}</div>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <div className={`${palette.sub} text-sm`}>Qualidade Prevista</div>
+                    <div className="text-2xl font-bold text-blue-600">{last.quality.toFixed(2)}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className={`${palette.sub} text-sm`}>Classificação</div>
+                    <div className={`text-lg font-bold ${clsTone}`}>{analysis.cls.label}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className={`${palette.sub} text-sm`}>Confiança</div>
+                    <div className="text-lg font-bold text-green-600">{(88 + Math.random() * 6).toFixed(1)}%</div>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <div className={`${palette.sub} text-sm`}>Classificação</div>
-                  <div className={`text-lg font-bold ${cls}`}>{label}</div>
+
+                {/* Análise IA */}
+                <div className={`mt-2 border-t ${palette.borderSubtle} pt-3`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Brain className="h-4 w-4 text-purple-500" />
+                    <span className={`text-sm font-semibold ${palette.text}`}>Análise IA</span>
+                  </div>
+                  <p className={`text-sm mb-1 ${palette.sub}`}>{analysis.cls.hint}</p>
+                  {analysis.tips.length > 0 && (
+                    <ul className={`text-sm list-disc ml-5 ${palette.sub}`}>
+                      {analysis.tips.map((tip, i) => <li key={i}>{tip}</li>)}
+                    </ul>
+                  )}
                 </div>
-                <div className="text-center">
-                  <div className={`${palette.sub} text-sm`}>Confiança</div>
-                  <div className="text-lg font-bold text-green-600">{(88 + Math.random() * 6).toFixed(1)}%</div>
-                </div>
-              </div>
+              </>
             );
           })()}
         </div>
       )}
 
+      {/* LOTE */}
       {tab === 'batch' && batchStats && (
-        <div className={palette.card}>
-          <h3 className={`text-lg font-semibold mb-4 ${palette.text}`}>Resultados do Lote</h3>
+        <div className={`${palette.card} space-y-4`}>
+          <h3 className={`text-lg font-semibold ${palette.text}`}>Resultados do Lote</h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <Stat label="Média" value={batchStats.mean.toFixed(2)} color="text-blue-600" />
             <Stat label="Desvio Padrão" value={batchStats.std.toFixed(2)} color="text-purple-600" />
@@ -376,21 +495,33 @@ const SimulationPanel: React.FC<Props> = ({
             <Stat label="Pior" value={batchStats.min.toFixed(2)} color="text-red-600" />
             <Stat label="N" value={batchStats.n} color="text-gray-600" />
           </div>
-          <div className={`mt-3 p-3 rounded ${isDark ? 'bg-blue-900' : 'bg-blue-50'}`}>
-            <p className={`text-sm ${isDark ? 'text-blue-200' : 'text-blue-700'}`}>
-              <strong>Interpretação:</strong> menor desvio padrão ⇒ processo mais consistente.
-            </p>
-          </div>
+
+          {/* Análise IA do lote */}
+          {(() => {
+            const ai = analyzeBatch(batchStats);
+            return (
+              <div className={`mt-2 border-t ${palette.borderSubtle} pt-3`}>
+                <div className="flex items-center gap-2 mb-1">
+                  <Brain className="h-4 w-4 text-purple-500" />
+                  <span className={`text-sm font-semibold ${palette.text}`}>Análise IA</span>
+                </div>
+                <ul className={`text-sm list-disc ml-5 ${palette.sub}`}>
+                  {ai.notes.map((n, i) => <li key={i}>{n}</li>)}
+                </ul>
+              </div>
+            );
+          })()}
         </div>
       )}
 
+      {/* SENSIBILIDADE */}
       {tab === 'sensitivity' && sensitivity && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div className={palette.card}>{getSensitivityChart('temperatura', sensitivity.temperatura, '°C')}</div>
-            <div className={palette.card}>{getSensitivityChart('tempo', sensitivity.tempo, 'min')}</div>
-            <div className={palette.card}>{getSensitivityChart('pressao', sensitivity.pressao, 'kPa')}</div>
-            <div className={palette.card}>{getSensitivityChart('velocidade', sensitivity.velocidade, 'rpm')}</div>
+            <SensitivityCard title="Temperatura" unit="°C" data={sensitivity.temperatura} />
+            <SensitivityCard title="Tempo" unit="min" data={sensitivity.tempo} />
+            <SensitivityCard title="Pressão" unit="kPa" data={sensitivity.pressao} />
+            <SensitivityCard title="Velocidade" unit="rpm" data={sensitivity.velocidade} />
           </div>
         </div>
       )}
@@ -406,6 +537,7 @@ const Stat: React.FC<{ label: string; value: string | number; color?: string }> 
 );
 
 export default SimulationPanel;
+
 
 
 
