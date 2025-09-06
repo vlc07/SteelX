@@ -2,7 +2,7 @@
 import React from 'react';
 import {
   Play, Beaker, Dna, Brain, Gauge, AlertCircle, Trophy,
-  Thermometer, Timer, Wind, BatteryCharging
+  Thermometer, Timer, Wind, BatteryCharging, History as HistoryIcon, Settings2, Leaf, Flame, Zap
 } from 'lucide-react';
 import type { OptimizeMethod } from '../optim/runner';
 import { runOptimization } from '../optim/runner';
@@ -32,6 +32,21 @@ type Range = {
   tipica: { min: number; max: number };
 };
 
+/** ---- Histórico ---- */
+type HistoryItem = {
+  id: string;
+  ts: number;
+  method: OptimizeMethod;
+  score: number;
+  evaluations: number;
+  x: Record<string, number>;
+  quality: number;
+  energy: number;
+  lambda: number;
+};
+
+const HIST_KEY = 'opt_history_v1';
+
 export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplete }) => {
   // Controles globais
   const [budget, setBudget] = React.useState<number>(200);
@@ -45,6 +60,28 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   const [runningBO, setRunningBO] = React.useState(false);
 
   const [last, setLast] = React.useState<LastSummary | null>(null);
+
+  // Histórico
+  const [history, setHistory] = React.useState<HistoryItem[]>(() => {
+    try {
+      const raw = localStorage.getItem(HIST_KEY);
+      return raw ? JSON.parse(raw) as HistoryItem[] : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const saveHistory = React.useCallback((items: HistoryItem[]) => {
+    setHistory(items);
+    try { localStorage.setItem(HIST_KEY, JSON.stringify(items)); } catch {}
+  }, []);
+
+  const pushHistory = React.useCallback((item: HistoryItem) => {
+    const items = [item, ...history].slice(0, 20); // mantém os 20 mais recentes
+    saveHistory(items);
+  }, [history, saveHistory]);
+
+  const clearHistory = () => saveHistory([]);
 
   const label = isDark ? 'text-gray-300' : 'text-gray-700';
   const text = isDark ? 'text-gray-200' : 'text-gray-800';
@@ -69,7 +106,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     velocidade:  { low: 290,  high: 310  },
   } as const;
 
-  /** --- NOVO: faixas de otimização editáveis pelo usuário --- */
+  /** --- faixas de otimização editáveis pelo usuário --- */
   const [ranges, setRanges] = React.useState<Record<'temperatura'|'tempo'|'pressao'|'velocidade', Range>>({
     temperatura: { min: 1400, max: 1600, step: 5,  industrial: { min: 1400, max: 1600 }, tipica: { min: 1450, max: 1550 } },
     tempo:       { min:   15, max:  120, step: 5,  industrial: { min:   15, max:  120 }, tipica: { min:   30, max:   90 } },
@@ -111,7 +148,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     return { label: 'Ineficiente', class: isDark ? 'bg-rose-900/50 text-rose-200 border border-rose-700' : 'bg-rose-100 text-rose-700 border border-rose-200' };
   }
 
-  // Posição em % no intervalo
+  // Posição em % no intervalo (para a barra das cards de parâmetros)
   const pct = (name: keyof typeof bounds, v: number) => {
     const b = bounds[name];
     return Math.max(0, Math.min(100, ((v - b.min) / (b.max - b.min)) * 100));
@@ -124,12 +161,66 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     return 'Otimização Bayesiana';
   }
 
+  /** ============ PRESETS POR OBJETIVO ============ */
+  type PresetKey = 'resistencia' | 'ductilidade' | 'energia' | 'balanceado';
+  const applyPreset = (p: PresetKey) => {
+    if (p === 'resistencia') {
+      // foca em qualidade (λ baixo), temperatura e tempo mais altos dentro do seguro
+      setLambda(0.08);
+      setRanges(prev => ({
+        ...prev,
+        temperatura: { ...prev.temperatura, min: 1480, max: 1560, step: 5 },
+        tempo:       { ...prev.tempo,       min:  55,  max:  90,  step: 5 },
+        pressao:     { ...prev.pressao,     min: 100,  max: 106,  step: 1 },
+        velocidade:  { ...prev.velocidade,  min: 285,  max: 310,  step: 5 },
+      }));
+      setUseQualityConstraint(true);
+      setQualityMin(365);
+    } else if (p === 'ductilidade') {
+      // foco em maleabilidade: temperaturas/tempos um pouco mais baixos, sem sacrificar demais a qualidade
+      setLambda(0.12);
+      setRanges(prev => ({
+        ...prev,
+        temperatura: { ...prev.temperatura, min: 1460, max: 1520, step: 5 },
+        tempo:       { ...prev.tempo,       min:  45,  max:  75,  step: 5 },
+        pressao:     { ...prev.pressao,     min:  99,  max: 106,  step: 1 },
+        velocidade:  { ...prev.velocidade,  min: 285,  max: 315,  step: 5 },
+      }));
+      setUseQualityConstraint(true);
+      setQualityMin(360);
+    } else if (p === 'energia') {
+      // economiza energia: λ mais alto, T/tempo menores
+      setLambda(0.22);
+      setRanges(prev => ({
+        ...prev,
+        temperatura: { ...prev.temperatura, min: 1450, max: 1500, step: 5 },
+        tempo:       { ...prev.tempo,       min:  35,  max:  65,  step: 5 },
+        pressao:     { ...prev.pressao,     min:  99,  max: 105,  step: 1 },
+        velocidade:  { ...prev.velocidade,  min: 290,  max: 305,  step: 5 },
+      }));
+      setUseQualityConstraint(true);
+      setQualityMin(355);
+    } else {
+      // balanceado (padrão)
+      setLambda(0.15);
+      setRanges(prev => ({
+        ...prev,
+        temperatura: { ...prev.temperatura, min: 1400, max: 1600, step: 5 },
+        tempo:       { ...prev.tempo,       min:   15, max:  120, step: 5 },
+        pressao:     { ...prev.pressao,     min:   95, max:  110, step: 1 },
+        velocidade:  { ...prev.velocidade,  min:  250, max:  350, step: 5 },
+      }));
+      setUseQualityConstraint(false);
+      setQualityMin(365);
+    }
+  };
+
   // Executar método
   async function executar(method: OptimizeMethod) {
     const setRun = method === 'grid' ? setRunningGrid : method === 'ga' ? setRunningGA : setRunningBO;
     setRun(true);
     try {
-      /** NOVO: payload de bounds vindo dos cards */
+      /** bounds vindos dos cards editáveis */
       const boundsPayload = {
         temperatura: { min: ranges.temperatura.min, max: ranges.temperatura.max, step: ranges.temperatura.step },
         tempo:       { min: ranges.tempo.min,       max: ranges.tempo.max,       step: ranges.tempo.step },
@@ -139,7 +230,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
 
       const res = await runOptimization({
         method, budget, lambda, useQualityConstraint, qualityMin, seed: 2025,
-        bounds: boundsPayload, // <--- passa as faixas para o otimizador
+        bounds: boundsPayload,
       });
 
       const qe = model.predict({
@@ -149,14 +240,30 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         speed: Number(res.best.x.velocidade),
       });
 
-      setLast({
+      const summary: LastSummary = {
         method,
         score: res.best.y,
         x: res.best.x,
         evaluations: res.evaluations,
         quality: qe.quality,
         energy: qe.energy,
-      });
+      };
+
+      setLast(summary);
+
+      // Histórico
+      const item: HistoryItem = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        ts: Date.now(),
+        method,
+        score: summary.score,
+        evaluations: summary.evaluations,
+        x: summary.x,
+        quality: summary.quality,
+        energy: summary.energy,
+        lambda,
+      };
+      pushHistory(item);
 
       // Mantém compatível com Results
       onOptimizationComplete({ ...res, bestParams: res.best.x });
@@ -179,6 +286,83 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         <p className={`${sub} text-sm`}>
           Escolha um método para buscar os melhores parâmetros. As configurações ao lado valem para todos os métodos.
         </p>
+      </div>
+
+      {/* === NOVO: PRESETS POR OBJETIVO === */}
+      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-5`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Settings2 className={`h-5 w-5 ${isDark ? 'text-gray-300' : 'text-gray-600'}`} />
+            <h3 className={`font-semibold ${text}`}>Presets por objetivo</h3>
+          </div>
+          <span className="text-xs text-gray-500">Aplique com 1 clique — você pode ajustar as faixas depois.</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Alta resistência */}
+          <button
+            onClick={() => applyPreset('resistencia')}
+            className={`group rounded-xl p-4 border transition
+              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+          >
+            <div className="flex items-center gap-2">
+              <Flame className="h-5 w-5 text-rose-500" />
+              <div className="font-semibold">Alta Resistência</div>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">Foco em qualidade. T e tempo mais altos (λ baixo).</div>
+            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+              λ ≈ 0.08 · Qualidade ≥ 365
+            </div>
+          </button>
+
+          {/* Alta ductilidade */}
+          <button
+            onClick={() => applyPreset('ductilidade')}
+            className={`group rounded-xl p-4 border transition
+              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+          >
+            <div className="flex items-center gap-2">
+              <Dna className="h-5 w-5 text-green-500" />
+              <div className="font-semibold">Alta Ductilidade</div>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">Maleabilidade com boa qualidade. T/tempo moderados.</div>
+            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
+              λ ≈ 0.12 · Qualidade ≥ 360
+            </div>
+          </button>
+
+          {/* Economia de energia */}
+          <button
+            onClick={() => applyPreset('energia')}
+            className={`group rounded-xl p-4 border transition
+              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+          >
+            <div className="flex items-center gap-2">
+              <Leaf className="h-5 w-5 text-emerald-500" />
+              <div className="font-semibold">Economia de Energia</div>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">Reduz custo/CO₂. T/tempo menores (λ mais alto).</div>
+            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+              λ ≈ 0.22 · Qualidade ≥ 355
+            </div>
+          </button>
+
+          {/* Balanceado */}
+          <button
+            onClick={() => applyPreset('balanceado')}
+            className={`group rounded-xl p-4 border transition
+              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
+          >
+            <div className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-blue-500" />
+              <div className="font-semibold">Balanceado</div>
+            </div>
+            <div className="text-xs text-gray-500 mt-1">Equilíbrio padrão. Você ajusta depois, se quiser.</div>
+            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
+              λ ≈ 0.15 · Qualidade mínima opcional
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* Cards dos métodos + Configurações */}
@@ -319,7 +503,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         </div>
       </div>
 
-      {/* === NOVO BLOCO: Faixas de Otimização (editáveis) === */}
+      {/* === Faixas de Otimização (editáveis) === */}
       <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-5`}>
         <div className="flex items-center justify-between mb-3">
           <h3 className={`${isDark ? 'text-gray-200' : 'text-gray-700'} font-semibold`}>Faixas de Otimização</h3>
@@ -394,7 +578,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
                 <span
                   className={`cursor-help text-xs ${isDark ? 'bg-blue-900/60 text-blue-200 border border-blue-800' : 'bg-blue-100 text-blue-700 border border-blue-200'} px-2 py-0.5 rounded-full`}
                   title={`O score combina qualidade prevista e consumo de energia em um só valor.
-Valores menores do equilíbrio priorizam qualidade. Valores maiores priorizam economia de energia.`}
+Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores priorizam economia de energia.`}
                 >
                   ℹ️
                 </span>
@@ -408,7 +592,7 @@ Valores menores do equilíbrio priorizam qualidade. Valores maiores priorizam ec
           {/* Body: método, qualidade, energia */}
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Método usado (card ao lado da qualidade) */}
+              {/* Método usado */}
               <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
                 <div className="text-xs uppercase tracking-wide text-gray-500">Método utilizado</div>
                 <div className={`mt-1 text-lg font-semibold ${text}`}>{fullMethodName(last.method)}</div>
@@ -503,6 +687,80 @@ Valores menores do equilíbrio priorizam qualidade. Valores maiores priorizam ec
         </div>
       )}
 
+      {/* === NOVO: HISTÓRICO BÁSICO === */}
+      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-5`}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <HistoryIcon className="h-5 w-5 text-indigo-500" />
+            <h3 className={`font-semibold ${text}`}>Histórico de Otimizações</h3>
+          </div>
+          <button
+            onClick={clearHistory}
+            className={`text-xs px-3 py-1 rounded-md border ${
+              isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            Limpar histórico
+          </button>
+        </div>
+
+        {history.length === 0 ? (
+          <div className={`text-sm ${sub}`}>Nenhuma execução registrada ainda.</div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {history.map(item => (
+              <div
+                key={item.id}
+                className={`rounded-xl p-4 border ${isDark ? 'bg-gray-900/40 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold">
+                    {fullMethodName(item.method)}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {new Date(item.ts).toLocaleString('pt-BR')}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mt-3">
+                  <div>
+                    <div className="text-[11px] text-gray-500 mb-0.5">Score</div>
+                    <div className={`${isDark ? 'text-gray-100' : 'text-gray-900'} font-bold`}>
+                      {item.score.toFixed(2)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-gray-500 mb-0.5">Testes</div>
+                    <div className={`${isDark ? 'text-gray-100' : 'text-gray-900'} font-bold`}>
+                      {item.evaluations}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-gray-500 mb-0.5">Qualidade</div>
+                    <div className={`${isDark ? 'text-gray-100' : 'text-gray-900'} font-bold`}>
+                      {item.quality.toFixed(1)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-gray-500 mb-0.5">Energia</div>
+                    <div className={`${isDark ? 'text-gray-100' : 'text-gray-900'} font-bold`}>
+                      {item.energy.toFixed(1)} <span className="text-xs text-gray-500">kWh/ton</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 text-xs text-gray-500">
+                  λ: {item.lambda.toFixed(2)} · Parâmetros: T={item.x.temperatura?.toFixed?.(1) ?? item.x.temperatura}ºC; 
+                  t={item.x.tempo?.toFixed?.(1) ?? item.x.tempo} min; 
+                  p={item.x.pressao?.toFixed?.(1) ?? item.x.pressao}; 
+                  v={item.x.velocidade?.toFixed?.(1) ?? item.x.velocidade} rpm
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Notas finais */}
       <div className={card}>
         <p className={`${sub} text-xs leading-relaxed`}>
@@ -563,7 +821,7 @@ function ParamCard(props: {
   );
 }
 
-/** ---- NOVO: Card reutilizável para edição de faixas ---- */
+/** Card reutilizável para edição de faixas */
 function RangeCard({
   title, name, unit, isDark, value, onChange, showGridHint = true
 }: {
@@ -628,12 +886,13 @@ function RangeCard({
         <span className="text-gray-500">Faixa típica: {value.tipica.min}–{value.tipica.max} {unit}</span>
         {showGridHint && (
           <span className={`${invalid ? 'text-rose-600' : (isDark ? 'text-gray-300' : 'text-gray-700')}`}>
-            {invalid ? 'Faixa inválida (mín >= máx)' : <>Espaço (Grid): <b>{points}</b> pontos</>}
+            {invalid ? 'Faixa inválida (mín ≥ máx)' : <>Espaço (Grid): <b>{points}</b> pontos</>}
           </span>
         )}
       </div>
     </div>
   );
 }
+
 
 
