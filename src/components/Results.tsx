@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { FileText, Download, TrendingUp, Award, BarChart3, PieChart } from 'lucide-react';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import {
+  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement,
+  BarElement, Title, Tooltip, Legend, ArcElement
+} from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 
 ChartJS.register(
@@ -17,13 +20,14 @@ ChartJS.register(
 
 interface ResultsProps {
   optimizationResults: any;
-  simulationResults: any[];
+  simulationResults: Array<{ quality: number } & Record<string, any>>;
   currentParams: {
     temperatura: number;
     tempo: number;
     pressao: number;
     velocidade: number;
     qualidade: number;
+    energia: number; // <-- ADICIONADO
   };
   t: (key: string) => string;
   isDark: boolean;
@@ -36,24 +40,23 @@ export const Results: React.FC<ResultsProps> = ({
   t,
   isDark
 }) => {
-  const [activeView, setActiveView] = useState<'overview' | 'detailed' | 'comparison'>('overview');
+  const [activeView, setActiveView] =
+    useState<'overview' | 'detailed' | 'comparison'>('overview');
+
+  const safeNumber = (v: any, fallback = 0) =>
+    Number.isFinite(Number(v)) ? Number(v) : fallback;
 
   const downloadAllResults = () => {
-    const allData = {
-      currentParameters: currentParams,
-      optimizationResults: optimizationResults,
-      simulationResults: simulationResults,
-      summary: {
-        totalSimulations: simulationResults.length,
-        averageQuality: simulationResults.length > 0 
-          ? simulationResults.reduce((sum, r) => sum + r.quality, 0) / simulationResults.length 
-          : 0,
-        bestQuality: simulationResults.length > 0 
-          ? Math.max(...simulationResults.map(r => r.quality)) 
-          : 0,
-        timestamp: new Date().toISOString()
-      }
-    };
+    const avgQuality =
+      simulationResults.length > 0
+        ? simulationResults.reduce((sum, r) => sum + safeNumber(r.quality), 0) /
+          simulationResults.length
+        : 0;
+
+    const bestQuality =
+      simulationResults.length > 0
+        ? Math.max(...simulationResults.map(r => safeNumber(r.quality)))
+        : 0;
 
     const csvContent = [
       'Section,Parameter,Value',
@@ -62,15 +65,18 @@ export const Results: React.FC<ResultsProps> = ({
       `Current,Pressure,${currentParams.pressao}`,
       `Current,Speed,${currentParams.velocidade}`,
       `Current,Quality,${currentParams.qualidade}`,
-      ...(optimizationResults ? [
-        `Optimized,Temperature,${optimizationResults.temperatura}`,
-        `Optimized,Time,${optimizationResults.tempo}`,
-        `Optimized,Pressure,${optimizationResults.pressao}`,
-        `Optimized,Speed,${optimizationResults.velocidade}`,
-        `Optimized,Quality,${optimizationResults.quality}`
-      ] : []),
-      ...simulationResults.map((result, i) => 
-        `Simulation ${i + 1},Quality,${result.quality.toFixed(2)}`
+      `Current,Energy,${currentParams.energia}`,
+      ...(optimizationResults
+        ? [
+            `Optimized,Temperature,${optimizationResults.temperatura ?? ''}`,
+            `Optimized,Time,${optimizationResults.tempo ?? ''}`,
+            `Optimized,Pressure,${optimizationResults.pressao ?? ''}`,
+            `Optimized,Speed,${optimizationResults.velocidade ?? ''}`,
+            `Optimized,Quality,${optimizationResults.quality ?? ''}`
+          ]
+        : []),
+      ...simulationResults.map((result, i) =>
+        `Simulation ${i + 1},Quality,${safeNumber(result.quality).toFixed(2)}`
       )
     ].join('\n');
 
@@ -86,6 +92,22 @@ export const Results: React.FC<ResultsProps> = ({
   };
 
   const generateReport = () => {
+    const avg =
+      simulationResults.length > 0
+        ? (
+            simulationResults.reduce((sum, r) => sum + safeNumber(r.quality), 0) /
+            simulationResults.length
+          ).toFixed(2)
+        : 'N/A';
+    const best =
+      simulationResults.length > 0
+        ? Math.max(...simulationResults.map(r => safeNumber(r.quality))).toFixed(2)
+        : 'N/A';
+    const worst =
+      simulationResults.length > 0
+        ? Math.min(...simulationResults.map(r => safeNumber(r.quality))).toFixed(2)
+        : 'N/A';
+
     const reportContent = `
 RELATÓRIO DE OTIMIZAÇÃO DE PROCESSOS
 =====================================
@@ -98,30 +120,42 @@ PARÂMETROS ATUAIS:
 - Tempo: ${currentParams.tempo} min
 - Pressão: ${currentParams.pressao} kPa
 - Velocidade: ${currentParams.velocidade} rpm
-- Qualidade Prevista: ${currentParams.qualidade.toFixed(2)}
+- Qualidade Prevista: ${safeNumber(currentParams.qualidade).toFixed(2)}
+- Energia Prevista: ${safeNumber(currentParams.energia).toFixed(1)} kWh/ton
 
-${optimizationResults ? `
+${
+  optimizationResults
+    ? `
 PARÂMETROS OTIMIZADOS:
-- Temperatura: ${optimizationResults.temperatura}°C
-- Tempo: ${optimizationResults.tempo} min
-- Pressão: ${optimizationResults.pressao} kPa
-- Velocidade: ${optimizationResults.velocidade} rpm
-- Qualidade Otimizada: ${optimizationResults.quality.toFixed(2)}
-- Melhoria: +${optimizationResults.improvement} unidades
-` : ''}
+- Temperatura: ${optimizationResults.temperatura ?? '—'}°C
+- Tempo: ${optimizationResults.tempo ?? '—'} min
+- Pressão: ${optimizationResults.pressao ?? '—'} kPa
+- Velocidade: ${optimizationResults.velocidade ?? '—'} rpm
+- Qualidade Otimizada: ${
+        optimizationResults.quality != null
+          ? safeNumber(optimizationResults.quality).toFixed(2)
+          : '—'
+      }
+- Melhoria: ${optimizationResults.improvement ?? '—'} unidades
+`
+    : ''
+}
 
 RESUMO DAS SIMULAÇÕES:
 - Total de simulações: ${simulationResults.length}
-- Qualidade média: ${simulationResults.length > 0 ? (simulationResults.reduce((sum, r) => sum + r.quality, 0) / simulationResults.length).toFixed(2) : 'N/A'}
-- Melhor qualidade: ${simulationResults.length > 0 ? Math.max(...simulationResults.map(r => r.quality)).toFixed(2) : 'N/A'}
-- Pior qualidade: ${simulationResults.length > 0 ? Math.min(...simulationResults.map(r => r.quality)).toFixed(2) : 'N/A'}
+- Qualidade média: ${avg}
+- Melhor qualidade: ${best}
+- Pior qualidade: ${worst}
 
 RECOMENDAÇÕES:
-${optimizationResults ? 
-  `1. Implementar os parâmetros otimizados para obter melhoria de ${optimizationResults.improvement} unidades
+${
+  optimizationResults
+    ? `1. Implementar os parâmetros otimizados para obter melhoria de ${
+        optimizationResults.improvement ?? '—'
+      } unidades
 2. Monitorar especialmente a temperatura, que tem maior impacto na qualidade
-3. Realizar testes piloto antes da implementação completa` :
-  `1. Execute a otimização para encontrar os melhores parâmetros
+3. Realizar testes piloto antes da implementação completa`
+    : `1. Execute a otimização para encontrar os melhores parâmetros
 2. Realize mais simulações para validar os resultados
 3. Considere análise de sensibilidade para entender melhor os parâmetros`
 }
@@ -147,7 +181,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
     datasets: [
       {
         label: 'Qualidade',
-        data: simulationResults.map(r => r.quality),
+        data: simulationResults.map(r => safeNumber(r.quality)),
         borderColor: 'rgb(59, 130, 246)',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         tension: 0.4
@@ -160,9 +194,9 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
     datasets: [
       {
         data: [
-          simulationResults.filter(r => r.quality < 355).length,
-          simulationResults.filter(r => r.quality >= 355 && r.quality < 365).length,
-          simulationResults.filter(r => r.quality >= 365).length
+          simulationResults.filter(r => safeNumber(r.quality) < 355).length,
+          simulationResults.filter(r => safeNumber(r.quality) >= 355 && safeNumber(r.quality) < 365).length,
+          simulationResults.filter(r => safeNumber(r.quality) >= 365).length
         ],
         backgroundColor: [
           'rgba(239, 68, 68, 0.8)',
@@ -178,16 +212,58 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
     datasets: [
       {
         label: 'Atual',
-        data: [currentParams.temperatura, currentParams.tempo, currentParams.pressao, currentParams.velocidade],
+        data: [
+          currentParams.temperatura,
+          currentParams.tempo,
+          currentParams.pressao,
+          currentParams.velocidade
+        ],
         backgroundColor: 'rgba(59, 130, 246, 0.8)'
       },
-      ...(optimizationResults ? [{
-        label: 'Otimizado',
-        data: [optimizationResults.temperatura, optimizationResults.tempo, optimizationResults.pressao, optimizationResults.velocidade],
-        backgroundColor: 'rgba(34, 197, 94, 0.8)'
-      }] : [])
+      ...(optimizationResults
+        ? [
+            {
+              label: 'Otimizado',
+              data: [
+                optimizationResults.temperatura ?? 0,
+                optimizationResults.tempo ?? 0,
+                optimizationResults.pressao ?? 0,
+                optimizationResults.velocidade ?? 0
+              ],
+              backgroundColor: 'rgba(34, 197, 94, 0.8)'
+            }
+          ]
+        : [])
     ]
   };
+
+  // Helpers para estatísticas
+  const mean =
+    simulationResults.length > 0
+      ? simulationResults.reduce((s, r) => s + safeNumber(r.quality), 0) /
+        simulationResults.length
+      : 0;
+  const std =
+    simulationResults.length > 1
+      ? Math.sqrt(
+          simulationResults.reduce((sum, r) => {
+            const q = safeNumber(r.quality);
+            return sum + Math.pow(q - mean, 2);
+          }, 0) / (simulationResults.length - 1)
+        )
+      : 0;
+  const sorted = [...simulationResults].sort((a, b) => safeNumber(a.quality) - safeNumber(b.quality));
+  const median =
+    simulationResults.length > 0
+      ? safeNumber(sorted[Math.floor(simulationResults.length / 2)]?.quality).toFixed(2)
+      : '0.00';
+  const range =
+    simulationResults.length > 0
+      ? (
+          Math.max(...simulationResults.map(r => safeNumber(r.quality))) -
+          Math.min(...simulationResults.map(r => safeNumber(r.quality)))
+        ).toFixed(2)
+      : '0.00';
 
   return (
     <div className="space-y-6">
@@ -195,10 +271,9 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
         <div className="flex items-center justify-between mb-6">
           <h2 className={`text-2xl font-bold flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
             <FileText className="h-6 w-6 mr-2 text-blue-500" />
-            <span>Resultados e Relatórios </span>
-            
+            <span>Resultados e Relatórios</span>
           </h2>
-          
+
           <div className="flex space-x-2">
             <button
               onClick={downloadAllResults}
@@ -262,20 +337,23 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
                   <div>
                     <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Qualidade Atual</div>
                     <div className={`text-2xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                      {currentParams.qualidade.toFixed(1)}
+                      {safeNumber(currentParams.qualidade).toFixed(1)}<span className="text-lg text-gray-500">/400</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {optimizationResults && (
+              {!!optimizationResults && (
                 <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-green-50'} border ${isDark ? 'border-gray-600' : 'border-green-200'}`}>
                   <div className="flex items-center">
                     <Award className="h-8 w-8 text-green-500 mr-3" />
                     <div>
                       <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Qualidade Otimizada</div>
                       <div className={`text-2xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                        {optimizationResults.quality.toFixed(1)}
+                        {optimizationResults?.quality != null
+                          ? safeNumber(optimizationResults.quality).toFixed(1)
+                          : '—'}
+                        <span className="text-lg text-gray-500">/400</span>
                       </div>
                     </div>
                   </div>
@@ -301,7 +379,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
                     <div>
                       <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Melhor Simulação</div>
                       <div className={`text-2xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                        {Math.max(...simulationResults.map(r => r.quality)).toFixed(1)}
+                        {Math.max(...simulationResults.map(r => safeNumber(r.quality))).toFixed(1)}
                       </div>
                     </div>
                   </div>
@@ -316,48 +394,42 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h4 className={`font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                    📊 Análise de Performance
-                  </h4>
+                  <h4 className={`font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>📊 Análise de Performance</h4>
                   <ul className={`space-y-1 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    <li>• {simulationResults.length > 0 ? 
-                      `Qualidade média das simulações: ${(simulationResults.reduce((sum, r) => sum + r.quality, 0) / simulationResults.length).toFixed(1)}` :
-                      'Nenhuma simulação executada ainda'
-                    }</li>
-                    <li>• {optimizationResults ? 
-                      `Melhoria potencial: +${optimizationResults.improvement} unidades` :
-                      'Execute a otimização para ver melhorias potenciais'
-                    }</li>
-                    <li>• {currentParams.qualidade >= 365 ? 
-                      'Parâmetros atuais já produzem excelente qualidade' :
-                      currentParams.qualidade >= 355 ?
-                      'Parâmetros atuais produzem boa qualidade' :
-                      'Parâmetros atuais precisam de otimização'
-                    }</li>
-                    <li>• Consumo energético atual: {currentParams.energia.toFixed(1)} kWh/ton ({
-                      currentParams.energia < 500 ? 'muito eficiente' :
-                      currentParams.energia < 600 ? 'eficiente' : 'ineficiente'
+                    <li>• {simulationResults.length > 0
+                      ? `Qualidade média das simulações: ${(
+                          simulationResults.reduce((sum, r) => sum + safeNumber(r.quality), 0) /
+                          simulationResults.length
+                        ).toFixed(1)}`
+                      : 'Nenhuma simulação executada ainda'}</li>
+                    <li>• {optimizationResults
+                      ? `Melhoria potencial: +${optimizationResults.improvement ?? '—'} unidades`
+                      : 'Execute a otimização para ver melhorias potenciais'}</li>
+                    <li>• {currentParams.qualidade >= 365
+                      ? 'Parâmetros atuais já produzem excelente qualidade'
+                      : currentParams.qualidade >= 355
+                      ? 'Parâmetros atuais produzem boa qualidade'
+                      : 'Parâmetros atuais precisam de otimização'}</li>
+                    <li>• Consumo energético atual: {safeNumber(currentParams.energia).toFixed(1)} kWh/ton ({
+                      currentParams.energia < 500 ? 'muito eficiente'
+                        : currentParams.energia < 600 ? 'eficiente'
+                        : 'ineficiente'
                     })</li>
                   </ul>
                 </div>
                 <div>
-                  <h4 className={`font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                    🎯 Recomendações
-                  </h4>
+                  <h4 className={`font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>🎯 Recomendações</h4>
                   <ul className={`space-y-1 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    <li>• {optimizationResults ? 
-                      'Implemente os parâmetros otimizados gradualmente' :
-                      'Execute a otimização para encontrar melhores parâmetros'
-                    }</li>
-                    <li>• {simulationResults.length < 10 ? 
-                      'Execute mais simulações para validar resultados' :
-                      'Dados suficientes coletados para análise confiável'
-                    }</li>
+                    <li>• {optimizationResults
+                      ? 'Implemente os parâmetros otimizados gradualmente'
+                      : 'Execute a otimização para encontrar melhores parâmetros'}</li>
+                    <li>• {simulationResults.length < 10
+                      ? 'Execute mais simulações para validar resultados'
+                      : 'Dados suficientes coletados para análise confiável'}</li>
                     <li>• Monitore a temperatura de perto - é o parâmetro mais crítico</li>
-                    <li>• {currentParams.energia > 600 ? 
-                       'Considere reduzir temperatura ou tempo para economizar energia' :
-                       'Consumo energético está em nível aceitável'
-                     }</li>
+                    <li>• {currentParams.energia > 600
+                      ? 'Considere reduzir temperatura ou tempo para economizar energia'
+                      : 'Consumo energético está em nível aceitável'}</li>
                   </ul>
                 </div>
               </div>
@@ -370,18 +442,12 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'} border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                <h3 className={`font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
-                  Tendência de Qualidade
-                </h3>
+                <h3 className={`font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Tendência de Qualidade</h3>
                 <Line
                   data={qualityTrendData}
                   options={{
                     responsive: true,
-                    plugins: {
-                      legend: {
-                        labels: { color: isDark ? '#e5e7eb' : '#374151' }
-                      }
-                    },
+                    plugins: { legend: { labels: { color: isDark ? '#e5e7eb' : '#374151' } } },
                     scales: {
                       y: {
                         title: { display: true, text: 'Qualidade', color: isDark ? '#e5e7eb' : '#374151' },
@@ -398,9 +464,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
               </div>
 
               <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'} border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                <h3 className={`font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
-                  Distribuição de Qualidade
-                </h3>
+                <h3 className={`font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Distribuição de Qualidade</h3>
                 <Doughnut
                   data={qualityDistributionData}
                   options={{
@@ -418,37 +482,30 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
 
             {/* Statistical Summary */}
             <div className={`p-6 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'} border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-              <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
-                Resumo Estatístico
-              </h3>
+              <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Resumo Estatístico</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Média</div>
                   <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    {(simulationResults.reduce((sum, r) => sum + r.quality, 0) / simulationResults.length).toFixed(2)}
+                    {mean.toFixed(2)}
                   </div>
                 </div>
                 <div>
                   <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Mediana</div>
                   <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    {simulationResults.sort((a, b) => a.quality - b.quality)[Math.floor(simulationResults.length / 2)]?.quality.toFixed(2)}
+                    {median}
                   </div>
                 </div>
                 <div>
                   <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Desvio Padrão</div>
                   <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    {Math.sqrt(
-                      simulationResults.reduce((sum, r) => {
-                        const mean = simulationResults.reduce((s, res) => s + res.quality, 0) / simulationResults.length;
-                        return sum + Math.pow(r.quality - mean, 2);
-                      }, 0) / (simulationResults.length - 1)
-                    ).toFixed(2)}
+                    {std.toFixed(2)}
                   </div>
                 </div>
                 <div>
                   <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Amplitude</div>
                   <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    {(Math.max(...simulationResults.map(r => r.quality)) - Math.min(...simulationResults.map(r => r.quality))).toFixed(2)}
+                    {range}
                   </div>
                 </div>
               </div>
@@ -461,18 +518,12 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
           <div className="space-y-6">
             {optimizationResults ? (
               <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'} border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                <h3 className={`font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
-                  Comparação: Atual vs Otimizado
-                </h3>
+                <h3 className={`font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Comparação: Atual vs Otimizado</h3>
                 <Bar
                   data={parameterComparisonData}
                   options={{
                     responsive: true,
-                    plugins: {
-                      legend: {
-                        labels: { color: isDark ? '#e5e7eb' : '#374151' }
-                      }
-                    },
+                    plugins: { legend: { labels: { color: isDark ? '#e5e7eb' : '#374151' } } },
                     scales: {
                       y: {
                         title: { display: true, text: 'Valor', color: isDark ? '#e5e7eb' : '#374151' },
@@ -501,34 +552,34 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
             {/* Improvement Summary */}
             {optimizationResults && (
               <div className={`p-6 rounded-lg ${isDark ? 'bg-green-900' : 'bg-green-50'} border ${isDark ? 'border-green-700' : 'border-green-200'}`}>
-                <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-green-300' : 'text-green-800'}`}>
-                  Resumo das Melhorias
-                </h3>
+                <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-green-300' : 'text-green-800'}`}>Resumo das Melhorias</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>Melhoria na Qualidade</div>
                     <div className={`text-2xl font-bold ${isDark ? 'text-green-200' : 'text-green-800'}`}>
-                      +{optimizationResults.improvement} unidades
+                      +{optimizationResults.improvement ?? '—'} unidades
                     </div>
                     <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>
-                      ({((optimizationResults.improvement / currentParams.qualidade) * 100).toFixed(1)}% de melhoria)
+                      {currentParams.qualidade
+                        ? `(${((safeNumber(optimizationResults.improvement) / currentParams.qualidade) * 100).toFixed(1)}% de melhoria)`
+                        : '(—)'}
                     </div>
                   </div>
                   <div>
                     <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>Parâmetro Mais Alterado</div>
-                    <div className={`text-xl font-bold ${isDark ? 'text-green-200' : 'text-green-800'}`}>
-                      Temperatura
-                    </div>
+                    <div className={`text-xl font-bold ${isDark ? 'text-green-200' : 'text-green-800'}`}>Temperatura</div>
                     <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>
-                      {optimizationResults.temperatura - currentParams.temperatura > 0 ? '+' : ''}
-                      {optimizationResults.temperatura - currentParams.temperatura}°C
+                      {(safeNumber(optimizationResults.temperatura) - currentParams.temperatura) >= 0 ? '+' : ''}
+                      {(safeNumber(optimizationResults.temperatura) - currentParams.temperatura).toFixed(1)}°C
                     </div>
                   </div>
                   <div>
                     <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>Classificação Final</div>
                     <div className={`text-xl font-bold ${isDark ? 'text-green-200' : 'text-green-800'}`}>
-                      {optimizationResults.quality >= 365 ? 'Excelente' : 
-                       optimizationResults.quality >= 355 ? 'Boa' : 'Regular'}
+                      {optimizationResults?.quality != null
+                        ? (optimizationResults.quality >= 365 ? 'Excelente' :
+                           optimizationResults.quality >= 355 ? 'Boa' : 'Regular')
+                        : '—'}
                     </div>
                   </div>
                 </div>
@@ -537,16 +588,12 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Sant
           </div>
         )}
 
-        {/* Empty State */}
+        {/* Empty State (detailed sem dados) */}
         {activeView === 'detailed' && simulationResults.length === 0 && (
           <div className={`p-8 text-center ${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
             <BarChart3 className={`h-16 w-16 mx-auto mb-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-            <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'} mb-2`}>
-              Nenhuma simulação executada ainda
-            </div>
-            <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-              Execute simulações na aba correspondente para ver análises detalhadas
-            </div>
+            <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'} mb-2`}>Nenhuma simulação executada ainda</div>
+            <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Execute simulações na aba correspondente para ver análises detalhadas</div>
           </div>
         )}
       </div>
