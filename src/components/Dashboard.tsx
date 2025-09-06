@@ -521,7 +521,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className={`mt-4 p-3 rounded ${isDark ? 'bg-blue-900' : 'bg-blue-50'}`}>
                 <h4 className={`font-medium mb-2 ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>
                   📊 Análise Qualidade vs Energia:
-                </div>
+                </h4>
                 <p className={`text-sm ${isDark ? 'text-blue-200' : 'text-blue-700'}`}>
                   {qualidadePrevista >= 365 && energiaPrevista < 550 ? 
                     'Configuração ideal: alta qualidade com baixo consumo energético' :
