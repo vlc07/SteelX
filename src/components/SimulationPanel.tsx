@@ -1,4 +1,4 @@
-// src/components/SimulationPanel.tsx
+/// src/components/SimulationPanel.tsx
 import React from 'react';
 import { Play, TrendingUp, Zap, AlertCircle, Brain, Sparkles } from 'lucide-react';
 import {
@@ -520,7 +520,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
       {/* Sensibilidade */}
       {activeTab === 'sensitivity' && sensitivityResults && (
         <div className="space-y-6">
-          {/* >>>>>>>>>>>>>  MOVIDO PARA CIMA  <<<<<<<<<<<<< */}
+          {/* Análise IA geral no topo (posição ajustada) */}
           <AIInsightCard
             headline="Análise IA — Visão Geral da Sensibilidade"
             bullets={[
@@ -562,8 +562,6 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     </div>
   );
 };
-
-export default SimulationPanel;
 
 /* ===== Componentes auxiliares ===== */
 
