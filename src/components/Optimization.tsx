@@ -23,6 +23,15 @@ type LastSummary = {
   energy: number;
 };
 
+/** ---- Tipagem local para faixas editáveis ---- */
+type Range = {
+  min: number;
+  max: number;
+  step?: number;
+  industrial: { min: number; max: number };
+  tipica: { min: number; max: number };
+};
+
 export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplete }) => {
   // Controles globais
   const [budget, setBudget] = React.useState<number>(200);
@@ -59,6 +68,14 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     pressao:     { low: 100,  high: 106  },
     velocidade:  { low: 290,  high: 310  },
   } as const;
+
+  /** --- NOVO: faixas de otimização editáveis pelo usuário --- */
+  const [ranges, setRanges] = React.useState<Record<'temperatura'|'tempo'|'pressao'|'velocidade', Range>>({
+    temperatura: { min: 1400, max: 1600, step: 5,  industrial: { min: 1400, max: 1600 }, tipica: { min: 1450, max: 1550 } },
+    tempo:       { min:   15, max:  120, step: 5,  industrial: { min:   15, max:  120 }, tipica: { min:   30, max:   90 } },
+    pressao:     { min:   95, max:  110, step: 1,  industrial: { min:   95, max:  110 }, tipica: { min:  100, max:  106 } },
+    velocidade:  { min:  250, max:  350, step: 5,  industrial: { min:  250, max:  350 }, tipica: { min:  290, max:  310 } },
+  });
 
   // Badge por parâmetro
   function badgeFor(name: keyof typeof bounds, v: number) {
@@ -112,7 +129,18 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     const setRun = method === 'grid' ? setRunningGrid : method === 'ga' ? setRunningGA : setRunningBO;
     setRun(true);
     try {
-      const res = await runOptimization({ method, budget, lambda, useQualityConstraint, qualityMin, seed: 2025 });
+      /** NOVO: payload de bounds vindo dos cards */
+      const boundsPayload = {
+        temperatura: { min: ranges.temperatura.min, max: ranges.temperatura.max, step: ranges.temperatura.step },
+        tempo:       { min: ranges.tempo.min,       max: ranges.tempo.max,       step: ranges.tempo.step },
+        pressao:     { min: ranges.pressao.min,     max: ranges.pressao.max,     step: ranges.pressao.step },
+        velocidade:  { min: ranges.velocidade.min,  max: ranges.velocidade.max,  step: ranges.velocidade.step },
+      };
+
+      const res = await runOptimization({
+        method, budget, lambda, useQualityConstraint, qualityMin, seed: 2025,
+        bounds: boundsPayload, // <--- passa as faixas para o otimizador
+      });
 
       const qe = model.predict({
         temp: Number(res.best.x.temperatura),
@@ -291,6 +319,53 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         </div>
       </div>
 
+      {/* === NOVO BLOCO: Faixas de Otimização (editáveis) === */}
+      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-5`}>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className={`${isDark ? 'text-gray-200' : 'text-gray-700'} font-semibold`}>Faixas de Otimização</h3>
+          <span className="text-xs text-gray-500">Defina onde cada algoritmo pode buscar o melhor ajuste</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <RangeCard
+            title="Temperatura"
+            name="temperatura"
+            unit="ºC"
+            isDark={isDark}
+            value={ranges.temperatura}
+            onChange={(next) => setRanges(prev => ({ ...prev, temperatura: next }))}
+          />
+          <RangeCard
+            title="Tempo"
+            name="tempo"
+            unit="min"
+            isDark={isDark}
+            value={ranges.tempo}
+            onChange={(next) => setRanges(prev => ({ ...prev, tempo: next }))}
+          />
+          <RangeCard
+            title="Pressão"
+            name="pressao"
+            unit="un"
+            isDark={isDark}
+            value={ranges.pressao}
+            onChange={(next) => setRanges(prev => ({ ...prev, pressao: next }))}
+          />
+          <RangeCard
+            title="Velocidade"
+            name="velocidade"
+            unit="rpm"
+            isDark={isDark}
+            value={ranges.velocidade}
+            onChange={(next) => setRanges(prev => ({ ...prev, velocidade: next }))}
+          />
+        </div>
+
+        <p className="text-xs text-gray-500 mt-3">
+          💡 Dica: passos menores aumentam a precisão no <b>Grid Search</b>, mas ampliam o número de testes. Algoritmo Genético e Bayesiano não usam o passo.
+        </p>
+      </div>
+
       {/* Resultado premium */}
       {last && (
         <div
@@ -347,17 +422,16 @@ Valores menores do equilíbrio priorizam qualidade. Valores maiores priorizam ec
                     {qualityBadge(last.quality).label}
                   </span>
                 </div>
-               <div className={`mt-1 text-2xl font-extrabold ${text}`}>
-  {last.quality.toFixed(1)}<span className="text-lg text-gray-500">/400</span>
-</div>
-
+                <div className={`mt-1 text-2xl font-extrabold ${text}`}>
+                  {last.quality.toFixed(1)}<span className="text-lg text-gray-500">/400</span>
+                </div>
               </div>
 
               {/* Energia */}
               <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs uppercase tracking-wide text-gray-500">Consumo energético</span>
-                <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${energyBadge(last.energy).class}`}>
+                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${energyBadge(last.energy).class}`}>
                     <BatteryCharging className="inline h-3 w-3 mr-1" />
                     {energyBadge(last.energy).label}
                   </span>
@@ -488,4 +562,78 @@ function ParamCard(props: {
     </div>
   );
 }
+
+/** ---- NOVO: Card reutilizável para edição de faixas ---- */
+function RangeCard({
+  title, name, unit, isDark, value, onChange, showGridHint = true
+}: {
+  title: string;
+  name: 'temperatura'|'tempo'|'pressao'|'velocidade';
+  unit: string;
+  isDark: boolean;
+  value: Range;
+  onChange: (next: Range) => void;
+  showGridHint?: boolean;
+}) {
+  const card = `${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-xl p-4 border shadow-sm`;
+  const label = 'text-xs text-gray-500';
+  const set = (patch: Partial<Range>) => onChange({ ...value, ...patch });
+
+  const clamp = (v: number) =>
+    Math.min(value.industrial.max, Math.max(value.industrial.min, v));
+
+  const step = Math.max(1, Number(value.step ?? 1));
+  const points = Math.floor((value.max - value.min) / step) + 1;
+  const invalid = value.min >= value.max;
+
+  return (
+    <div className={card}>
+      <div className="flex items-center justify-between">
+        <h4 className={`${isDark ? 'text-gray-200' : 'text-gray-800'} font-semibold`}>{title}</h4>
+        <span className="text-xs text-gray-500">Limites industriais: {value.industrial.min}–{value.industrial.max} {unit}</span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 mt-3">
+        <div>
+          <label className={label}>Mínimo</label>
+          <input
+            type="number"
+            value={value.min}
+            onChange={e => set({ min: clamp(Number(e.target.value)) })}
+            className="w-full mt-1 rounded border px-2 py-1 bg-transparent"
+          />
+        </div>
+        <div>
+          <label className={label}>Máximo</label>
+          <input
+            type="number"
+            value={value.max}
+            onChange={e => set({ max: clamp(Number(e.target.value)) })}
+            className="w-full mt-1 rounded border px-2 py-1 bg-transparent"
+          />
+        </div>
+        <div>
+          <label className={label}>Passo (Grid)</label>
+          <input
+            type="number"
+            value={value.step ?? 1}
+            min={1}
+            onChange={e => set({ step: Math.max(1, Number(e.target.value)) })}
+            className="w-full mt-1 rounded border px-2 py-1 bg-transparent"
+          />
+        </div>
+      </div>
+
+      <div className="mt-3 text-xs flex items-center justify-between">
+        <span className="text-gray-500">Faixa típica: {value.tipica.min}–{value.tipica.max} {unit}</span>
+        {showGridHint && (
+          <span className={`${invalid ? 'text-rose-600' : (isDark ? 'text-gray-300' : 'text-gray-700')}`}>
+            {invalid ? 'Faixa inválida (mín >= máx)' : <>Espaço (Grid): <b>{points}</b> pontos</>}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
