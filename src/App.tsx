@@ -13,21 +13,20 @@ import { Glossary } from './components/Glossary';
 import { translations } from './utils/translations';
 
 function App() {
-  // State management
   const [activeTab, setActiveTab] = useState<string>('presentation');
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [isDark, setIsDark] = useState<boolean>(false);
   const [language, setLanguage] = useState<string>('pt');
-  
-  // Process parameters
+
+  // Parâmetros de processo
   const [temperatura, setTemperatura] = useState<number>(1450);
   const [tempo, setTempo] = useState<number>(30);
   const [pressao, setPressao] = useState<number>(101);
   const [velocidade, setVelocidade] = useState<number>(300);
-  
-  // Results
+
+  // Resultados
   const [resultado, setResultado] = useState<string>('');
-  const [metricas, setMetricas] = useState<{r2: number, mae: number, mse: number} | null>(null);
+  const [metricas, setMetricas] = useState<{ r2: number; mae: number; mse: number } | null>(null);
   const [graficos, setGraficos] = useState<boolean>(false);
   const [valoresReais, setValoresReais] = useState<number[]>([]);
   const [valoresPrevistos, setValoresPrevistos] = useState<number[]>([]);
@@ -35,29 +34,21 @@ function App() {
   const [energiaPrevista, setEnergiaPrevista] = useState<number>(0);
   const [mostrarAjuda, setMostrarAjuda] = useState<boolean>(false);
 
-  // Simulation and optimization results
+  // Simulation & optimization
   const [simulationResults, setSimulationResults] = useState<any[]>([]);
   const [optimizationResults, setOptimizationResults] = useState<any>(null);
 
-  // Translation function
-  const t = (key: string): string => {
-    return translations[language]?.[key] || key;
-  };
+  // i18n
+  const t = (key: string): string => translations[language]?.[key] || key;
 
-  // Load preferences from localStorage
+  // Preferências
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
     const savedLanguage = localStorage.getItem('language');
-    
-    if (savedTheme) {
-      setIsDark(savedTheme === 'dark');
-    }
-    if (savedLanguage) {
-      setLanguage(savedLanguage);
-    }
+    if (savedTheme) setIsDark(savedTheme === 'dark');
+    if (savedLanguage) setLanguage(savedLanguage);
   }, []);
 
-  // Save preferences to localStorage
   useEffect(() => {
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
     document.documentElement.classList.toggle('dark', isDark);
@@ -67,61 +58,54 @@ function App() {
     localStorage.setItem('language', language);
   }, [language]);
 
-  const calcular = () => {
-    // Professional ML model with proper parameter validation and realistic behavior
-    const calculateQualityAndEnergyML = (temp: number, time: number, press: number, speed: number) => {
-      // Input validation to prevent NaN
-      if (isNaN(temp) || isNaN(time) || isNaN(press) || isNaN(speed)) {
-        console.error('Invalid input parameters detected');
-        return { quality: 350, energy: 100 }; // Default fallback
-      }
-      
-      // Clamp inputs to realistic ranges to prevent extreme values
-      const clampedTemp = Math.max(1400, Math.min(1600, temp));
-      const clampedTime = Math.max(10, Math.min(120, time));
-      const clampedPress = Math.max(95, Math.min(110, press));
-      const clampedSpeed = Math.max(250, Math.min(350, speed));
-      
-      // Normalize inputs with proper bounds checking
-      const tempNorm = (clampedTemp - 1400) / 200; // 0 to 1
-      const timeNorm = (clampedTime - 10) / 110;   // 0 to 1
-      const pressNorm = (clampedPress - 95) / 15;  // 0 to 1
-      const speedNorm = (clampedSpeed - 250) / 100; // 0 to 1
-      
-      // Professional metallurgical model based on real industrial data
-      let quality = 320; // Base quality for carbon steel
-      
-      // Temperature effect (40% influence) - Most critical in steel production
-      const tempEffect = 45 * (0.3 + 0.7 * Math.pow(tempNorm, 0.8));
-      quality += tempEffect;
-      
-      // Time effect (25% influence) - Optimal processing time curve
-      const timeOptimal = Math.exp(-Math.pow((timeNorm - 0.65), 2) / 0.3);
-      quality += 25 * timeOptimal;
-      
-      // Pressure effect (20% influence) - Linear with threshold effects
-      const pressEffect = 20 * (pressNorm + 0.3 * Math.sin(pressNorm * Math.PI * 2));
-      quality += pressEffect;
-      
-      // Speed effect (15% influence) - Mixing efficiency curve
-      const speedEffect = 15 * (Math.sqrt(speedNorm) + 0.2 * Math.cos(speedNorm * Math.PI));
-      quality += speedEffect;
-      
-      // Professional interaction effects (real metallurgical relationships)
-      quality += 8 * tempNorm * timeNorm; // Temperature-time synergy
-      quality += 4 * pressNorm * speedNorm; // Pressure-speed interaction
-      quality += 3 * tempNorm * pressNorm; // Temperature-pressure coupling
-      
-      // Realistic process variation (±2 units for industrial consistency)
-      const processNoise = (Math.random() - 0.5) * 4;
-      quality += processNoise;
-      
-      // Final bounds checking with realistic limits
-      return Math.max(300, Math.min(400, Math.round(quality * 100) / 100));
-    };
+  // === Modelo de Qualidade & Energia (corrigido para retornar OBJETO) ===
+  const calculateQualityAndEnergyML = (temp: number, time: number, press: number, speed: number) => {
+    if (isNaN(temp) || isNaN(time) || isNaN(press) || isNaN(speed)) {
+      console.error('Invalid input parameters detected');
+      return { quality: 350, energy: 500 };
+    }
 
-    // Generate training data with realistic variations
-    const trainingData = [];
+    const clampedTemp = Math.max(1400, Math.min(1600, temp));
+    const clampedTime = Math.max(10, Math.min(120, time));
+    const clampedPress = Math.max(95, Math.min(110, press));
+    const clampedSpeed = Math.max(250, Math.min(350, speed));
+
+    const tempNorm = (clampedTemp - 1400) / 200;
+    const timeNorm = (clampedTime - 10) / 110;
+    const pressNorm = (clampedPress - 95) / 15;
+    const speedNorm = (clampedSpeed - 250) / 100;
+
+    // Qualidade
+    let quality = 320;
+    const tempEffect = 45 * (0.3 + 0.7 * Math.pow(tempNorm, 0.8));
+    const timeOptimal = Math.exp(-Math.pow(timeNorm - 0.65, 2) / 0.3);
+    const pressEffect = 20 * (pressNorm + 0.3 * Math.sin(pressNorm * Math.PI * 2));
+    const speedEffect = 15 * (Math.sqrt(speedNorm) + 0.2 * Math.cos(speedNorm * Math.PI));
+    quality += tempEffect + 25 * timeOptimal + pressEffect + speedEffect;
+    quality += 8 * tempNorm * timeNorm + 4 * pressNorm * speedNorm + 3 * tempNorm * pressNorm;
+    quality += (Math.random() - 0.5) * 4;
+    quality = Math.max(300, Math.min(400, Math.round(quality * 100) / 100));
+
+    // Energia (kWh/ton)
+    let energy =
+      400 +
+      120 * tempNorm +
+      40 * timeNorm +
+      30 * pressNorm +
+      25 * speedNorm +
+      (Math.random() - 0.5) * 20;
+    energy = Math.max(350, Math.min(700, Math.round(energy * 100) / 100));
+
+    return { quality, energy };
+  };
+
+  const calcular = () => {
+    // dados sintéticos para métricas/plot
+    const trainingData: {
+      temp: number; time: number; press: number; speed: number;
+      real: number; predicted: number; realEnergy: number; predictedEnergy: number;
+    }[] = [];
+
     const baseConfigs = [
       { temp: 1420, time: 25, press: 96, speed: 260 },
       { temp: 1440, time: 35, press: 98, speed: 280 },
@@ -142,61 +126,49 @@ function App() {
       { temp: 1495, time: 62, press: 103, speed: 320 },
       { temp: 1515, time: 72, press: 105, speed: 300 },
       { temp: 1525, time: 78, press: 104, speed: 295 },
-      { temp: 1465, time: 48, press: 100, speed: 308 }
+      { temp: 1465, time: 48, press: 100, speed: 308 },
     ];
-    
+
     for (let i = 0; i < baseConfigs.length; i++) {
-      const config = baseConfigs[i];
-      // Add small realistic variations to base configurations
-      const tempVar = config.temp + (Math.random() - 0.5) * 20;
-      const timeVar = config.time + (Math.random() - 0.5) * 10;
-      const pressVar = config.press + (Math.random() - 0.5) * 2;
-      const speedVar = config.speed + (Math.random() - 0.5) * 15;
-      
-      const realResult = calculateQualityAndEnergyML(tempVar, timeVar, pressVar, speedVar);
-      // Realistic model prediction error (±2 units for professional ML model)
-      const predictedQuality = realResult.quality + (Math.random() - 0.5) * 4;
-      const predictedEnergy = realResult.energy + (Math.random() - 0.5) * 20;
-      
+      const c = baseConfigs[i];
+      const tempVar = c.temp + (Math.random() - 0.5) * 20;
+      const timeVar = c.time + (Math.random() - 0.5) * 10;
+      const pressVar = c.press + (Math.random() - 0.5) * 2;
+      const speedVar = c.speed + (Math.random() - 0.5) * 15;
+
+      const real = calculateQualityAndEnergyML(tempVar, timeVar, pressVar, speedVar);
+      const predictedQuality = real.quality + (Math.random() - 0.5) * 4;
+      const predictedEnergy = real.energy + (Math.random() - 0.5) * 20;
+
       trainingData.push({
         temp: tempVar,
         time: timeVar,
         press: pressVar,
         speed: speedVar,
-        real: realResult.quality,
+        real: real.quality,
         predicted: predictedQuality,
-        realEnergy: realResult.energy,
-        predictedEnergy: predictedEnergy
+        realEnergy: real.energy,
+        predictedEnergy,
       });
     }
 
-    // Calculate current quality prediction
     const currentResult = calculateQualityAndEnergyML(temperatura, tempo, pressao, velocidade);
 
-    // Calculate professional ML metrics with proper error handling
-    const realValues = trainingData.map(d => d.real);
-    const predictedValues = trainingData.map(d => d.predicted);
-    
-    // Validate data before calculations
+    const realValues = trainingData.map((d) => d.real);
+    const predictedValues = trainingData.map((d) => d.predicted);
     if (realValues.length === 0 || predictedValues.length === 0) {
       console.error('No training data available');
       setResultado('Erro: Dados de treinamento indisponíveis');
       return;
     }
-    
-    // R² calculation
-    const meanReal = realValues.reduce((sum, val) => sum + val, 0) / realValues.length;
-    const totalSumSquares = realValues.reduce((sum, val) => sum + Math.pow(val - meanReal, 2), 0);
-    const residualSumSquares = realValues.reduce((sum, val, i) => sum + Math.pow(val - predictedValues[i], 2), 0);
-    const r2 = totalSumSquares > 0 ? Math.max(0, Math.min(1, 1 - (residualSumSquares / totalSumSquares))) : 0.95;
-    
-    // MAE calculation
-    const mae = realValues.reduce((sum, val, i) => sum + Math.abs(val - predictedValues[i]), 0) / realValues.length;
-    
-    // MSE calculation
-    const mse = realValues.reduce((sum, val, i) => sum + Math.pow(val - predictedValues[i], 2), 0) / realValues.length;
 
-    // Final validation to prevent NaN results
+    const meanReal = realValues.reduce((s, v) => s + v, 0) / realValues.length;
+    const totalSumSquares = realValues.reduce((s, v) => s + Math.pow(v - meanReal, 2), 0);
+    const residualSumSquares = realValues.reduce((s, v, i) => s + Math.pow(v - predictedValues[i], 2), 0);
+    const r2 = totalSumSquares > 0 ? Math.max(0, Math.min(1, 1 - residualSumSquares / totalSumSquares)) : 0.95;
+    const mae = realValues.reduce((s, v, i) => s + Math.abs(v - predictedValues[i]), 0) / realValues.length;
+    const mse = realValues.reduce((s, v, i) => s + Math.pow(v - predictedValues[i], 2), 0) / realValues.length;
+
     const finalR2 = isNaN(r2) ? 0.95 : r2;
     const finalMAE = isNaN(mae) ? 2.1 : mae;
     const finalMSE = isNaN(mse) ? 6.8 : mse;
@@ -213,21 +185,6 @@ function App() {
   };
 
   const downloadResults = () => {
-    const data = {
-      parameters: {
-        temperatura,
-        tempo,
-        pressao,
-        velocidade
-      },
-      results: {
-        qualidadePrevista,
-        metricas
-      },
-      timestamp: new Date().toISOString()
-    };
-
-    // Convert to CSV
     const csvContent = [
       'Parameter,Value',
       `Temperature,${temperatura}`,
@@ -238,7 +195,7 @@ function App() {
       `Energy Consumption,${energiaPrevista}`,
       `R2,${metricas?.r2 || 0}`,
       `MAE,${metricas?.mae || 0}`,
-      `MSE,${metricas?.mse || 0}`
+      `MSE,${metricas?.mse || 0}`,
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -257,20 +214,17 @@ function App() {
       case 'dashboard':
         return (
           <Dashboard
-            temperatura={temperatura}
-            setTemperatura={setTemperatura}
-            tempo={tempo}
-            setTempo={setTempo}
-            pressao={pressao}
-            setPressao={setPressao}
-            velocidade={velocidade}
-            setVelocidade={setVelocidade}
+            temperatura={temperatura} setTemperatura={setTemperatura}
+            tempo={tempo} setTempo={setTempo}
+            pressao={pressao} setPressao={setPressao}
+            velocidade={velocidade} setVelocidade={setVelocidade}
             resultado={resultado}
             metricas={metricas}
             graficos={graficos}
             valoresReais={valoresReais}
             valoresPrevistos={valoresPrevistos}
             qualidadePrevista={qualidadePrevista}
+            energiaPrevista={energiaPrevista}  // <-- ADICIONADO
             mostrarAjuda={mostrarAjuda}
             setMostrarAjuda={setMostrarAjuda}
             calcular={calcular}
@@ -286,16 +240,12 @@ function App() {
       case 'simulation':
         return (
           <Simulation
-            temperatura={temperatura}
-            setTemperatura={setTemperatura}
-            tempo={tempo}
-            setTempo={setTempo}
-            pressao={pressao}
-            setPressao={setPressao}
-            velocidade={velocidade}
-            setVelocidade={setVelocidade}
+            temperatura={temperatura} setTemperatura={setTemperatura}
+            tempo={tempo} setTempo={setTempo}
+            pressao={pressao} setPressao={setPressao}
+            velocidade={velocidade} setVelocidade={setVelocidade}
             simulationResults={simulationResults}
-            setSimulationResults={(newResult: any) => setSimulationResults(prev => [...prev, newResult])}
+            setSimulationResults={(newResult: any) => setSimulationResults((prev) => [...prev, newResult])}
             t={t}
             isDark={isDark}
           />
@@ -303,13 +253,7 @@ function App() {
       case 'comparison':
         return <Comparison t={t} isDark={isDark} />;
       case 'optimization':
-        return (
-          <Optimization 
-            t={t} 
-            isDark={isDark}
-            onOptimizationComplete={setOptimizationResults}
-          />
-        );
+        return <Optimization t={t} isDark={isDark} onOptimizationComplete={setOptimizationResults} />;
       case 'results':
         return (
           <Results
@@ -334,20 +278,17 @@ function App() {
       default:
         return (
           <Dashboard
-            temperatura={temperatura}
-            setTemperatura={setTemperatura}
-            tempo={tempo}
-            setTempo={setTempo}
-            pressao={pressao}
-            setPressao={setPressao}
-            velocidade={velocidade}
-            setVelocidade={setVelocidade}
+            temperatura={temperatura} setTemperatura={setTemperatura}
+            tempo={tempo} setTempo={setTempo}
+            pressao={pressao} setPressao={setPressao}
+            velocidade={velocidade} setVelocidade={setVelocidade}
             resultado={resultado}
             metricas={metricas}
             graficos={graficos}
             valoresReais={valoresReais}
             valoresPrevistos={valoresPrevistos}
             qualidadePrevista={qualidadePrevista}
+            energiaPrevista={energiaPrevista}  // <-- ADICIONADO
             mostrarAjuda={mostrarAjuda}
             setMostrarAjuda={setMostrarAjuda}
             calcular={calcular}
@@ -362,32 +303,10 @@ function App() {
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-blue-100'} transition-colors duration-200`}>
       <div className="flex h-screen">
-        {/* Sidebar */}
-        <Sidebar
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          t={t}
-          isDark={isDark}
-        />
-
-        {/* Main Content */}
+        <Sidebar activeTab={activeTab} onTabChange={setActiveTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} t={t} isDark={isDark} />
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
-          <Header
-            onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
-            isDark={isDark}
-            onThemeToggle={() => setIsDark(!isDark)}
-            language={language}
-            onLanguageChange={setLanguage}
-            t={t}
-          />
-
-          {/* Content */}
-          <main className="flex-1 overflow-auto p-4 lg:p-6">
-            {renderContent()}
-          </main>
+          <Header onMenuToggle={() => setSidebarOpen(!sidebarOpen)} isDark={isDark} onThemeToggle={() => setIsDark(!isDark)} language={language} onLanguageChange={setLanguage} t={t} />
+          <main className="flex-1 overflow-auto p-4 lg:p-6">{renderContent()}</main>
         </div>
       </div>
     </div>
