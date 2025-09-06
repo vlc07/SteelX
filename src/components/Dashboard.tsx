@@ -31,6 +31,7 @@ interface DashboardProps {
   valoresReais: number[];
   valoresPrevistos: number[];
   qualidadePrevista: number;
+  energiaPrevista: number;
   mostrarAjuda: boolean;
   setMostrarAjuda: (value: boolean) => void;
   calcular: () => void;
@@ -59,6 +60,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   valoresReais,
   valoresPrevistos,
   qualidadePrevista,
+  energiaPrevista,
   mostrarAjuda,
   setMostrarAjuda,
   calcular,
@@ -105,6 +107,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
+  const obterClassificacaoEnergia = (energia: number) => {
+    if (energia < 450) {
+      return { texto: 'Muito Eficiente', cor: 'text-green-600', fundo: isDark ? 'bg-green-900' : 'bg-green-100' };
+    } else if (energia < 550) {
+      return { texto: 'Eficiente', cor: 'text-yellow-600', fundo: isDark ? 'bg-yellow-900' : 'bg-yellow-100' };
+    } else {
+      return { texto: 'Ineficiente', cor: 'text-red-600', fundo: isDark ? 'bg-red-900' : 'bg-red-100' };
+    }
+  };
+
   const dadosComparacao = {
     labels: valoresReais.map((_, i) => `Amostra ${i + 1}`),
     datasets: [
@@ -135,6 +147,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   const classificacao = obterClassificacaoQualidade(qualidadePrevista);
+  const energyClassification = obterClassificacaoEnergia(energiaPrevista);
 
   return (
     <div className="space-y-6">

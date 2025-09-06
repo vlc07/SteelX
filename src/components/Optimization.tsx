@@ -40,7 +40,7 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
   const [optimizationLog, setOptimizationLog] = useState<string[]>([]);
 
   // Enhanced quality calculation function (same as in Simulation)
-  const calculateQuality = (temp: number, time: number, press: number, speed: number) => {
+  const calculateQualityAndEnergy = (temp: number, time: number, press: number, speed: number) => {
     const tempNorm = (temp - 1400) / (1600 - 1400);
     const timeNorm = (time - 10) / (120 - 10);
     const pressNorm = (press - 95) / (110 - 95);
@@ -55,13 +55,29 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
     quality += 5 * tempNorm * timeNorm;
     quality += 3 * pressNorm * speedNorm;
     
-    return Math.max(300, Math.min(400, quality));
+    quality = Math.max(300, Math.min(400, quality));
+    
+    // Calculate energy consumption
+    let energy = 200; // Base energy consumption
+    energy += 150 * Math.pow(tempNorm, 2); // Temperature is the main energy driver
+    energy += 50 * timeNorm; // Time increases energy linearly
+    energy += 30 * pressNorm; // Pressure requires pumping energy
+    energy += 20 * speedNorm; // Speed requires motor energy
+    
+    // Efficiency bonus for optimal combinations
+    const efficiency = tempNorm * timeOptimal * pressNorm * speedNorm;
+    energy *= (1 - 0.05 * efficiency); // Up to 5% energy reduction for optimal combinations
+    
+    energy = Math.max(300, Math.min(700, energy));
+    
+    return { quality, energy };
   };
 
   // Grid Search Algorithm
   const runGridSearch = async () => {
     const log: string[] = [];
     let bestQuality = 0;
+    let bestEnergy = Infinity;
     let bestParams = null;
     let evaluations = 0;
 
@@ -77,13 +93,14 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
       for (let time = ranges.tempo.min; time <= ranges.tempo.max; time += ranges.tempo.step) {
         for (let press = ranges.pressao.min; press <= ranges.pressao.max; press += ranges.pressao.step) {
           for (let speed = ranges.velocidade.min; speed <= ranges.velocidade.max; speed += ranges.velocidade.step) {
-            const quality = calculateQuality(temp, time, press, speed);
+            const result = calculateQualityAndEnergy(temp, time, press, speed);
             evaluations++;
             
-            if (quality > bestQuality) {
-              bestQuality = quality;
+            if (result.quality > bestQuality) {
+              bestQuality = result.quality;
+              bestEnergy = result.energy;
               bestParams = { temperatura: temp, tempo: time, pressao: press, velocidade: speed };
-              log.push(`Nova melhor solução: Q=${quality.toFixed(2)} em T=${temp}, t=${time}, P=${press}, V=${speed}`);
+              log.push(`Nova melhor solução: Q=${result.quality.toFixed(2)}, E=${result.energy.toFixed(1)}kWh em T=${temp}, t=${time}, P=${press}, V=${speed}`);
             }
             
             setProgress((evaluations / totalCombinations) * 100);
@@ -99,7 +116,7 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
 
     log.push(`Grid Search concluído: ${evaluations} avaliações`);
     setOptimizationLog(log);
-    return { bestParams, bestQuality, evaluations, method: 'Grid Search' };
+    return { bestParams, bestQuality, bestEnergy, evaluations, method: 'Grid Search' };
   };
 
   // Genetic Algorithm
@@ -156,7 +173,9 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
         offspring.pressao = Math.max(ranges.pressao.min, Math.min(ranges.pressao.max, offspring.pressao));
         offspring.velocidade = Math.max(ranges.velocidade.min, Math.min(ranges.velocidade.max, offspring.velocidade));
         
-        offspring.fitness = calculateQuality(offspring.temperatura, offspring.tempo, offspring.pressao, offspring.velocidade);
+        const result = calculateQualityAndEnergy(offspring.temperatura, offspring.tempo, offspring.pressao, offspring.velocidade);
+        offspring.fitness = result.quality;
+        offspring.energy = result.energy;
         evaluations++;
         newPopulation.push(offspring);
       }
@@ -166,7 +185,7 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
       
       if (currentBest.fitness > bestIndividual.fitness) {
         bestIndividual = currentBest;
-        log.push(`Geração ${gen + 1}: nova melhor solução = ${bestIndividual.fitness.toFixed(2)}`);
+        log.push(`Geração ${gen + 1}: nova melhor solução = Q:${bestIndividual.fitness.toFixed(2)}, E:${bestIndividual.energy.toFixed(1)}kWh`);
       }
       
       setProgress(((gen + 1) / generations) * 100);
@@ -188,6 +207,7 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
         velocidade: bestIndividual.velocidade
       },
       bestQuality: bestIndividual.fitness,
+      bestEnergy: bestIndividual.energy,
       evaluations,
       method: 'Algoritmo Genético'
     };
@@ -375,6 +395,7 @@ export const Optimization: React.FC<OptimizationProps> = ({ t, isDark, onOptimiz
       const optimizedResult = {
         ...result.bestParams,
         quality: result.bestQuality,
+        energy: result.bestEnergy,
         improvement: result.bestQuality - 350, // Assuming baseline of 350
         method: result.method,
         iterations: result.evaluations,

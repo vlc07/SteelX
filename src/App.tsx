@@ -364,6 +364,7 @@ function App() {
       <div className="flex h-screen">
         {/* Sidebar */}
         <Sidebar
+          energiaPrevista={energiaPrevista}
           activeTab={activeTab}
           onTabChange={setActiveTab}
           isOpen={sidebarOpen}
