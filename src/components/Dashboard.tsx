@@ -465,6 +465,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   </div>
 )}
 </div>
-);   // <<< fecha o return
-};    // <<< fecha o componente
+);   
+};   
 
