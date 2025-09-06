@@ -233,14 +233,49 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
 
 /* Mini card para parâmetros */
 function ParamCard(props: {
-  title: string; name: string; value: number; unit: string; min: number; max: number;
-  badge: { label: string; class: string }; icon: React.ReactNode; isDark: boolean; pct: number;
+  title: string;
+  name: string;
+  value: number;
+  unit: string;
+  min: number;
+  max: number;
+  badge: { label: string; class: string };
+  icon: React.ReactNode;
+  isDark: boolean;
+  pct: number;
 }) {
   const { title, value, unit, min, max, badge, icon, isDark, pct } = props;
   return (
     <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2"><div className={`p-2 rounded-md ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>{icon}</div><span className="text-xs uppercase text-gray-500">{title}</span></div>
-        <span className="text-xs text-gray-500">{min}–{max} {unit}</span>
+        <div className="flex items-center gap-2">
+          <div className={`p-2 rounded-md ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+            {icon}
+          </div>
+          <span className="text-xs uppercase text-gray-500">{title}</span>
+        </div>
+        <span className="text-xs text-gray-500">
+          {min}–{max} {unit}
+        </span>
       </div>
-     
+
+      <div className="flex items-center justify-between gap-3">
+        <div className={`${isDark ? 'text-gray-100' : 'text-gray-900'} text-2xl font-extrabold`}>
+          {value.toFixed(1)} <span className="text-sm font-semibold text-gray-500">{unit}</span>
+        </div>
+        <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${badge.class}`}>
+          {badge.label}
+        </span>
+      </div>
+
+      <div className="mt-3">
+        <div className={`h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
+          <div
+            className={`h-2 rounded-full ${isDark ? 'bg-emerald-600' : 'bg-emerald-500'}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
