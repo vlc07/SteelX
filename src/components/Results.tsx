@@ -161,7 +161,7 @@ ${
 }
 
 Gerado por: Otimizador de Processos
-Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Lorenzo Zatta Santini
+Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     `;
 
     const blob = new Blob([reportContent], { type: 'text/plain' });
