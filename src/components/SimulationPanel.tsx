@@ -388,38 +388,81 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
         ))}
       </div>
 
-      {/* Parâmetros */}
-      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow p-6`}>
-        <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
-          Configuração de Parâmetros
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ParameterInput label="Temperatura" parameterName="temperatura" value={temperatura} onChange={setTemperatura} isDark={isDark} />
-          <ParameterInput label="Tempo" parameterName="tempo" value={tempo} onChange={setTempo} isDark={isDark} />
-          <ParameterInput label="Pressão" parameterName="pressao" value={pressao} onChange={setPressao} isDark={isDark} />
-          <ParameterInput label="Velocidade" parameterName="velocidade" value={velocidade} onChange={setVelocidade} isDark={isDark} />
+      {/* Parâmetros — DESIGN PREMIUM */}
+      <div
+        className={[
+          'rounded-2xl border overflow-hidden',
+          'bg-gradient-to-br',
+          isDark ? 'from-slate-900 to-gray-900 border-blue-900/40' : 'from-blue-50 via-white to-white border-blue-200',
+          'shadow-[0_10px_30px_-10px_rgba(0,0,0,0.25)]',
+        ].join(' ')}
+      >
+        {/* Header premium */}
+        <div
+          className={[
+            'px-6 py-5 flex items-center justify-between',
+            isDark ? 'bg-slate-900/40' : 'bg-blue-50/60',
+            'backdrop-blur-sm',
+          ].join(' ')}
+        >
+          <div className="flex items-center gap-3">
+            <div className={['p-2.5 rounded-lg', isDark ? 'bg-blue-900/50 text-blue-200' : 'bg-blue-600 text-white'].join(' ')}>
+              <Sparkles className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                Configuração de Parâmetros
+              </h3>
+              <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                Ajuste os parâmetros do processo. As simulações usam estes valores como base.
+              </p>
+            </div>
+          </div>
+
+          {/* brilho sutil na borda direita do header */}
+          <div className="hidden md:block h-8 w-24 rounded-full bg-gradient-to-r from-transparent via-blue-500/20 to-transparent blur-md" />
         </div>
 
-        {(!validationState.isValid || validationState.warnings.length > 0) && (
-          <div className="mt-4 space-y-2">
-            {validationState.errors.map((e, i) => (
-              <div key={i} className={`p-3 rounded-lg border ${isDark ? 'bg-red-900 text-red-200 border-red-700' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                <div className="flex items-start">
-                  <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">{e}</span>
-                </div>
-              </div>
-            ))}
-            {validationState.warnings.map((w, i) => (
-              <div key={i} className={`p-3 rounded-lg border ${isDark ? 'bg-yellow-900 text-yellow-200 border-yellow-700' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
-                <div className="flex items-start">
-                  <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">{w}</span>
-                </div>
-              </div>
-            ))}
+        {/* Conteúdo */}
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ParameterInput label="Temperatura" parameterName="temperatura" value={temperatura} onChange={setTemperatura} isDark={isDark} />
+            <ParameterInput label="Tempo" parameterName="tempo" value={tempo} onChange={setTempo} isDark={isDark} />
+            <ParameterInput label="Pressão" parameterName="pressao" value={pressao} onChange={setPressao} isDark={isDark} />
+            <ParameterInput label="Velocidade" parameterName="velocidade" value={velocidade} onChange={setVelocidade} isDark={isDark} />
           </div>
-        )}
+
+          {(!validationState.isValid || validationState.warnings.length > 0) && (
+            <div className="mt-5 space-y-2">
+              {validationState.errors.map((e, i) => (
+                <div
+                  key={i}
+                  className={`p-3 rounded-lg border ${
+                    isDark ? 'bg-red-900/30 text-red-200 border-red-800' : 'bg-red-50 text-red-700 border-red-200'
+                  }`}
+                >
+                  <div className="flex items-start">
+                    <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">{e}</span>
+                  </div>
+                </div>
+              ))}
+              {validationState.warnings.map((w, i) => (
+                <div
+                  key={i}
+                  className={`p-3 rounded-lg border ${
+                    isDark ? 'bg-yellow-900/20 text-yellow-200 border-yellow-800' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                  }`}
+                >
+                  <div className="flex items-start">
+                    <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                    <span className="text-sm">{w}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Botões */}
@@ -816,6 +859,7 @@ function SensitivityRow({
 }
 
 export default SimulationPanel;
+
 
 
 
