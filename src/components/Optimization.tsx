@@ -715,7 +715,6 @@ function ParamCard(props: {
         <span className={`text-xs ${isDark ? 'text-slate-300' : 'text-gray-500'}`}>
   {min}–{max} {unit}
 </span>
-
       </div>
       <div className="flex items-center justify-between gap-3">
         <div className={`${isDark ? 'text-gray-100' : 'text-gray-900'} text-2xl font-extrabold`}>
