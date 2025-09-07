@@ -718,7 +718,7 @@ function ParamCard(props: {
       </div>
       <div className="flex items-center justify-between gap-3">
         <div className={`${isDark ? 'text-gray-100' : 'text-gray-900'} text-2xl font-extrabold`}>
-          {value.toFixed(1)} <span className="text-sm font-semibold text-gray-500">{unit}</span>
+          <span className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-gray-500'}`}>{unit}</span>
         </div>
         <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${badge.class}`}>
           {badge.label}
