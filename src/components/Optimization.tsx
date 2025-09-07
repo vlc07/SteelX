@@ -7,6 +7,19 @@ import {
 import type { OptimizeMethod } from '../optim/runner';
 import { runOptimization } from '../optim/runner';
 import { getModel } from '../ml/engine';
+// charts
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Tooltip,
+  Legend
+} from 'chart.js';
+import { BarChart3 } from 'lucide-react';
+import { Bar } from 'react-chartjs-2';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 type Props = {
   t: (k: string) => string;
