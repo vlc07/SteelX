@@ -514,12 +514,11 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
                 <div className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-300' : 'text-gray-500'}`}>Método utilizado</div>
-
                 <div className={`mt-1 text-lg font-semibold ${text}`}>{fullMethodName(last.method)}</div>
               </div>
               <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs uppercase tracking-wide text-gray-500">Qualidade prevista</span>
+                  <span className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-300' : 'text-gray-500'}`}>Qualidade prevista</span>
                   <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${qualityBadge(last.quality).class}`}>{qualityBadge(last.quality).label}</span>
                 </div>
                 <div className={`mt-1 text-2xl font-extrabold ${text}`}>{last.quality.toFixed(1)}<span className="text-lg text-gray-500">/400</span></div>
