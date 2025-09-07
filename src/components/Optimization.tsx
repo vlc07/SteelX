@@ -525,7 +525,7 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
               </div>
               <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs uppercase tracking-wide text-gray-500">Consumo energético</span>
+                  <span className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-300' : 'text-gray-500'}`}>Consumo energético</span>
                   <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${energyBadge(last.energy).class}`}>
                     <BatteryCharging className="inline h-3 w-3 mr-1" />
                     {energyBadge(last.energy).label}
