@@ -76,11 +76,10 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   const pushHistory = (item: HistoryItem) => saveHistory([item, ...history].slice(0, 20));
   const clearHistory = () => saveHistory([]);
 
-  // Estilos
+  // Estilos base
   const label = isDark ? 'text-gray-300' : 'text-gray-700';
   const text = isDark ? 'text-gray-100' : 'text-gray-800';
   const sub = isDark ? 'text-gray-400' : 'text-gray-600';
-  const cardPlain = `${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-5`;
 
   const model = React.useMemo(() => getModel('inference'), []);
 
@@ -130,7 +129,6 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     return { label: 'Ineficiente', class: isDark ? 'bg-rose-900/60 text-rose-200' : 'bg-rose-100 text-rose-700' };
   }
 
-  // Posição %
   const pct = (name: keyof typeof bounds, v: number) => {
     const b = bounds[name];
     return Math.max(0, Math.min(100, ((v - b.min) / (b.max - b.min)) * 100));
@@ -192,7 +190,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     }
   };
 
-  /** ===== Executar otimização ===== */
+  /** ===== Executar ===== */
   async function executar(method: OptimizeMethod) {
     const setRun = method === 'grid' ? setRunningGrid : method === 'ga' ? setRunningGA : setRunningBO;
     setRun(true);
@@ -216,7 +214,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       });
 
       const summary: LastSummary = {
-        method,
+        method: res.best.method as OptimizeMethod ?? method,
         score: res.best.y,
         x: res.best.x,
         evaluations: res.evaluations,
@@ -250,7 +248,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
 
   return (
     <div className="space-y-6">
-      {/* Cabeçalho premium (azul) */}
+      {/* Cabeçalho premium azul */}
       <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-blue-700 bg-gradient-to-br from-gray-800 to-gray-900' : 'border-blue-200 bg-gradient-to-br from-blue-50 to-white'}`}>
         <div className={`flex items-center gap-2 px-6 py-5 ${isDark ? 'bg-blue-900/25' : 'bg-blue-100/70'}`}>
           <Beaker className="h-5 w-5 text-blue-500" />
@@ -261,7 +259,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         </p>
       </div>
 
-      {/* === PRESETS por objetivo (legível claro/escuro) === */}
+      {/* PRESETS */}
       <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-blue-700 bg-gradient-to-br from-gray-800 to-gray-900' : 'border-blue-200 bg-gradient-to-br from-blue-50 to-white'}`}>
         <div className={`flex items-center justify-between px-6 py-4 ${isDark ? 'bg-blue-900/25' : 'bg-blue-100/70'}`}>
           <div className="flex items-center gap-2">
@@ -272,48 +270,24 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         </div>
 
         <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <PresetCard
-            title="Alta Resistência"
-            description="Foco em qualidade. T e tempo mais altos (λ baixo)."
-            chip="λ ≈ 0.08 · Qualidade ≥ 365"
-            icon={<Flame className="h-5 w-5" />}
-            color="rose"
-            isDark={isDark}
-            onClick={() => applyPreset('resistencia')}
-          />
-          <PresetCard
-            title="Alta Ductilidade"
-            description="Maleabilidade com boa qualidade. T/tempo moderados."
-            chip="λ ≈ 0.12 · Qualidade ≥ 360"
-            icon={<Dna className="h-5 w-5" />}
-            color="emerald"
-            isDark={isDark}
-            onClick={() => applyPreset('ductilidade')}
-          />
-          <PresetCard
-            title="Economia de Energia"
-            description="Reduz custo/CO₂. T/tempo menores (λ mais alto)."
-            chip="λ ≈ 0.22 · Qualidade ≥ 355"
-            icon={<Leaf className="h-5 w-5" />}
-            color="green"
-            isDark={isDark}
-            onClick={() => applyPreset('energia')}
-          />
-          <PresetCard
-            title="Balanceado"
-            description="Equilíbrio padrão. Você ajusta depois, se quiser."
-            chip="λ ≈ 0.15 · Qualidade mínima opcional"
-            icon={<Zap className="h-5 w-5" />}
-            color="blue"
-            isDark={isDark}
-            onClick={() => applyPreset('balanceado')}
-          />
+          <PresetCard title="Alta Resistência" description="Foco em qualidade. T e tempo mais altos (λ baixo)."
+            chip="λ ≈ 0.08 · Qualidade ≥ 365" icon={<Flame className="h-5 w-5" />} color="rose" isDark={isDark}
+            onClick={() => applyPreset('resistencia')} />
+          <PresetCard title="Alta Ductilidade" description="Maleabilidade com boa qualidade. T/tempo moderados."
+            chip="λ ≈ 0.12 · Qualidade ≥ 360" icon={<Dna className="h-5 w-5" />} color="emerald" isDark={isDark}
+            onClick={() => applyPreset('ductilidade')} />
+          <PresetCard title="Economia de Energia" description="Reduz custo/CO₂. T/tempo menores (λ mais alto)."
+            chip="λ ≈ 0.22 · Qualidade ≥ 355" icon={<Leaf className="h-5 w-5" />} color="green" isDark={isDark}
+            onClick={() => applyPreset('energia')} />
+          <PresetCard title="Balanceado" description="Equilíbrio padrão. Você ajusta depois, se quiser."
+            chip="λ ≈ 0.15 · Qualidade mínima opcional" icon={<Zap className="h-5 w-5" />} color="blue" isDark={isDark}
+            onClick={() => applyPreset('balanceado')} />
         </div>
       </div>
 
       {/* Métodos + Configurações */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Métodos (gradiente azul nos cards) */}
+        {/* Métodos (gradiente azul) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:col-span-3">
           <AlgoCard
             title="Grid Search"
@@ -344,61 +318,85 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           />
         </div>
 
-        {/* Configurações */}
-        <div className={cardPlain}>
-          <div className="flex items-center gap-2 mb-3">
+        {/* Configurações – PREMIUM (gradiente verde) */}
+        <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-emerald-700 bg-gradient-to-br from-gray-800 to-gray-900' : 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-white'}`}>
+          {/* Header */}
+          <div className={`flex items-center gap-2 px-5 py-4 ${isDark ? 'bg-emerald-900/20' : 'bg-emerald-100/70'}`}>
             <Gauge className="h-5 w-5 text-emerald-500" />
-            <h3 className={`font-semibold ${text}`}>Configurações</h3>
+            <h3 className={`font-semibold ${isDark ? 'text-emerald-200' : 'text-emerald-800'}`}>Configurações</h3>
           </div>
 
-          {/* Budget */}
-          <div className="mb-4">
-            <label className={`block text-sm mb-1 ${label}`}>Budget (nº de testes)</label>
-            <input
-              type="range" min={50} max={1000} step={10}
-              value={budget} onChange={(e) => setBudget(parseInt(e.target.value))}
-              className="w-full"
-            />
-            <div className={`${text} text-sm mt-1`}>{budget}</div>
-          </div>
+          {/* Body */}
+          <div className="p-5 space-y-5">
+            {/* Budget */}
+            <div>
+              <label className={`block text-sm mb-1 ${label}`}>Budget (nº de testes)</label>
+              <input
+                type="range"
+                min={50}
+                max={1000}
+                step={10}
+                value={budget}
+                onChange={(e) => setBudget(parseInt(e.target.value))}
+                className="w-full accent-emerald-600"
+              />
+              <div className={`${text} text-sm mt-1`}>{budget}</div>
+            </div>
 
-          {/* Lambda */}
-          <div className="mb-4">
-            <label className={`block text-sm mb-1 ${label}`}>
-              Equilíbrio entre qualidade e energia
-              <span className="block text-xs text-gray-500">
-                Valores menores = foco em qualidade · Valores maiores = foco em economia de energia
-              </span>
-            </label>
-            <input
-              type="range" min={0} max={0.5} step={0.01}
-              value={lambda} onChange={(e) => setLambda(parseFloat(e.target.value))}
-              className="w-full"
-            />
-            <div className={`${text} text-sm mt-1`}>{lambda.toFixed(2)}</div>
-          </div>
+            {/* Lambda */}
+            <div>
+              <label className={`block text-sm mb-1 ${label}`}>
+                Equilíbrio entre qualidade e energia
+                <span className="block text-xs text-gray-500">
+                  Valores menores = foco em qualidade · Valores maiores = foco em economia de energia
+                </span>
+              </label>
+              <input
+                type="range"
+                min={0}
+                max={0.5}
+                step={0.01}
+                value={lambda}
+                onChange={(e) => setLambda(parseFloat(e.target.value))}
+                className="w-full accent-emerald-600"
+              />
+              <div className={`${text} text-sm mt-1`}>{lambda.toFixed(2)}</div>
+            </div>
 
-          {/* Restrição */}
-          <div className="mb-2 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-yellow-500" />
-            <label className={`flex items-center gap-2 ${label}`}>
-              <input type="checkbox" checked={useQualityConstraint} onChange={(e) => setUseQualityConstraint(e.target.checked)} />
-              Exigir qualidade mínima
-            </label>
-          </div>
-          <div className={`${useQualityConstraint ? '' : 'opacity-50 pointer-events-none'}`}>
-            <label className={`block text-sm mb-1 ${label}`}>Qualidade mínima</label>
-            <input
-              type="range" min={340} max={380} step={1}
-              value={qualityMin} onChange={(e) => setQualityMin(parseInt(e.target.value))}
-              className="w-full"
-            />
-            <div className={`${text} text-sm mt-1`}>{qualityMin}</div>
+            {/* Qualidade mínima */}
+            <div>
+              <div className="mb-2 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-yellow-500" />
+                <label className={`flex items-center gap-2 ${label}`}>
+                  <input
+                    type="checkbox"
+                    checked={useQualityConstraint}
+                    onChange={(e) => setUseQualityConstraint(e.target.checked)}
+                    className="accent-emerald-600"
+                  />
+                  Exigir qualidade mínima
+                </label>
+              </div>
+
+              <div className={`${useQualityConstraint ? '' : 'opacity-50 pointer-events-none'}`}>
+                <label className={`block text-sm mb-1 ${label}`}>Qualidade mínima</label>
+                <input
+                  type="range"
+                  min={340}
+                  max={380}
+                  step={1}
+                  value={qualityMin}
+                  onChange={(e) => setQualityMin(parseInt(e.target.value))}
+                  className="w-full accent-emerald-600"
+                />
+                <div className={`${text} text-sm mt-1`}>{qualityMin}</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* === Faixas de Otimização (gradiente violeta) === */}
+      {/* Faixas – gradiente violeta */}
       <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-violet-700 bg-gradient-to-br from-gray-800 to-gray-900' : 'border-violet-200 bg-gradient-to-br from-violet-50 to-white'}`}>
         <div className={`flex items-center justify-between px-6 py-4 ${isDark ? 'bg-violet-900/25' : 'bg-violet-100/70'}`}>
           <h3 className={`font-semibold ${isDark ? 'text-violet-200' : 'text-violet-800'}`}>Faixas de Otimização</h3>
@@ -508,7 +506,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         </div>
       )}
 
-      {/* Histórico (premium) */}
+      {/* Histórico – premium */}
       <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-indigo-700 bg-gradient-to-br from-gray-800 to-gray-900' : 'border-indigo-200 bg-gradient-to-br from-indigo-50 to-white'}`}>
         <div className={`flex items-center justify-between px-6 py-4 ${isDark ? 'bg-indigo-900/25' : 'bg-indigo-100/70'}`}>
           <div className="flex items-center gap-2">
@@ -553,7 +551,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       </div>
 
       {/* Notas */}
-      <div className={cardPlain}>
+      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-5`}>
         <p className={`${sub} text-xs leading-relaxed`}>
           Objetivo: <i>qualidade − λ·(energia − 500)</i>. Ative a restrição para exigir qualidade mínima (ex.: 365).
           Grid Search varre combinações; o Genético evolui soluções; a Bayesiana aprende com cada teste para testar menos.
@@ -563,7 +561,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   );
 };
 
-/* ====== Componentes auxiliares ====== */
+/* ====== Auxiliares ====== */
 
 function PresetCard({
   title, description, chip, icon, color, isDark, onClick,
@@ -653,7 +651,7 @@ function MiniStat({ label, value, isDark }: { label: string; value: string; isDa
   );
 }
 
-/** Mini-card de parâmetro com barra de posição */
+/** Card de parâmetro com barra de posição */
 function ParamCard(props: {
   title: string;
   name: string;
@@ -664,7 +662,7 @@ function ParamCard(props: {
   badge: { label: string; class: string };
   icon: React.ReactNode;
   isDark: boolean;
-  pct: number; // 0..100
+  pct: number;
 }) {
   const { title, value, unit, min, max, badge, icon, isDark, pct } = props;
   return (
@@ -754,6 +752,7 @@ function RangeCard({
 }
 
 export default Optimization;
+
 
 
 
