@@ -77,9 +77,9 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   const clearHistory = () => saveHistory([]);
 
   const label = isDark ? 'text-slate-300' : 'text-gray-700';
-  const sub = isDark ? 'text-gray-400' : 'text-gray-600';
+  const sub   = isDark ? 'text-slate-300' : 'text-gray-600';
   const subMuted = isDark ? 'text-gray-400' : 'text-gray-500';
-  const text = isDark ? 'text-gray-200' : 'text-gray-800';
+  const text  = isDark ? 'text-slate-100' : 'text-gray-800';
   const baseCard = `${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-5`;
 
   const model = React.useMemo(() => getModel('inference'), []);
