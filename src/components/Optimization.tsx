@@ -195,214 +195,100 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     return 'Otimização Bayesiana';
   }
 
-  /** ============ PRESETS POR OBJETIVO ============ */
-  type PresetKey = 'resistencia' | 'ductilidade' | 'energia' | 'balanceado';
-  const applyPreset = (p: PresetKey) => {
-    if (p === 'resistencia') {
-      setLambda(0.08);
-      setRanges(prev => ({
-        ...prev,
-        temperatura: { ...prev.temperatura, min: 1480, max: 1560, step: 5 },
-        tempo: { ...prev.tempo, min: 55, max: 90, step: 5 },
-        pressao: { ...prev.pressao, min: 100, max: 106, step: 1 },
-        velocidade: { ...prev.velocidade, min: 285, max: 310, step: 5 }
-      }));
-      setUseQualityConstraint(true);
-      setQualityMin(365);
-    } else if (p === 'ductilidade') {
-      setLambda(0.12);
-      setRanges(prev => ({
-        ...prev,
-        temperatura: { ...prev.temperatura, min: 1460, max: 1520, step: 5 },
-        tempo: { ...prev.tempo, min: 45, max: 75, step: 5 },
-        pressao: { ...prev.pressao, min: 99, max: 106, step: 1 },
-        velocidade: { ...prev.velocidade, min: 285, max: 315, step: 5 }
-      }));
-      setUseQualityConstraint(true);
-      setQualityMin(360);
-    } else if (p === 'energia') {
-      setLambda(0.22);
-      setRanges(prev => ({
-        ...prev,
-        temperatura: { ...prev.temperatura, min: 1450, max: 1500, step: 5 },
-        tempo: { ...prev.tempo, min: 35, max: 65, step: 5 },
-        pressao: { ...prev.pressao, min: 99, max: 105, step: 1 },
-        velocidade: { ...prev.velocidade, min: 290, max: 305, step: 5 }
-      }));
-      setUseQualityConstraint(true);
-      setQualityMin(355);
-    } else {
-      setLambda(0.15);
-      setRanges(prev => ({
-        ...prev,
-        temperatura: { ...prev.temperatura, min: 1400, max: 1600, step: 5 },
-        tempo: { ...prev.tempo, min: 15, max: 120, step: 5 },
-        pressao: { ...prev.pressao, min: 95, max: 110, step: 1 },
-        velocidade: { ...prev.velocidade, min: 250, max: 350, step: 5 }
-      }));
-      setUseQualityConstraint(false);
-      setQualityMin(365);
-    }
-  };
+  {/* === PRESETS POR OBJETIVO (premium com gradient) === */}
+<div
+  className={`rounded-2xl border overflow-hidden ${
+    isDark ? 'border-sky-700 bg-gradient-to-br from-gray-800 to-gray-900'
+           : 'border-sky-200 bg-gradient-to-br from-sky-50 to-white'
+  }`}
+>
+  <div className={`flex items-center justify-between px-6 py-4 ${isDark ? 'bg-sky-900/30' : 'bg-sky-100/80'}`}>
+    <div className="flex items-center gap-2">
+      <Settings2 className={`h-5 w-5 ${isDark ? 'text-sky-300' : 'text-sky-700'}`} />
+      <h3 className="font-semibold text-sky-600 dark:text-sky-300">Presets por objetivo</h3>
+    </div>
+    <span className="text-xs text-gray-600 dark:text-gray-300">Aplique com 1 clique — você pode ajustar as faixas depois.</span>
+  </div>
 
-  // Executar método
-  async function executar(method: OptimizeMethod) {
-    const setRun = method === 'grid' ? setRunningGrid : method === 'ga' ? setRunningGA : setRunningBO;
-    setRun(true);
-    try {
-      /** bounds vindos dos cards editáveis */
-      const boundsPayload = {
-        temperatura: { min: ranges.temperatura.min, max: ranges.temperatura.max, step: ranges.temperatura.step },
-        tempo: { min: ranges.tempo.min, max: ranges.tempo.max, step: ranges.tempo.step },
-        pressao: { min: ranges.pressao.min, max: ranges.pressao.max, step: ranges.pressao.step },
-        velocidade: { min: ranges.velocidade.min, max: ranges.velocidade.max, step: ranges.velocidade.step }
-      };
-
-      const res = await runOptimization({
-        method,
-        budget,
-        lambda,
-        useQualityConstraint,
-        qualityMin,
-        seed: 2025,
-        bounds: boundsPayload
-      });
-
-      const qe = model.predict({
-        temp: Number(res.best.x.temperatura),
-        time: Number(res.best.x.tempo),
-        press: Number(res.best.x.pressao),
-        speed: Number(res.best.x.velocidade)
-      });
-
-      const summary: LastSummary = {
-        method,
-        score: res.best.y,
-        x: res.best.x,
-        evaluations: res.evaluations,
-        quality: qe.quality,
-        energy: qe.energy
-      };
-
-      setLast(summary);
-
-      // Histórico
-      const item: HistoryItem = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        ts: Date.now(),
-        method,
-        score: summary.score,
-        evaluations: summary.evaluations,
-        x: summary.x,
-        quality: summary.quality,
-        energy: summary.energy,
-        lambda
-      };
-      pushHistory(item);
-
-      // Mantém compatível com Results
-      onOptimizationComplete({ ...res, bestParams: res.best.x });
-    } catch (e) {
-      console.error(e);
-      alert('Falha ao executar a otimização.');
-    } finally {
-      setRun(false);
-    }
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Cabeçalho */}
-      <div className={cardSolid}>
-        <div className="px-5 py-5">
-          <div className="flex items-center gap-2 mb-1">
-            <Beaker className="h-5 w-5 text-blue-500" />
-            <h2 className={`text-xl font-semibold ${text}`}>Otimização de Parâmetros (ML)</h2>
-          </div>
-          <p className={`${sub} text-sm`}>Escolha um método para buscar os melhores parâmetros. As configurações ao lado valem para todos os métodos.</p>
-        </div>
+  <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    {/* Alta resistência */}
+    <button
+      onClick={() => applyPreset('resistencia')}
+      className={`group rounded-xl p-4 border transition transform hover:-translate-y-0.5 shadow-sm
+        ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-sky-900/20'
+                 : 'bg-white border-gray-200 hover:bg-sky-50'}`}
+    >
+      <div className="flex items-center gap-2">
+        <Flame className="h-5 w-5 text-rose-500" />
+        <div className="font-semibold text-gray-900 dark:text-gray-100">Alta Resistência</div>
       </div>
-
-      {/* === PRESETS POR OBJETIVO (premium com gradient) === */}
-      <div
-        className={`rounded-2xl border overflow-hidden ${
-          isDark ? 'border-sky-700 bg-gradient-to-br from-gray-800 to-gray-900' : 'border-sky-200 bg-gradient-to-br from-sky-50 to-white'
-        }`}
-      >
-        <div className={`flex items-center justify-between px-6 py-4 ${isDark ? 'bg-sky-900/30' : 'bg-sky-100/80'}`}>
-          <div className="flex items-center gap-2">
-            <Settings2 className={`h-5 w-5 ${isDark ? 'text-sky-300' : 'text-sky-700'}`} />
-            <h3 className="font-semibold text-sky-600 dark:text-sky-300">Presets por objetivo</h3>
-          </div>
-          <span className="text-xs text-gray-600 dark:text-gray-300">Aplique com 1 clique — você pode ajustar as faixas depois.</span>
-        </div>
-
-        <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Alta resistência */}
-          <button
-            onClick={() => applyPreset('resistencia')}
-            className={`group rounded-xl p-4 border transition transform hover:-translate-y-0.5
-              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-sky-900/20' : 'bg-white/80 border-gray-200 hover:bg-sky-50'}`}
-          >
-            <div className="flex items-center gap-2">
-              <Flame className="h-5 w-5 text-rose-500" />
-              <div className="font-semibold text-gray-800 dark:text-gray-100">Alta Resistência</div>
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-300 mt-1">Foco em qualidade. T e tempo mais altos (λ baixo).</div>
-            <div className="mt-3 text-[11px] inline-block px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200 border border-rose-200 dark:border-rose-800">
-              λ ≈ 0.08 · Qualidade ≥ 365
-            </div>
-          </button>
-
-          {/* Alta ductilidade */}
-          <button
-            onClick={() => applyPreset('ductilidade')}
-            className={`group rounded-xl p-4 border transition transform hover:-translate-y-0.5
-              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-sky-900/20' : 'bg-white/80 border-gray-200 hover:bg-sky-50'}`}
-          >
-            <div className="flex items-center gap-2">
-              <Dna className="h-5 w-5 text-green-500" />
-              <div className="font-semibold text-gray-800 dark:text-gray-100">Alta Ductilidade</div>
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-300 mt-1">Maleabilidade com boa qualidade. T/tempo moderados.</div>
-            <div className="mt-3 text-[11px] inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200 border border-green-200 dark:border-green-800">
-              λ ≈ 0.12 · Qualidade ≥ 360
-            </div>
-          </button>
-
-          {/* Economia de energia */}
-          <button
-            onClick={() => applyPreset('energia')}
-            className={`group rounded-xl p-4 border transition transform hover:-translate-y-0.5
-              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-sky-900/20' : 'bg-white/80 border-gray-200 hover:bg-sky-50'}`}
-          >
-            <div className="flex items-center gap-2">
-              <Leaf className="h-5 w-5 text-emerald-500" />
-              <div className="font-semibold text-gray-800 dark:text-gray-100">Economia de Energia</div>
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-300 mt-1">Reduz custo/CO₂. T/tempo menores (λ mais alto).</div>
-            <div className="mt-3 text-[11px] inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800">
-              λ ≈ 0.22 · Qualidade ≥ 355
-            </div>
-          </button>
-
-          {/* Balanceado */}
-          <button
-            onClick={() => applyPreset('balanceado')}
-            className={`group rounded-xl p-4 border transition transform hover:-translate-y-0.5
-              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-sky-900/20' : 'bg-white/80 border-gray-200 hover:bg-sky-50'}`}
-          >
-            <div className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-blue-500" />
-              <div className="font-semibold text-gray-800 dark:text-gray-100">Balanceado</div>
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-300 mt-1">Equilíbrio padrão. Você ajusta depois, se quiser.</div>
-            <div className="mt-3 text-[11px] inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200 border border-blue-200 dark:border-blue-800">
-              λ ≈ 0.15 · Qualidade mínima opcional
-            </div>
-          </button>
-        </div>
+      <div className="text-xs text-gray-700 dark:text-gray-300 mt-1">
+        Foco em qualidade. T e tempo mais altos (λ baixo).
       </div>
+      <div className="mt-3 text-[11px] inline-block px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200 border border-rose-200 dark:border-rose-800">
+        λ ≈ 0.08 · Qualidade ≥ 365
+      </div>
+    </button>
+
+    {/* Alta ductilidade */}
+    <button
+      onClick={() => applyPreset('ductilidade')}
+      className={`group rounded-xl p-4 border transition transform hover:-translate-y-0.5 shadow-sm
+        ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-sky-900/20'
+                 : 'bg-white border-gray-200 hover:bg-sky-50'}`}
+    >
+      <div className="flex items-center gap-2">
+        <Dna className="h-5 w-5 text-green-500" />
+        <div className="font-semibold text-gray-900 dark:text-gray-100">Alta Ductilidade</div>
+      </div>
+      <div className="text-xs text-gray-700 dark:text-gray-300 mt-1">
+        Maleabilidade com boa qualidade. T/tempo moderados.
+      </div>
+      <div className="mt-3 text-[11px] inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-200 border border-green-200 dark:border-green-800">
+        λ ≈ 0.12 · Qualidade ≥ 360
+      </div>
+    </button>
+
+    {/* Economia de energia */}
+    <button
+      onClick={() => applyPreset('energia')}
+      className={`group rounded-xl p-4 border transition transform hover:-translate-y-0.5 shadow-sm
+        ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-sky-900/20'
+                 : 'bg-white border-gray-200 hover:bg-sky-50'}`}
+    >
+      <div className="flex items-center gap-2">
+        <Leaf className="h-5 w-5 text-emerald-500" />
+        <div className="font-semibold text-gray-900 dark:text-gray-100">Economia de Energia</div>
+      </div>
+      <div className="text-xs text-gray-700 dark:text-gray-300 mt-1">
+        Reduz custo/CO₂. T/tempo menores (λ mais alto).
+      </div>
+      <div className="mt-3 text-[11px] inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800">
+        λ ≈ 0.22 · Qualidade ≥ 355
+      </div>
+    </button>
+
+    {/* Balanceado */}
+    <button
+      onClick={() => applyPreset('balanceado')}
+      className={`group rounded-xl p-4 border transition transform hover:-translate-y-0.5 shadow-sm
+        ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-sky-900/20'
+                 : 'bg-white border-gray-200 hover:bg-sky-50'}`}
+    >
+      <div className="flex items-center gap-2">
+        <Zap className="h-5 w-5 text-blue-500" />
+        <div className="font-semibold text-gray-900 dark:text-gray-100">Balanceado</div>
+      </div>
+      <div className="text-xs text-gray-700 dark:text-gray-300 mt-1">
+        Equilíbrio padrão. Você ajusta depois, se quiser.
+      </div>
+      <div className="mt-3 text-[11px] inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200 border border-blue-200 dark:border-blue-800">
+        λ ≈ 0.15 · Qualidade mínima opcional
+      </div>
+    </button>
+  </div>
+</div>
+
 
       {/* Cards dos métodos + Configurações */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
