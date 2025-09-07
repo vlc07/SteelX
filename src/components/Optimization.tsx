@@ -710,7 +710,7 @@ function ParamCard(props: {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <div className={`p-2 rounded-md ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>{icon}</div>
-          <span className="text-xs uppercase tracking-wide text-gray-500">{title}</span>
+          <span className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-300' : 'text-gray-500'}`}>{title}</span>
         </div>
         <span className="text-xs text-gray-500">{min}–{max} {unit}</span>
       </div>
