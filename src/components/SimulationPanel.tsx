@@ -10,6 +10,43 @@ import { validateAllParameters, validateParameterCombination } from '../utils/pa
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
+/* ================= Tema por aba (cores premium para cards e botões) ================= */
+function getParamTheme(tab: 'single' | 'batch' | 'sensitivity', isDark: boolean) {
+  if (tab === 'single') {
+    return {
+      outer: `bg-gradient-to-br ${isDark ? 'from-slate-900 to-gray-900 border-blue-900/40' : 'from-blue-50 via-white to-white border-blue-200'}`,
+      header: `${isDark ? 'bg-slate-900/40' : 'bg-blue-50/60'}`,
+      icon: `${isDark ? 'bg-blue-900/50 text-blue-200' : 'bg-blue-600 text-white'}`,
+      glow: 'via-blue-500/20',
+      btn: 'bg-gradient-to-r from-blue-600 to-blue-500 text-white',
+      btnHover: 'hover:from-blue-700 hover:to-blue-600',
+      ring: 'ring-1 ring-blue-500/30',
+    };
+  }
+  if (tab === 'batch') {
+    return {
+      outer: `bg-gradient-to-br ${isDark ? 'from-emerald-950 to-gray-900 border-emerald-900/40' : 'from-emerald-50 via-white to-white border-emerald-200'}`,
+      header: `${isDark ? 'bg-emerald-950/20' : 'bg-emerald-50/60'}`,
+      icon: `${isDark ? 'bg-emerald-900/50 text-emerald-200' : 'bg-emerald-600 text-white'}`,
+      glow: 'via-emerald-500/20',
+      btn: 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white',
+      btnHover: 'hover:from-emerald-700 hover:to-emerald-600',
+      ring: 'ring-1 ring-emerald-500/30',
+    };
+  }
+  // sensitivity
+  return {
+    outer: `bg-gradient-to-br ${isDark ? 'from-purple-950 to-gray-900 border-purple-900/40' : 'from-purple-50 via-white to-white border-purple-200'}`,
+    header: `${isDark ? 'bg-purple-950/20' : 'bg-purple-50/60'}`,
+    icon: `${isDark ? 'bg-purple-900/50 text-purple-200' : 'bg-purple-600 text-white'}`,
+    glow: 'via-purple-500/20',
+    btn: 'bg-gradient-to-r from-purple-600 to-purple-500 text-white',
+    btnHover: 'hover:from-purple-700 hover:to-purple-600',
+    ring: 'ring-1 ring-purple-500/30',
+  };
+}
+
+/* ================= Props ================= */
 type SimulationPanelProps = {
   temperatura: number;
   setTemperatura: (v: number) => void;
@@ -366,7 +403,9 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     };
   }
 
-  /* ===== UI ===== */
+  /* ================= UI ================= */
+  const paramTheme = getParamTheme(activeTab, isDark);
+
   return (
     <div className="space-y-6">
       {/* Tabs no topo */}
@@ -388,42 +427,22 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
         ))}
       </div>
 
-      {/* Parâmetros — DESIGN PREMIUM */}
-      <div
-        className={[
-          'rounded-2xl border overflow-hidden',
-          'bg-gradient-to-br',
-          isDark ? 'from-slate-900 to-gray-900 border-blue-900/40' : 'from-blue-50 via-white to-white border-blue-200',
-          'shadow-[0_10px_30px_-10px_rgba(0,0,0,0.25)]',
-        ].join(' ')}
-      >
-        {/* Header premium */}
-        <div
-          className={[
-            'px-6 py-5 flex items-center justify-between',
-            isDark ? 'bg-slate-900/40' : 'bg-blue-50/60',
-            'backdrop-blur-sm',
-          ].join(' ')}
-        >
-          <div className="flex items-center gap-3">
-            <div className={['p-2.5 rounded-lg', isDark ? 'bg-blue-900/50 text-blue-200' : 'bg-blue-600 text-white'].join(' ')}>
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
-                Configuração de Parâmetros
-              </h3>
-              <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                Ajuste os parâmetros do processo. As simulações usam estes valores como base.
-              </p>
-            </div>
-          </div>
-
-          {/* brilho sutil na borda direita do header */}
-          <div className="hidden md:block h-8 w-24 rounded-full bg-gradient-to-r from-transparent via-blue-500/20 to-transparent blur-md" />
+      {/* Configuração de Parâmetros — Card premium por aba */}
+      <div className={`relative rounded-2xl border ${paramTheme.outer} ${paramTheme.ring} overflow-hidden`}>
+        {/* Glow suave */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-transparent">
+          <div className={`absolute -inset-32 bg-gradient-to-r from-transparent ${paramTheme.glow} to-transparent blur-3xl opacity-70`} />
         </div>
 
-        {/* Conteúdo */}
+        {/* Header do card */}
+        <div className={`px-6 py-4 ${paramTheme.header} border-b ${isDark ? 'border-white/10' : 'border-black/5'} flex items-center gap-3`}>
+          <div className={`p-2 rounded-lg ${paramTheme.icon}`}>
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Configuração de Parâmetros</h3>
+        </div>
+
+        {/* Inputs */}
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ParameterInput label="Temperatura" parameterName="temperatura" value={temperatura} onChange={setTemperatura} isDark={isDark} />
@@ -433,14 +452,9 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
           </div>
 
           {(!validationState.isValid || validationState.warnings.length > 0) && (
-            <div className="mt-5 space-y-2">
+            <div className="mt-4 space-y-2">
               {validationState.errors.map((e, i) => (
-                <div
-                  key={i}
-                  className={`p-3 rounded-lg border ${
-                    isDark ? 'bg-red-900/30 text-red-200 border-red-800' : 'bg-red-50 text-red-700 border-red-200'
-                  }`}
-                >
+                <div key={i} className={`p-3 rounded-lg border ${isDark ? 'bg-red-900 text-red-200 border-red-700' : 'bg-red-50 text-red-700 border-red-200'}`}>
                   <div className="flex items-start">
                     <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
                     <span className="text-sm">{e}</span>
@@ -448,12 +462,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
                 </div>
               ))}
               {validationState.warnings.map((w, i) => (
-                <div
-                  key={i}
-                  className={`p-3 rounded-lg border ${
-                    isDark ? 'bg-yellow-900/20 text-yellow-200 border-yellow-800' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                  }`}
-                >
+                <div key={i} className={`p-3 rounded-lg border ${isDark ? 'bg-yellow-900 text-yellow-200 border-yellow-700' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
                   <div className="flex items-start">
                     <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
                     <span className="text-sm">{w}</span>
@@ -465,44 +474,61 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
         </div>
       </div>
 
-      {/* Botões */}
+      {/* Botões — premium por aba */}
       <div className="flex flex-wrap items-center justify-center gap-3">
-        {activeTab === 'single' && (
-          <button
-            onClick={runSingle}
-            disabled={isRunning || !validationState.isValid}
-            className={`flex items-center px-6 py-3 rounded-lg font-medium transition-colors ${
-              isRunning || !validationState.isValid ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
-            }`}
-          >
-            <Play className="h-5 w-5 mr-2" />
-            {isRunning ? 'Simulando...' : 'Executar Simulação'}
-          </button>
-        )}
-        {activeTab === 'batch' && (
-          <button
-            onClick={runBatch}
-            disabled={isRunning || !validationState.isValid}
-            className={`flex items-center px-6 py-3 rounded-lg font-medium transition-colors ${
-              isRunning || !validationState.isValid ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-            }`}
-          >
-            <TrendingUp className="h-5 w-5 mr-2" />
-            {isRunning ? 'Executando Lote...' : 'Executar Lote (20x)'}
-          </button>
-        )}
-        {activeTab === 'sensitivity' && (
-          <button
-            onClick={runSensitivity}
-            disabled={isRunning || !validationState.isValid}
-            className={`flex items-center px-6 py-3 rounded-lg font-medium transition-colors ${
-              isRunning || !validationState.isValid ? 'bg-gray-400 text-white cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700 text-white'
-            }`}
-          >
-            <Zap className="h-5 w-5 mr-2" />
-            {isRunning ? 'Analisando...' : 'Executar Análise de Sensibilidade'}
-          </button>
-        )}
+        {(() => {
+          const theme = getParamTheme(activeTab, isDark);
+
+          if (activeTab === 'single') {
+            return (
+              <button
+                onClick={runSingle}
+                disabled={isRunning || !validationState.isValid}
+                className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all shadow-md
+                  ${isRunning || !validationState.isValid
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : `${theme.btn} ${theme.btnHover} shadow-lg shadow-blue-500/20`} `}
+              >
+                <Play className="h-5 w-5 mr-2" />
+                {isRunning ? 'Simulando...' : 'Executar Simulação'}
+              </button>
+            );
+          }
+
+          if (activeTab === 'batch') {
+            return (
+              <button
+                onClick={runBatch}
+                disabled={isRunning || !validationState.isValid}
+                className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all shadow-md
+                  ${isRunning || !validationState.isValid
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : `${theme.btn} ${theme.btnHover} shadow-lg shadow-emerald-500/20`} `}
+              >
+                <TrendingUp className="h-5 w-5 mr-2" />
+                {isRunning ? 'Executando Lote...' : 'Executar Lote (20x)'}
+              </button>
+            );
+          }
+
+          if (activeTab === 'sensitivity') {
+            return (
+              <button
+                onClick={runSensitivity}
+                disabled={isRunning || !validationState.isValid}
+                className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all shadow-md
+                  ${isRunning || !validationState.isValid
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : `${theme.btn} ${theme.btnHover} shadow-lg shadow-purple-500/20`} `}
+              >
+                <Zap className="h-5 w-5 mr-2" />
+                {isRunning ? 'Analisando...' : 'Executar Análise de Sensibilidade'}
+              </button>
+            );
+          }
+
+          return null;
+        })()}
       </div>
 
       {/* Loading */}
@@ -653,7 +679,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
   );
 };
 
-/* ===== Componentes auxiliares ===== */
+/* ================= Componentes auxiliares ================= */
 
 function KPI({
   title,
@@ -859,6 +885,7 @@ function SensitivityRow({
 }
 
 export default SimulationPanel;
+
 
 
 
