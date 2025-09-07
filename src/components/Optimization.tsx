@@ -717,13 +717,20 @@ function ParamCard(props: {
 </span>
       </div>
       <div className="flex items-center justify-between gap-3">
-        <div className={`${isDark ? 'text-gray-100' : 'text-gray-900'} text-2xl font-extrabold`}>
-          <span className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-gray-500'}`}>{unit}</span>
-        </div>
-        <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${badge.class}`}>
-          {badge.label}
-        </span>
-      </div>
+  {/* número + unidade com contraste forte e fallback contra NaN */}
+  <div className="flex items-baseline gap-1">
+    <span className={`${isDark ? 'text-white' : 'text-slate-900'} text-3xl font-black leading-none`}>
+      {Number.isFinite(value) ? value.toFixed(1) : '--'}
+    </span>
+    <span className={`${isDark ? 'text-slate-300' : 'text-slate-500'} text-sm font-semibold`}>
+      {unit}
+    </span>
+  </div>
+  <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold whitespace-nowrap ${badge.class}`}>
+    {badge.label}
+  </span>
+</div>
+
       <div className="mt-3">
         <div className={`h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
           <div className={`h-2 rounded-full ${isDark ? 'bg-emerald-600' : 'bg-emerald-500'}`} style={{ width: `${pct}%` }} />
