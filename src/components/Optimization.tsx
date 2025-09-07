@@ -207,7 +207,9 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       <Settings2 className={`h-5 w-5 ${isDark ? 'text-sky-300' : 'text-sky-700'}`} />
       <h3 className="font-semibold text-sky-600 dark:text-sky-300">Presets por objetivo</h3>
     </div>
-    <span className="text-xs text-gray-600 dark:text-gray-300">Aplique com 1 clique — você pode ajustar as faixas depois.</span>
+    <span className="text-xs text-gray-600 dark:text-gray-300">
+      Aplique com 1 clique — você pode ajustar as faixas depois.
+    </span>
   </div>
 
   <div className="p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -288,6 +290,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     </button>
   </div>
 </div>
+
 
 
       {/* Cards dos métodos + Configurações */}
