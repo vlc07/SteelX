@@ -46,6 +46,92 @@ type HistoryItem = {
 
 const HIST_KEY = 'opt_history_v1';
 
+/** ================= Premium range CSS (glow) =================
+ *  Aplica brilho suave no "thumb" e um track discretamente gradiente.
+ *  Compatível com WebKit e Firefox.
+ */
+const PremiumRangeGlow: React.FC<{ dark?: boolean }> = ({ dark }) => (
+  <style>{`
+    .premium-range {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 9999px;
+      background: ${dark
+        ? 'linear-gradient(90deg, rgba(16,185,129,.25), rgba(16,185,129,.45))'
+        : 'linear-gradient(90deg, rgba(16,185,129,.15), rgba(16,185,129,.35))'};
+      outline: none;
+    }
+    /* WebKit - track */
+    .premium-range::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 9999px;
+      background: ${dark
+        ? 'linear-gradient(90deg, rgba(16,185,129,.25), rgba(16,185,129,.45))'
+        : 'linear-gradient(90deg, rgba(16,185,129,.15), rgba(16,185,129,.35))'};
+    }
+    /* WebKit - thumb */
+    .premium-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 9999px;
+      background: #10b981; /* emerald-500 */
+      border: 2px solid ${dark ? '#111827' : '#ffffff'};
+      box-shadow:
+        0 0 0 4px ${dark ? 'rgba(16,185,129,.22)' : 'rgba(16,185,129,.18)'},
+        0 0 16px rgba(16,185,129,.55);
+      transition: box-shadow .2s ease, transform .2s ease, background .2s ease;
+      cursor: pointer;
+    }
+    .premium-range:hover::-webkit-slider-thumb {
+      box-shadow:
+        0 0 0 5px ${dark ? 'rgba(16,185,129,.28)' : 'rgba(16,185,129,.24)'},
+        0 0 22px rgba(16,185,129,.65);
+    }
+    .premium-range:active::-webkit-slider-thumb {
+      transform: scale(1.06);
+      box-shadow:
+        0 0 0 6px ${dark ? 'rgba(16,185,129,.35)' : 'rgba(16,185,129,.30)'},
+        0 0 28px rgba(16,185,129,.85);
+    }
+    /* Firefox - track */
+    .premium-range::-moz-range-track {
+      height: 4px;
+      border-radius: 9999px;
+      background: ${dark
+        ? 'linear-gradient(90deg, rgba(16,185,129,.25), rgba(16,185,129,.45))'
+        : 'linear-gradient(90deg, rgba(16,185,129,.15), rgba(16,185,129,.35))'};
+    }
+    /* Firefox - thumb */
+    .premium-range::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 9999px;
+      background: #10b981;
+      border: 2px solid ${dark ? '#111827' : '#ffffff'};
+      box-shadow:
+        0 0 0 4px ${dark ? 'rgba(16,185,129,.22)' : 'rgba(16,185,129,.18)'},
+        0 0 16px rgba(16,185,129,.55);
+      transition: box-shadow .2s ease, transform .2s ease, background .2s ease;
+      cursor: pointer;
+    }
+    .premium-range:hover::-moz-range-thumb {
+      box-shadow:
+        0 0 0 5px ${dark ? 'rgba(16,185,129,.28)' : 'rgba(16,185,129,.24)'},
+        0 0 22px rgba(16,185,129,.65);
+    }
+    .premium-range:active::-moz-range-thumb {
+      transform: scale(1.06);
+      box-shadow:
+        0 0 0 6px ${dark ? 'rgba(16,185,129,.35)' : 'rgba(16,185,129,.30)'},
+        0 0 28px rgba(16,185,129,.85);
+    }
+  `}</style>
+);
+
 export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplete }) => {
   // Globais
   const [budget, setBudget] = React.useState<number>(200);
@@ -53,7 +139,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   const [useQualityConstraint, setUseQualityConstraint] = React.useState<boolean>(false);
   const [qualityMin, setQualityMin] = React.useState<number>(365);
 
-  // Estados de execução
+  // Execução
   const [runningGrid, setRunningGrid] = React.useState(false);
   const [runningGA, setRunningGA] = React.useState(false);
   const [runningBO, setRunningBO] = React.useState(false);
@@ -76,14 +162,14 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   const pushHistory = (item: HistoryItem) => saveHistory([item, ...history].slice(0, 20));
   const clearHistory = () => saveHistory([]);
 
-  // Estilos base
+  // Estilos
   const label = isDark ? 'text-gray-300' : 'text-gray-700';
   const text = isDark ? 'text-gray-100' : 'text-gray-800';
   const sub = isDark ? 'text-gray-400' : 'text-gray-600';
 
   const model = React.useMemo(() => getModel('inference'), []);
 
-  // Limites/Unidades
+  // Limites
   const bounds = {
     temperatura: { min: 1400, max: 1600, unit: 'ºC', icon: <Thermometer className="h-4 w-4" /> },
     tempo:       { min:   10, max:  120, unit: 'min', icon: <Timer className="h-4 w-4" /> },
@@ -98,7 +184,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     velocidade:  { low: 290,  high: 310  },
   } as const;
 
-  // Faixas editáveis
+  // Faixas
   const [ranges, setRanges] =
     React.useState<Record<'temperatura'|'tempo'|'pressao'|'velocidade', Range>>({
       temperatura: { min: 1400, max: 1600, step: 5,  industrial: { min: 1400, max: 1600 }, tipica: { min: 1450, max: 1550 } },
@@ -110,12 +196,8 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   // Badges
   function badgeFor(name: keyof typeof bounds, v: number) {
     const id = ideal[name];
-    if (v < id.low) {
-      return { label: 'Baixo', class: isDark ? 'bg-amber-900/60 text-amber-200' : 'bg-amber-100 text-amber-700' };
-    }
-    if (v > id.high) {
-      return { label: 'Alto', class: isDark ? 'bg-rose-900/60 text-rose-200' : 'bg-rose-100 text-rose-700' };
-    }
+    if (v < id.low) return { label: 'Baixo', class: isDark ? 'bg-amber-900/60 text-amber-200' : 'bg-amber-100 text-amber-700' };
+    if (v > id.high) return { label: 'Alto', class: isDark ? 'bg-rose-900/60 text-rose-200' : 'bg-rose-100 text-rose-700' };
     return { label: 'Ótimo', class: isDark ? 'bg-emerald-900/60 text-emerald-200' : 'bg-emerald-100 text-emerald-800' };
   }
   function qualityBadge(q: number) {
@@ -140,7 +222,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     return 'Otimização Bayesiana';
   }
 
-  /** ===== Presets por objetivo ===== */
+  /** Presets */
   type PresetKey = 'resistencia' | 'ductilidade' | 'energia' | 'balanceado';
   const applyPreset = (p: PresetKey) => {
     if (p === 'resistencia') {
@@ -190,7 +272,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     }
   };
 
-  /** ===== Executar ===== */
+  /** Executar */
   async function executar(method: OptimizeMethod) {
     const setRun = method === 'grid' ? setRunningGrid : method === 'ga' ? setRunningGA : setRunningBO;
     setRun(true);
@@ -214,7 +296,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       });
 
       const summary: LastSummary = {
-        method: res.best.method as OptimizeMethod ?? method,
+        method: (res.best.method as OptimizeMethod) ?? method,
         score: res.best.y,
         x: res.best.x,
         evaluations: res.evaluations,
@@ -235,7 +317,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         energy: summary.energy,
         lambda,
       };
-      pushHistory(item);
+      saveHistory([item, ...history].slice(0, 20));
 
       onOptimizationComplete({ ...res, bestParams: res.best.x });
     } catch (e) {
@@ -248,6 +330,9 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
 
   return (
     <div className="space-y-6">
+      {/* CSS do brilho dos sliders */}
+      <PremiumRangeGlow dark={isDark} />
+
       {/* Cabeçalho premium azul */}
       <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-blue-700 bg-gradient-to-br from-gray-800 to-gray-900' : 'border-blue-200 bg-gradient-to-br from-blue-50 to-white'}`}>
         <div className={`flex items-center gap-2 px-6 py-5 ${isDark ? 'bg-blue-900/25' : 'bg-blue-100/70'}`}>
@@ -318,15 +403,13 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           />
         </div>
 
-        {/* Configurações – PREMIUM (gradiente verde) */}
+        {/* Configurações – PREMIUM (gradiente verde + glow sliders) */}
         <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-emerald-700 bg-gradient-to-br from-gray-800 to-gray-900' : 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-white'}`}>
-          {/* Header */}
           <div className={`flex items-center gap-2 px-5 py-4 ${isDark ? 'bg-emerald-900/20' : 'bg-emerald-100/70'}`}>
             <Gauge className="h-5 w-5 text-emerald-500" />
             <h3 className={`font-semibold ${isDark ? 'text-emerald-200' : 'text-emerald-800'}`}>Configurações</h3>
           </div>
 
-          {/* Body */}
           <div className="p-5 space-y-5">
             {/* Budget */}
             <div>
@@ -338,7 +421,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
                 step={10}
                 value={budget}
                 onChange={(e) => setBudget(parseInt(e.target.value))}
-                className="w-full accent-emerald-600"
+                className="premium-range accent-emerald-600"
               />
               <div className={`${text} text-sm mt-1`}>{budget}</div>
             </div>
@@ -358,7 +441,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
                 step={0.01}
                 value={lambda}
                 onChange={(e) => setLambda(parseFloat(e.target.value))}
-                className="w-full accent-emerald-600"
+                className="premium-range accent-emerald-600"
               />
               <div className={`${text} text-sm mt-1`}>{lambda.toFixed(2)}</div>
             </div>
@@ -387,7 +470,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
                   step={1}
                   value={qualityMin}
                   onChange={(e) => setQualityMin(parseInt(e.target.value))}
-                  className="w-full accent-emerald-600"
+                  className="premium-range accent-emerald-600"
                 />
                 <div className={`${text} text-sm mt-1`}>{qualityMin}</div>
               </div>
@@ -752,6 +835,7 @@ function RangeCard({
 }
 
 export default Optimization;
+
 
 
 
