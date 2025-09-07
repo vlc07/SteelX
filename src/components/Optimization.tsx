@@ -681,7 +681,7 @@ function ParamCard(props: {
   );
 }
 
-/** Card reutilizável para edição de faixas */
+/** Card reutilizável para edição de faixas — com contraste melhor no dark mode */
 function RangeCard({
   title, name, unit, isDark, value, onChange, showGridHint = true
 }: {
@@ -689,13 +689,17 @@ function RangeCard({
   name: 'temperatura'|'tempo'|'pressao'|'velocidade';
   unit: string;
   isDark: boolean;
-  value: Range;
-  onChange: (next: Range) => void;
+  value: {
+    min: number; max: number; step?: number;
+    industrial: { min: number; max: number };
+    tipica: { min: number; max: number };
+  };
+  onChange: (next: any) => void;
   showGridHint?: boolean;
 }) {
   const card = `${isDark ? 'bg-slate-900/40 border-slate-700' : 'bg-white border-slate-200'} rounded-xl p-4 border shadow-sm`;
   const label = 'text-xs text-gray-500';
-  const set = (patch: Partial<Range>) => onChange({ ...value, ...patch });
+  const set = (patch: Partial<typeof value>) => onChange({ ...value, ...patch });
 
   const clamp = (v: number) => Math.min(value.industrial.max, Math.max(value.industrial.min, v));
 
@@ -703,11 +707,17 @@ function RangeCard({
   const points = Math.floor((value.max - value.min) / step) + 1;
   const invalid = value.min >= value.max;
 
+  const inputClass = isDark
+    ? 'w-full mt-1 rounded border px-2 py-1 bg-slate-800 text-slate-100 placeholder-slate-400 border-slate-600 focus:border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500/40'
+    : 'w-full mt-1 rounded border px-2 py-1 bg-white text-slate-800 placeholder-slate-400 border-slate-300 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-200';
+
   return (
     <div className={card}>
       <div className="flex items-center justify-between">
-        <h4 className={`${isDark ? 'text-gray-200' : 'text-gray-800'} font-semibold`}>{title}</h4>
-        <span className="text-xs text-gray-500">Limites industriais: {value.industrial.min}–{value.industrial.max} {unit}</span>
+        <h4 className={`${isDark ? 'text-slate-100' : 'text-slate-800'} font-semibold`}>{title}</h4>
+        <span className={`${isDark ? 'text-slate-300' : 'text-slate-500'} text-xs`}>
+          Limites industriais: {value.industrial.min}–{value.industrial.max} {unit}
+        </span>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mt-3">
@@ -717,7 +727,7 @@ function RangeCard({
             type="number"
             value={value.min}
             onChange={e => set({ min: clamp(Number(e.target.value)) })}
-            className="w-full mt-1 rounded border px-2 py-1 bg-transparent"
+            className={inputClass}
           />
         </div>
         <div>
@@ -726,7 +736,7 @@ function RangeCard({
             type="number"
             value={value.max}
             onChange={e => set({ max: clamp(Number(e.target.value)) })}
-            className="w-full mt-1 rounded border px-2 py-1 bg-transparent"
+            className={inputClass}
           />
         </div>
         <div>
@@ -736,15 +746,17 @@ function RangeCard({
             value={value.step ?? 1}
             min={1}
             onChange={e => set({ step: Math.max(1, Number(e.target.value)) })}
-            className="w-full mt-1 rounded border px-2 py-1 bg-transparent"
+            className={inputClass}
           />
         </div>
       </div>
 
       <div className="mt-3 text-xs flex items-center justify-between">
-        <span className="text-gray-500">Faixa típica: {value.tipica.min}–{value.tipica.max} {unit}</span>
+        <span className={`${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+          Faixa típica: {value.tipica.min}–{value.tipica.max} {unit}
+        </span>
         {showGridHint && (
-          <span className={`${invalid ? 'text-rose-600' : (isDark ? 'text-gray-300' : 'text-gray-700')}`}>
+          <span className={`${invalid ? 'text-rose-500' : (isDark ? 'text-slate-200' : 'text-slate-700')}`}>
             {invalid ? 'Faixa inválida (mín ≥ máx)' : <>Espaço (Grid): <b>{points}</b> pontos</>}
           </span>
         )}
@@ -752,6 +764,7 @@ function RangeCard({
     </div>
   );
 }
+
 
 
 
