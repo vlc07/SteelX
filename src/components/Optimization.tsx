@@ -497,7 +497,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
               <div className="flex items-center justify-end gap-2">
                 <span className={`text-xs ${subMuted}`}>Score</span>
                 <span
-                  className={`cursor-help text-xs ${isDark ? 'bg-blue-900/60 text-blue-200 border border-blue-800' : 'bg-blue-100 text-blue-700 border border-blue-200'} px-2 py-0.5 rounded-full`}
+                  className={`cursor-help text-xs ${isDark ? 'bg-blue-900/70 text-blue-200 border border-blue-700' : 'bg-blue-100 text-blue-700 border border-blue-200'} px-2 py-0.5 rounded-full`}
                   title={`O score combina qualidade prevista e consumo de energia em um só valor.
 Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores priorizam economia de energia.`}
                 >
