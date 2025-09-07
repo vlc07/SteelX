@@ -56,29 +56,33 @@ const PremiumRangeGlow: React.FC<{ dark?: boolean }> = ({ dark }) => (
       -webkit-appearance: none;
       appearance: none;
       width: 100%;
-      height: 4px;
+      height: 4px;                 /* altura do trilho */
       border-radius: 9999px;
       background: ${dark
         ? 'linear-gradient(90deg, rgba(16,185,129,.25), rgba(16,185,129,.45))'
         : 'linear-gradient(90deg, rgba(16,185,129,.15), rgba(16,185,129,.35))'};
       outline: none;
     }
-    /* WebKit - track */
+
+    /* WebKit - trilho */
     .premium-range::-webkit-slider-runnable-track {
-      height: 4px;
+      height: 4px;                 /* mantenha igual ao de cima */
       border-radius: 9999px;
       background: ${dark
         ? 'linear-gradient(90deg, rgba(16,185,129,.25), rgba(16,185,129,.45))'
         : 'linear-gradient(90deg, rgba(16,185,129,.15), rgba(16,185,129,.35))'};
     }
-    /* WebKit - thumb */
+
+    /* WebKit - thumb (18px). Centramos com margin-top negativo:
+       (thumb 18px - track 4px) / 2 = 7px  */
     .premium-range::-webkit-slider-thumb {
       -webkit-appearance: none;
       appearance: none;
       width: 18px;
       height: 18px;
+      margin-top: -7px;            /* <-- corrige o “descer” do thumb */
       border-radius: 9999px;
-      background: #10b981; /* emerald-500 */
+      background: #10b981;         /* emerald-500 */
       border: 2px solid ${dark ? '#111827' : '#ffffff'};
       box-shadow:
         0 0 0 4px ${dark ? 'rgba(16,185,129,.22)' : 'rgba(16,185,129,.18)'},
@@ -97,7 +101,8 @@ const PremiumRangeGlow: React.FC<{ dark?: boolean }> = ({ dark }) => (
         0 0 0 6px ${dark ? 'rgba(16,185,129,.35)' : 'rgba(16,185,129,.30)'},
         0 0 28px rgba(16,185,129,.85);
     }
-    /* Firefox - track */
+
+    /* Firefox normalmente centraliza bem; não há margin-top no thumb do Firefox */
     .premium-range::-moz-range-track {
       height: 4px;
       border-radius: 9999px;
@@ -105,7 +110,6 @@ const PremiumRangeGlow: React.FC<{ dark?: boolean }> = ({ dark }) => (
         ? 'linear-gradient(90deg, rgba(16,185,129,.25), rgba(16,185,129,.45))'
         : 'linear-gradient(90deg, rgba(16,185,129,.15), rgba(16,185,129,.35))'};
     }
-    /* Firefox - thumb */
     .premium-range::-moz-range-thumb {
       width: 18px;
       height: 18px;
@@ -115,7 +119,7 @@ const PremiumRangeGlow: React.FC<{ dark?: boolean }> = ({ dark }) => (
       box-shadow:
         0 0 0 4px ${dark ? 'rgba(16,185,129,.22)' : 'rgba(16,185,129,.18)'},
         0 0 16px rgba(16,185,129,.55);
-      transition: box-shadow .2s ease, transform .2s ease, background .2s ease;
+      transition: box-shadow .2s, transform .2s, background .2s;
       cursor: pointer;
     }
     .premium-range:hover::-moz-range-thumb {
