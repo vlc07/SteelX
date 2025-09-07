@@ -513,7 +513,8 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
-                <div className="text-xs uppercase tracking-wide text-gray-500">Método utilizado</div>
+                <div className={`text-xs uppercase tracking-wide ${isDark ? 'text-slate-300' : 'text-gray-500'}`}>Método utilizado</div>
+
                 <div className={`mt-1 text-lg font-semibold ${text}`}>{fullMethodName(last.method)}</div>
               </div>
               <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
