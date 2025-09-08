@@ -2,7 +2,7 @@
 import React from 'react';
 import {
   Play, Beaker, Dna, Brain, Gauge, AlertCircle, Trophy,
-  Thermometer, Timer, Wind, BatteryCharging, History as HistoryIcon, Settings2, Leaf, Flame, Zap
+  Thermometer, Timer, Wind, BatteryCharging, History as HistoryIcon, Settings2, Leaf, Flame, Zap, Download
 } from 'lucide-react';
 import type { OptimizeMethod } from '../optim/runner';
 import { runOptimization } from '../optim/runner';
@@ -333,7 +333,6 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       setBoProgress(0);
       return;
     }
-    // Fallback incremental (não depende do loop de JS para animar visualmente — a barra tem animação CSS própria)
     let p = 0;
     const id = window.setInterval(() => {
       p = Math.min(90, p + Math.random() * 6 + 2);
@@ -341,6 +340,62 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     }, 400);
     return () => window.clearInterval(id);
   }, [runningBO]);
+
+  // ===== Exportar histórico (CSV com BOM) =====
+  const exportHistory = React.useCallback(() => {
+    if (!history || history.length === 0) {
+      alert('Não há histórico para exportar.');
+      return;
+    }
+    const header = [
+      'timestamp',
+      'metodo',
+      'score',
+      'testes',
+      'qualidade',
+      'energia_kWh_ton',
+      'lambda',
+      'temperatura_C',
+      'tempo_min',
+      'pressao',
+      'velocidade_rpm'
+    ];
+    const lines = history.map((item) => {
+      const ts = new Date(item.ts).toISOString();
+      const metodo = fullMethodName(item.method);
+      const t = (item.x as any)?.temperatura ?? '';
+      const tm = (item.x as any)?.tempo ?? '';
+      const p = (item.x as any)?.pressao ?? '';
+      const v = (item.x as any)?.velocidade ?? '';
+      return [
+        ts,
+        metodo,
+        item.score,
+        item.evaluations,
+        item.quality,
+        item.energy,
+        item.lambda,
+        t,
+        tm,
+        p,
+        v
+      ]
+        .map((v) => (typeof v === 'string' ? `"${v.replace(/"/g, '""')}"` : String(v)))
+        .join(',');
+    });
+    const csv = [header.join(','), ...lines].join('\n');
+    const csvWithBom = '\uFEFF' + csv;
+    const blob = new Blob([csvWithBom], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const date = new Date().toISOString().slice(0, 10);
+    a.download = `historico_otimizacoes_${date}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [history]);
 
   // Executar método
   async function executar(method: OptimizeMethod) {
@@ -395,7 +450,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       setLast(summary);
 
       const item: HistoryItem = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        id: `${Date.now()}-${Math.random().toString(36).slice(0, 7)}`,
         ts: Date.now(),
         method,
         score: summary.score,
@@ -532,7 +587,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             <Settings2 className={`h-5 w-5 ${isDark ? 'text-gray-300' : 'text-gray-600'}`} />
             <h3 className={`font-semibold ${text}`}>Presets por objetivo</h3>
           </div>
-          <span className="text-xs text-gray-500">
+        <span className="text-xs text-gray-500">
             Aplique com 1 clique — você pode ajustar as faixas depois.
           </span>
         </div>
@@ -708,7 +763,6 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
                   </span>
                 </div>
                 <div className="progress-track progress-indeterminate relative">
-                  {/* também renderizamos uma barra "determinada" por cima, caso o timer rode */}
                   <div
                     style={{ width: `${boProgress}%` }}
                     className={`absolute inset-y-0 left-0 rounded-full ${isDark ? 'bg-emerald-600/70' : 'bg-emerald-500/80'}`}
@@ -1028,13 +1082,30 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
               Histórico de Otimizações
             </h3>
           </div>
-          <button
-            onClick={clearHistory}
-            className={`text-xs px-3 py-1 rounded-md border transition 
+          {/* Botões: Exportar + Limpar */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={exportHistory}
+              disabled={history.length === 0}
+              className={`text-xs px-3 py-1 rounded-md border transition inline-flex items-center gap-1
+                ${isDark
+                  ? 'border-emerald-700 text-emerald-300 hover:bg-emerald-900/30 disabled:opacity-50'
+                  : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50'}
+                ${ringBlue}`}
+              title="Exportar histórico para CSV"
+            >
+              <Download className="h-4 w-4" />
+              Exportar histórico
+            </button>
+
+            <button
+              onClick={clearHistory}
+              className={`text-xs px-3 py-1 rounded-md border transition 
               ${isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-          >
-            Limpar histórico
-          </button>
+            >
+              Limpar histórico
+            </button>
+          </div>
         </div>
 
         {history.length === 0 ? (
@@ -1269,6 +1340,7 @@ function RangeCard({
     </div>
   );
 }
+
 
 
 
