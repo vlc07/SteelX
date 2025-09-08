@@ -50,7 +50,51 @@ export const Results: React.FC<ResultsProps> = ({
 
   const model = useMemo(() => getModel('inference'), []);
 
-  // Normaliza possível estrutura dos resultados de otimização
+  /** --------- Helpers visuais premium (apenas estilo) --------- */
+  const text = isDark ? 'text-gray-100' : 'text-gray-900';
+  const sub  = isDark ? 'text-gray-400' : 'text-gray-600';
+
+  // container “vidro + gradiente” com glow sutil
+  const cardGlass = `rounded-2xl border shadow-lg transition-all duration-300
+    ${isDark
+      ? 'bg-gradient-to-br from-slate-900/60 via-slate-900/40 to-slate-800/30 border-slate-700/70 backdrop-blur-md'
+      : 'bg-gradient-to-br from-white/80 to-slate-50/70 border-slate-200/80 backdrop-blur'} 
+    hover:shadow-xl hover:-translate-y-0.5`;
+
+  // variação para caixas de gráfico (um pouco mais “larga”)
+  const chartGlass = `${cardGlass} p-4 sm:p-6`;
+
+  // barra de navegação das abas
+  const tabsWrap = `flex space-x-1 mb-6 rounded-xl p-1 border
+    ${isDark ? 'bg-slate-900/50 border-slate-700/70' : 'bg-slate-100/60 border-slate-200'}`;
+
+  const tabBtn = (active: boolean) =>
+    `flex-1 py-2.5 px-4 rounded-lg text-sm font-medium transition-all
+     ${active
+       ? `${isDark
+          ? 'bg-slate-800/70 text-sky-300 shadow ring-1 ring-sky-500/30'
+          : 'bg-white text-sky-700 shadow ring-1 ring-sky-500/20'}`
+       : `${isDark
+          ? 'text-gray-300 hover:text-white hover:bg-slate-800/40'
+          : 'text-gray-600 hover:text-gray-900 hover:bg-white/70'}`}`;
+
+  // botões principais
+  const primaryBtn = `flex items-center px-4 py-2 rounded-xl font-medium text-white transition-all
+    bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-600
+    shadow hover:shadow-lg active:scale-[0.99]`;
+  const successBtn = `flex items-center px-4 py-2 rounded-xl font-medium text-white transition-all
+    bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-600
+    shadow hover:shadow-lg active:scale-[0.99]`;
+
+  // cards-resumo com sutis cores tema
+  const summaryTone = (tone: 'blue' | 'green' | 'purple' | 'yellow') =>
+    `${cardGlass} p-5
+     ${tone === 'blue'   ? (isDark ? 'border-sky-800/40'     : 'border-sky-200')
+      : tone === 'green' ? (isDark ? 'border-emerald-800/40' : 'border-emerald-200')
+      : tone === 'purple'? (isDark ? 'border-violet-800/40'  : 'border-violet-200')
+                         : (isDark ? 'border-amber-800/40'   : 'border-amber-200')}`;
+
+  // ----------------- Lógica (inalterada) -----------------
   const opt = useMemo(() => {
     const src = optimizationResults;
     if (!src) return null;
@@ -108,7 +152,6 @@ export const Results: React.FC<ResultsProps> = ({
     return null;
   }, [optimizationResults]);
 
-  // Qualidade otimizada com fallbacks
   const optimizedQuality: number | null = useMemo(() => {
     if (!opt) return null;
 
@@ -143,16 +186,13 @@ export const Results: React.FC<ResultsProps> = ({
     return null;
   }, [opt, optimizationResults, currentParams, model]);
 
-  // ===== Qualidade/Energia atuais com fallbacks robustos =====
   const { currentQuality, currentEnergy } = useMemo(() => {
-    // 1) pegar dos props
     let q = Number(currentParams.qualidade);
     let e = Number(currentParams.energia);
 
-    const qInvalid = !Number.isFinite(q) || q <= 0; // <= 0 passa a acionar fallback
+    const qInvalid = !Number.isFinite(q) || q <= 0;
     const eInvalid = !Number.isFinite(e) || e <= 0;
 
-    // 2) tentar prever pelo modelo (se inválidos)
     if (qInvalid || eInvalid) {
       try {
         const pred = model.predict({
@@ -166,7 +206,6 @@ export const Results: React.FC<ResultsProps> = ({
       } catch {}
     }
 
-    // 3) se ainda sem qualidade, usa a última simulação disponível
     if ((!Number.isFinite(q) || q <= 0) && simulationResults.length > 0) {
       const last = simulationResults[simulationResults.length - 1];
       q = safeNumber(last?.quality, NaN);
@@ -178,7 +217,6 @@ export const Results: React.FC<ResultsProps> = ({
     };
   }, [currentParams, simulationResults, model]);
 
-  // Baixar CSV
   const downloadAllResults = () => {
     const avgQuality =
       simulationResults.length > 0
@@ -220,7 +258,6 @@ export const Results: React.FC<ResultsProps> = ({
     window.URL.revokeObjectURL(url);
   };
 
-  // Gerar relatório TXT
   const generateReport = () => {
     const avg =
       simulationResults.length > 0
@@ -301,7 +338,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     window.URL.revokeObjectURL(url);
   };
 
-  // Dados dos gráficos
+  // Chart data
   const qualityTrendData = {
     labels: simulationResults.map((_, i) => `Teste ${i + 1}`),
     datasets: [
@@ -363,7 +400,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     ]
   };
 
-  // Estatísticas auxiliares
+  // Helpers para estatísticas
   const mean =
     simulationResults.length > 0
       ? simulationResults.reduce((s, r) => s + safeNumber(r.quality), 0) /
@@ -393,60 +430,43 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
 
   return (
     <div className="space-y-6">
-      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
+      {/* Header premium */}
+      <div className={`${cardGlass} p-6`}>
         <div className="flex items-center justify-between mb-6">
-          <h2 className={`text-2xl font-bold flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
-            <FileText className="h-6 w-6 mr-2 text-blue-500" />
+          <h2 className={`text-2xl font-bold flex items-center ${text}`}>
+            <FileText className="h-6 w-6 mr-2 text-sky-400" />
             <span>Resultados e Relatórios</span>
           </h2>
 
-        <div className="flex space-x-2">
-            <button
-              onClick={downloadAllResults}
-              className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
+          <div className="flex gap-2">
+            <button onClick={downloadAllResults} className={primaryBtn}>
               <Download className="h-4 w-4 mr-2" />
               Baixar CSV
             </button>
-            <button
-              onClick={generateReport}
-              className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-            >
+            <button onClick={generateReport} className={successBtn}>
               <FileText className="h-4 w-4 mr-2" />
               Gerar Relatório
             </button>
           </div>
         </div>
 
-        {/* View Selector */}
-        <div className="flex space-x-1 mb-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+        {/* View Selector premium */}
+        <div className={tabsWrap}>
           <button
             onClick={() => setActiveView('overview')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeView === 'overview'
-                ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-            }`}
+            className={tabBtn(activeView === 'overview')}
           >
             Visão Geral
           </button>
           <button
             onClick={() => setActiveView('detailed')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeView === 'detailed'
-                ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-            }`}
+            className={tabBtn(activeView === 'detailed')}
           >
             Análise Detalhada
           </button>
           <button
             onClick={() => setActiveView('comparison')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeView === 'comparison'
-                ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-            }`}
+            className={tabBtn(activeView === 'comparison')}
           >
             Comparação
           </button>
@@ -457,25 +477,30 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
           <div className="space-y-6">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-blue-50'} border ${isDark ? 'border-gray-600' : 'border-blue-200'}`}>
+              <div className={summaryTone('blue')}>
                 <div className="flex items-center">
-                  <TrendingUp className="h-8 w-8 text-blue-500 mr-3" />
+                  <div className="mr-3 p-2 rounded-xl bg-sky-500/15 text-sky-400 ring-1 ring-sky-500/20">
+                    <TrendingUp className="h-6 w-6" />
+                  </div>
                   <div>
-                    <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Qualidade Atual</div>
-                    <div className={`text-2xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                      {safeNumber(currentQuality).toFixed(1)}<span className="text-lg text-gray-500">/400</span>
+                    <div className={`text-sm ${sub}`}>Qualidade Atual</div>
+                    <div className={`text-2xl font-bold ${text}`}>
+                      {safeNumber(currentQuality).toFixed(1)}
+                      <span className="text-lg text-gray-500">/400</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {!!opt && (
-                <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-green-50'} border ${isDark ? 'border-gray-600' : 'border-green-200'}`}>
+                <div className={summaryTone('green')}>
                   <div className="flex items-center">
-                    <Award className="h-8 w-8 text-green-500 mr-3" />
+                    <div className="mr-3 p-2 rounded-xl bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/20">
+                      <Award className="h-6 w-6" />
+                    </div>
                     <div>
-                      <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Qualidade Otimizada</div>
-                      <div className={`text-2xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                      <div className={`text-sm ${sub}`}>Qualidade Otimizada</div>
+                      <div className={`text-2xl font-bold ${text}`}>
                         {optimizedQuality != null ? optimizedQuality.toFixed(1) : '—'}
                         <span className="text-lg text-gray-500">/400</span>
                       </div>
@@ -484,25 +509,27 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                 </div>
               )}
 
-              <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-purple-50'} border ${isDark ? 'border-gray-600' : 'border-purple-200'}`}>
+              <div className={summaryTone('purple')}>
                 <div className="flex items-center">
-                  <BarChart3 className="h-8 w-8 text-purple-500 mr-3" />
+                  <div className="mr-3 p-2 rounded-xl bg-violet-500/15 text-violet-400 ring-1 ring-violet-500/20">
+                    <BarChart3 className="h-6 w-6" />
+                  </div>
                   <div>
-                    <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Total de Simulações</div>
-                    <div className={`text-2xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                      {simulationResults.length}
-                    </div>
+                    <div className={`text-sm ${sub}`}>Total de Simulações</div>
+                    <div className={`text-2xl font-bold ${text}`}>{simulationResults.length}</div>
                   </div>
                 </div>
               </div>
 
               {simulationResults.length > 0 && (
-                <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-yellow-50'} border ${isDark ? 'border-gray-600' : 'border-yellow-200'}`}>
+                <div className={summaryTone('yellow')}>
                   <div className="flex items-center">
-                    <PieChart className="h-8 w-8 text-yellow-500 mr-3" />
+                    <div className="mr-3 p-2 rounded-xl bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/20">
+                      <PieChart className="h-6 w-6" />
+                    </div>
                     <div>
-                      <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Melhor Simulação</div>
-                      <div className={`text-2xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                      <div className={`text-sm ${sub}`}>Melhor Simulação</div>
+                      <div className={`text-2xl font-bold ${text}`}>
                         {Math.max(...simulationResults.map(r => safeNumber(r.quality))).toFixed(1)}
                       </div>
                     </div>
@@ -512,14 +539,12 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
             </div>
 
             {/* Quick Insights */}
-            <div className={`p-6 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
-              <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
-                Insights Rápidos
-              </h3>
+            <div className={`${cardGlass} p-6`}>
+              <h3 className={`text-lg font-semibold mb-4 ${text}`}>Insights Rápidos</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <h4 className={`font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>📊 Análise de Performance</h4>
-                  <ul className={`space-y-1 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <h4 className={`font-medium mb-2 ${text}`}>📊 Análise de Performance</h4>
+                  <ul className={`space-y-1 text-sm ${sub}`}>
                     <li>• {simulationResults.length > 0
                       ? `Qualidade média das simulações: ${(
                           simulationResults.reduce((sum, r) => sum + safeNumber(r.quality), 0) /
@@ -542,8 +567,8 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                   </ul>
                 </div>
                 <div>
-                  <h4 className={`font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>🎯 Recomendações</h4>
-                  <ul className={`space-y-1 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <h4 className={`font-medium mb-2 ${text}`}>🎯 Recomendações</h4>
+                  <ul className={`space-y-1 text-sm ${sub}`}>
                     <li>• {opt
                       ? 'Implemente os parâmetros otimizados gradualmente'
                       : 'Execute a otimização para encontrar melhores parâmetros'}</li>
@@ -565,8 +590,8 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
         {activeView === 'detailed' && simulationResults.length > 0 && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'} border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                <h3 className={`font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Tendência de Qualidade</h3>
+              <div className={chartGlass}>
+                <h3 className={`font-semibold mb-4 ${text}`}>Tendência de Qualidade</h3>
                 <Line
                   data={qualityTrendData}
                   options={{
@@ -587,8 +612,8 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                 />
               </div>
 
-              <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'} border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                <h3 className={`font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Distribuição de Qualidade</h3>
+              <div className={chartGlass}>
+                <h3 className={`font-semibold mb-4 ${text}`}>Distribuição de Qualidade</h3>
                 <Doughnut
                   data={qualityDistributionData}
                   options={{
@@ -605,32 +630,24 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
             </div>
 
             {/* Statistical Summary */}
-            <div className={`p-6 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'} border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-              <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Resumo Estatístico</h3>
+            <div className={`${cardGlass} p-6`}>
+              <h3 className={`text-lg font-semibold mb-4 ${text}`}>Resumo Estatístico</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
-                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Média</div>
-                  <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    {mean.toFixed(2)}
-                  </div>
+                  <div className={`text-sm ${sub}`}>Média</div>
+                  <div className={`text-xl font-bold ${text}`}>{mean.toFixed(2)}</div>
                 </div>
                 <div>
-                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Mediana</div>
-                  <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    {median}
-                  </div>
+                  <div className={`text-sm ${sub}`}>Mediana</div>
+                  <div className={`text-xl font-bold ${text}`}>{median}</div>
                 </div>
                 <div>
-                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Desvio Padrão</div>
-                  <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    {std.toFixed(2)}
-                  </div>
+                  <div className={`text-sm ${sub}`}>Desvio Padrão</div>
+                  <div className={`text-xl font-bold ${text}`}>{std.toFixed(2)}</div>
                 </div>
                 <div>
-                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Amplitude</div>
-                  <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    {range}
-                  </div>
+                  <div className={`text-sm ${sub}`}>Amplitude</div>
+                  <div className={`text-xl font-bold ${text}`}>{range}</div>
                 </div>
               </div>
             </div>
@@ -641,8 +658,8 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
         {activeView === 'comparison' && (
           <div className="space-y-6">
             {opt ? (
-              <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'} border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                <h3 className={`font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Comparação: Atual vs Otimizado</h3>
+              <div className={chartGlass}>
+                <h3 className={`font-semibold mb-4 ${text}`}>Comparação: Atual vs Otimizado</h3>
                 <Bar
                   data={parameterComparisonData}
                   options={{
@@ -663,11 +680,9 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                 />
               </div>
             ) : (
-              <div className={`p-8 text-center ${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
-                <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'} mb-2`}>
-                  Nenhuma otimização executada ainda
-                </div>
-                <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              <div className={`${cardGlass} p-8 text-center`}>
+                <div className={`text-lg ${text} mb-2`}>Nenhuma otimização executada ainda</div>
+                <div className={`text-sm ${sub}`}>
                   Execute a otimização na aba correspondente para ver comparações
                 </div>
               </div>
@@ -675,31 +690,33 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
 
             {/* Improvement Summary */}
             {opt && (
-              <div className={`p-6 rounded-lg ${isDark ? 'bg-green-900' : 'bg-green-50'} border ${isDark ? 'border-green-700' : 'border-green-200'}`}>
-                <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-green-300' : 'text-green-800'}`}>Resumo das Melhorias</h3>
+              <div className={`${cardGlass} p-6 border-emerald-800/40`}>
+                <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
+                  Resumo das Melhorias
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>Melhoria na Qualidade</div>
-                    <div className={`text-2xl font-bold ${isDark ? 'text-green-200' : 'text-green-800'}`}>
+                    <div className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>Melhoria na Qualidade</div>
+                    <div className={`text-2xl font-bold ${isDark ? 'text-emerald-200' : 'text-emerald-800'}`}>
                       +{optimizationResults?.improvement ?? '—'} unidades
                     </div>
-                    <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                    <div className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>
                       {currentQuality
                         ? `(${((safeNumber(optimizationResults?.improvement) / Math.max(1, currentQuality)) * 100).toFixed(1)}% de melhoria)`
                         : '(—)'}
                     </div>
                   </div>
                   <div>
-                    <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>Parâmetro Mais Alterado</div>
-                    <div className={`text-xl font-bold ${isDark ? 'text-green-200' : 'text-green-800'}`}>Temperatura</div>
-                    <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                    <div className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>Parâmetro Mais Alterado</div>
+                    <div className={`text-xl font-bold ${isDark ? 'text-emerald-200' : 'text-emerald-800'}`}>Temperatura</div>
+                    <div className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>
                       {(safeNumber(opt.temperatura) - currentParams.temperatura) >= 0 ? '+' : ''}
                       {(safeNumber(opt.temperatura) - currentParams.temperatura).toFixed(1)}°C
                     </div>
                   </div>
                   <div>
-                    <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>Classificação Final</div>
-                    <div className={`text-xl font-bold ${isDark ? 'text-green-200' : 'text-green-800'}`}>
+                    <div className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>Classificação Final</div>
+                    <div className={`text-xl font-bold ${isDark ? 'text-emerald-200' : 'text-emerald-800'}`}>
                       {optimizedQuality != null
                         ? (optimizedQuality >= 365 ? 'Excelente' :
                            optimizedQuality >= 355 ? 'Boa' : 'Regular')
@@ -714,10 +731,10 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
 
         {/* Empty State (detailed sem dados) */}
         {activeView === 'detailed' && simulationResults.length === 0 && (
-          <div className={`p-8 text-center ${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
+          <div className={`${cardGlass} p-8 text-center`}>
             <BarChart3 className={`h-16 w-16 mx-auto mb-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-            <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'} mb-2`}>Nenhuma simulação executada ainda</div>
-            <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Execute simulações na aba correspondente para ver análises detalhadas</div>
+            <div className={`text-lg ${text} mb-2`}>Nenhuma simulação executada ainda</div>
+            <div className={`text-sm ${sub}`}>Execute simulações na aba correspondente para ver análises detalhadas</div>
           </div>
         )}
       </div>
