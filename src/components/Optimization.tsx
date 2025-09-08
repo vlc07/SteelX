@@ -190,7 +190,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     return {
       label: 'Ótimo',
       class: isDark
-        ? 'bg-emerald-900/50 text-emerald-200 border border-emerald-700'
+        ? 'bg-emerald-900/50 text-emerald-200 border-emerald-700'
         : 'bg-emerald-100 text-emerald-800 border-emerald-200'
     };
   }
@@ -249,7 +249,6 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   const pct = (name: keyof typeof bounds, v: number) => {
     const b = bounds[name];
     return Math.max(0, Math.min(100, ((v - b.min) / (b.max - b.min)) * 100));
-    // 0..100
   };
 
   // Nome completo do método
@@ -327,6 +326,22 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     }, 250);
   }
 
+  // ===== PROGRESSO VISUAL — Bayesiana (indeterminado com fallback incremental) =====
+  const [boProgress, setBoProgress] = React.useState(0);
+  React.useEffect(() => {
+    if (!runningBO) {
+      setBoProgress(0);
+      return;
+    }
+    // Fallback incremental (não depende do loop de JS para animar visualmente — a barra tem animação CSS própria)
+    let p = 0;
+    const id = window.setInterval(() => {
+      p = Math.min(90, p + Math.random() * 6 + 2);
+      setBoProgress(p);
+    }, 400);
+    return () => window.clearInterval(id);
+  }, [runningBO]);
+
   // Executar método
   async function executar(method: OptimizeMethod) {
     const setRun =
@@ -347,6 +362,9 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           step: ranges.velocidade.step
         }
       };
+
+      // Pequeno yield para a UI renderizar o banner e a barra antes do cálculo pesado
+      await new Promise((r) => setTimeout(r, 30));
 
       const res = await runOptimization({
         method,
@@ -391,6 +409,9 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
 
       onOptimizationComplete({ ...res, bestParams: res.best.x });
 
+      // Força progresso a 100% ao terminar a Bayesiana
+      if (method === 'bo') setBoProgress(100);
+
       // feedback + auto-scroll
       notifyAndRevealResult();
     } catch (e) {
@@ -401,7 +422,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     }
   }
 
-  // ===== estilos premium para sliders (glow + thumb centralizado) =====
+  // ===== estilos premium para sliders e barra indeterminada =====
   const sliderStyle = (
     <style>{`
       .premium-range {
@@ -426,7 +447,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         background: #10b981;
         border: 2px solid rgba(255,255,255,0.8);
         box-shadow: 0 0 0 3px rgba(16,185,129,0.25), 0 0 20px rgba(16,185,129,0.45);
-        margin-top: -6px; /* centraliza no track de 6px */
+        margin-top: -6px;
       }
       .dark .premium-range::-webkit-slider-thumb{
         background: #22c55e;
@@ -442,6 +463,29 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       .dark .premium-range::-moz-range-thumb{
         background: #22c55e;
         border-color: rgba(255,255,255,0.6);
+      }
+
+      /* Barra indeterminada com shimmer (não depende de JS durante o cálculo) */
+      .progress-track {
+        position: relative;
+        overflow: hidden;
+        height: 8px;
+        border-radius: 9999px;
+        background: ${isDark ? 'rgba(31,41,55,1)' : 'rgba(229,231,235,1)'};
+      }
+      .progress-indeterminate::before {
+        content: "";
+        position: absolute;
+        left: -40%;
+        top: 0; bottom: 0;
+        width: 40%;
+        border-radius: 9999px;
+        background: linear-gradient(90deg, rgba(16,185,129,0.0) 0%, rgba(16,185,129,0.55) 50%, rgba(16,185,129,0.0) 100%);
+        animation: indet 1.0s ease-in-out infinite;
+      }
+      @keyframes indet {
+        0% { left: -40%; }
+        100% { left: 100%; }
       }
     `}</style>
   );
@@ -467,7 +511,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         </div>
       )}
 
-      {/* Cabeçalho – deu mais respiro (p-6) */}
+      {/* Cabeçalho */}
       <div className={`${cardBase} ${ringBlue} p-6`}>
         <div className="flex items-center gap-2 mb-1">
           <Beaker className="h-5 w-5 text-blue-500" />
@@ -653,6 +697,25 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
               <Play className="h-5 w-5" />
               {runningBO ? 'Executando…' : 'Executar Otimização Bayesiana'}
             </button>
+
+            {/* Barra de progresso — aparece somente durante a Bayesiana */}
+            {runningBO && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Progresso</span>
+                  <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {Math.round(boProgress)}%
+                  </span>
+                </div>
+                <div className="progress-track progress-indeterminate relative">
+                  {/* também renderizamos uma barra "determinada" por cima, caso o timer rode */}
+                  <div
+                    style={{ width: `${boProgress}%` }}
+                    className={`absolute inset-y-0 left-0 rounded-full ${isDark ? 'bg-emerald-600/70' : 'bg-emerald-500/80'}`}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1206,6 +1269,7 @@ function RangeCard({
     </div>
   );
 }
+
 
 
 
