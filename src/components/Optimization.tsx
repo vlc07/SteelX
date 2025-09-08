@@ -2,7 +2,7 @@
 import React from 'react';
 import {
   Play, Beaker, Dna, Brain, Gauge, AlertCircle, Trophy,
-  Thermometer, Timer, Wind, BatteryCharging, History as HistoryIcon, Settings2, Leaf, Flame, Zap, Download
+  Thermometer, Timer, Wind, BatteryCharging, History as HistoryIcon, Settings2, Leaf, Flame, Zap
 } from 'lucide-react';
 import type { OptimizeMethod } from '../optim/runner';
 import { runOptimization } from '../optim/runner';
@@ -85,6 +85,58 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   );
 
   const clearHistory = () => saveHistory([]);
+
+  // === ADIÇÃO: Exportar histórico para CSV (Excel-friendly, com BOM) ===
+  function exportHistoryCSV() {
+    if (!history || history.length === 0) return;
+
+    const sep = ';';
+    const esc = (s: any) => `"${String(s ?? '').replace(/"/g, '""')}"`;
+
+    const header = [
+      'id','timestamp_iso','method','score','evaluations','quality','energy','lambda',
+      'temperatura','tempo','pressao','velocidade'
+    ].join(sep);
+
+    const rows = history.map((it) => {
+      const tsIso = it.ts ? new Date(it.ts).toISOString() : '';
+      const temp = (it.x as any)?.temperatura ?? '';
+      const tempoVal = (it.x as any)?.tempo ?? '';
+      const press = (it.x as any)?.pressao ?? '';
+      const vel = (it.x as any)?.velocidade ?? '';
+      return [
+        esc(it.id),
+        esc(tsIso),
+        esc(it.method),
+        esc(it.score.toFixed(2)),
+        esc(it.evaluations),
+        esc(it.quality.toFixed(2)),
+        esc(it.energy.toFixed(2)),
+        esc(it.lambda.toFixed(2)),
+        esc(temp),
+        esc(tempoVal),
+        esc(press),
+        esc(vel)
+      ].join(sep);
+    });
+
+    const csv = [header, ...rows].join('\n');
+
+    // BOM UTF-8 para o Excel reconhecer corretamente
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM, csv], { type: 'text/csv;charset=utf-8;' });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.download = `historico_otimizacoes_${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  // === FIM DA ADIÇÃO ===
 
   const label = isDark ? 'text-gray-300' : 'text-gray-700';
   const text = isDark ? 'text-gray-100' : 'text-gray-900';
@@ -190,7 +242,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     return {
       label: 'Ótimo',
       class: isDark
-        ? 'bg-emerald-900/50 text-emerald-200 border-emerald-700'
+        ? 'bg-emerald-900/50 text-emerald-200 border border-emerald-700'
         : 'bg-emerald-100 text-emerald-800 border-emerald-200'
     };
   }
@@ -249,6 +301,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   const pct = (name: keyof typeof bounds, v: number) => {
     const b = bounds[name];
     return Math.max(0, Math.min(100, ((v - b.min) / (b.max - b.min)) * 100));
+    // 0..100
   };
 
   // Nome completo do método
@@ -311,87 +364,6 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     }
   };
 
-  // ===== status visual / toast / ref para auto-scroll =====
-  const isAnyRunning = runningGrid || runningGA || runningBO;
-  const [showToast, setShowToast] = React.useState(false);
-  const resultRef = React.useRef<HTMLDivElement | null>(null);
-
-  function notifyAndRevealResult() {
-    setShowToast(true);
-    window.setTimeout(() => setShowToast(false), 3500);
-    window.setTimeout(() => {
-      if (resultRef.current) {
-        resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 250);
-  }
-
-  // ===== PROGRESSO VISUAL — Bayesiana (indeterminado com fallback incremental) =====
-  const [boProgress, setBoProgress] = React.useState(0);
-  React.useEffect(() => {
-    if (!runningBO) {
-      setBoProgress(0);
-      return;
-    }
-    let p = 0;
-    const id = window.setInterval(() => {
-      p = Math.min(90, p + Math.random() * 6 + 2);
-      setBoProgress(p);
-    }, 400);
-    return () => window.clearInterval(id);
-  }, [runningBO]);
-
-  // ===== Exportar histórico (CSV com BOM) =====
-  function exportHistoryCSV() {
-  if (!history || history.length === 0) return;
-
-  const sep = ';';
-  const esc = (s: any) => `"${String(s ?? '').replace(/"/g, '""')}"`;
-
-  const header = [
-    'id','timestamp_iso','method','score','evaluations','quality','energy','lambda',
-    'temperatura','tempo','pressao','velocidade'
-  ].join(sep);
-
-  const rows = history.map((it) => {
-    const t = it.ts ? new Date(it.ts).toISOString() : '';
-    const temp = (it.x as any)?.temperatura ?? '';
-    const tempoVal = (it.x as any)?.tempo ?? '';
-    const press = (it.x as any)?.pressao ?? '';
-    const vel = (it.x as any)?.velocidade ?? '';
-    return [
-      esc(it.id),
-      esc(t),
-      esc(it.method),
-      esc(it.score.toFixed(2)),
-      esc(it.evaluations),
-      esc(it.quality.toFixed(2)),
-      esc(it.energy.toFixed(2)),
-      esc(it.lambda.toFixed(2)),
-      esc(temp),
-      esc(tempoVal),
-      esc(press),
-      esc(vel)
-    ].join(sep);
-  });
-
-  const csv = [header, ...rows].join('\n');
-
-  // >>> chave para o Excel: BOM UTF-8 <<<
-  const BOM = '\uFEFF'; // Byte Order Mark
-  const blob = new Blob([BOM, csv], { type: 'text/csv;charset=utf-8;' });
-
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  const stamp = new Date().toISOString().slice(0, 10);
-  a.download = `historico_otimizacoes_${stamp}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
   // Executar método
   async function executar(method: OptimizeMethod) {
     const setRun =
@@ -412,9 +384,6 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           step: ranges.velocidade.step
         }
       };
-
-      // Pequeno yield para a UI renderizar o banner e a barra antes do cálculo pesado
-      await new Promise((r) => setTimeout(r, 30));
 
       const res = await runOptimization({
         method,
@@ -445,7 +414,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       setLast(summary);
 
       const item: HistoryItem = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(0, 7)}`,
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         ts: Date.now(),
         method,
         score: summary.score,
@@ -458,12 +427,6 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       pushHistory(item);
 
       onOptimizationComplete({ ...res, bestParams: res.best.x });
-
-      // Força progresso a 100% ao terminar a Bayesiana
-      if (method === 'bo') setBoProgress(100);
-
-      // feedback + auto-scroll
-      notifyAndRevealResult();
     } catch (e) {
       console.error(e);
       alert('Falha ao executar a otimização.');
@@ -472,7 +435,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     }
   }
 
-  // ===== estilos premium para sliders e barra indeterminada =====
+  // ===== estilos premium para sliders (glow + thumb centralizado) =====
   const sliderStyle = (
     <style>{`
       .premium-range {
@@ -497,7 +460,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         background: #10b981;
         border: 2px solid rgba(255,255,255,0.8);
         box-shadow: 0 0 0 3px rgba(16,185,129,0.25), 0 0 20px rgba(16,185,129,0.45);
-        margin-top: -6px;
+        margin-top: -6px; /* centraliza no track de 6px */
       }
       .dark .premium-range::-webkit-slider-thumb{
         background: #22c55e;
@@ -514,29 +477,6 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         background: #22c55e;
         border-color: rgba(255,255,255,0.6);
       }
-
-      /* Barra indeterminada com shimmer (não depende de JS durante o cálculo) */
-      .progress-track {
-        position: relative;
-        overflow: hidden;
-        height: 8px;
-        border-radius: 9999px;
-        background: ${isDark ? 'rgba(31,41,55,1)' : 'rgba(229,231,235,1)'};
-      }
-      .progress-indeterminate::before {
-        content: "";
-        position: absolute;
-        left: -40%;
-        top: 0; bottom: 0;
-        width: 40%;
-        border-radius: 9999px;
-        background: linear-gradient(90deg, rgba(16,185,129,0.0) 0%, rgba(16,185,129,0.55) 50%, rgba(16,185,129,0.0) 100%);
-        animation: indet 1.0s ease-in-out infinite;
-      }
-      @keyframes indet {
-        0% { left: -40%; }
-        100% { left: 100%; }
-      }
     `}</style>
   );
 
@@ -544,24 +484,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     <div className="space-y-6">
       {sliderStyle}
 
-      {/* Banner "executando..." fixo (aparece somente durante execução) */}
-      {isAnyRunning && (
-        <div className="sticky top-2 z-40">
-          <div className={`mx-auto w-fit px-4 py-2 rounded-full shadow-lg border backdrop-blur
-            ${isDark
-              ? 'bg-gray-900/70 border-gray-700 text-gray-100'
-              : 'bg-white/80 border-gray-200 text-gray-800'}`}>
-            <span className="inline-flex items-center gap-2 text-sm font-medium">
-              <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              {runningBO && 'Otimizando (Bayesiana)…'}
-              {runningGrid && 'Executando Grid Search…'}
-              {runningGA && 'Executando Algoritmo Genético…'}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Cabeçalho */}
+      {/* Cabeçalho – deu mais respiro (p-6) */}
       <div className={`${cardBase} ${ringBlue} p-6`}>
         <div className="flex items-center gap-2 mb-1">
           <Beaker className="h-5 w-5 text-blue-500" />
@@ -582,7 +505,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             <Settings2 className={`h-5 w-5 ${isDark ? 'text-gray-300' : 'text-gray-600'}`} />
             <h3 className={`font-semibold ${text}`}>Presets por objetivo</h3>
           </div>
-        <span className="text-xs text-gray-500">
+          <span className="text-xs text-gray-500">
             Aplique com 1 clique — você pode ajustar as faixas depois.
           </span>
         </div>
@@ -747,24 +670,6 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
               <Play className="h-5 w-5" />
               {runningBO ? 'Executando…' : 'Executar Otimização Bayesiana'}
             </button>
-
-            {/* Barra de progresso — aparece somente durante a Bayesiana */}
-            {runningBO && (
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-1">
-                  <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Progresso</span>
-                  <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {Math.round(boProgress)}%
-                  </span>
-                </div>
-                <div className="progress-track progress-indeterminate relative">
-                  <div
-                    style={{ width: `${boProgress}%` }}
-                    className={`absolute inset-y-0 left-0 rounded-full ${isDark ? 'bg-emerald-600/70' : 'bg-emerald-500/80'}`}
-                  />
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -895,7 +800,6 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       {/* Resultado premium */}
       {last && (
         <div
-          ref={resultRef}
           className={`rounded-2xl border overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5
             ${
               isDark
@@ -1077,30 +981,24 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
               Histórico de Otimizações
             </h3>
           </div>
-          {/* Botões: Exportar + Limpar */}
+          {/* ADIÇÃO: Botões lado a lado (Exportar + Limpar) */}
           <div className="flex items-center gap-2">
             <button
-              onClick={exportHistory}
-              disabled={history.length === 0}
-              className={`text-xs px-3 py-1 rounded-md border transition inline-flex items-center gap-1
-                ${isDark
-                  ? 'border-emerald-700 text-emerald-300 hover:bg-emerald-900/30 disabled:opacity-50'
-                  : 'border-emerald-300 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50'}
-                ${ringBlue}`}
-              title="Exportar histórico para CSV"
+              onClick={exportHistoryCSV}
+              className={`text-xs px-3 py-1 rounded-md border transition 
+                ${isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
             >
-              <Download className="h-4 w-4" />
-              Exportar histórico
+              Exportar histórico (.csv)
             </button>
-
             <button
               onClick={clearHistory}
               className={`text-xs px-3 py-1 rounded-md border transition 
-              ${isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                ${isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
             >
               Limpar histórico
             </button>
           </div>
+          {/* FIM ADIÇÃO */}
         </div>
 
         {history.length === 0 ? (
@@ -1169,22 +1067,6 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
           mínima (ex.: 365). Grid Search varre combinações; o Genético evolui soluções; a Bayesiana
           aprende com cada teste para testar menos.
         </p>
-      </div>
-
-      {/* Toast de sucesso */}
-      <div className="fixed bottom-4 right-4 z-50">
-        {showToast && (
-          <div className={`rounded-xl border shadow-xl px-4 py-3 max-w-sm transition-all
-            ${isDark ? 'bg-gray-900/90 border-emerald-800 text-emerald-200' : 'bg-white/95 border-emerald-200 text-emerald-700'}`}>
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 h-2 w-2 rounded-full bg-emerald-500 animate-ping"></div>
-              <div className="text-sm">
-                <div className="font-semibold">Resultados prontos</div>
-                <div className={`${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Rolando até o melhor resultado…</div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -1335,6 +1217,7 @@ function RangeCard({
     </div>
   );
 }
+
 
 
 
