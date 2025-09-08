@@ -1,3 +1,4 @@
+// src/components/Results.tsx
 import React, { useState } from 'react';
 import { FileText, Download, TrendingUp, Award, BarChart3, PieChart } from 'lucide-react';
 import {
@@ -27,7 +28,7 @@ interface ResultsProps {
     pressao: number;
     velocidade: number;
     qualidade: number;
-    energia: number; // <-- ADICIONADO
+    energia: number;
   };
   t: (key: string) => string;
   isDark: boolean;
@@ -237,7 +238,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     ]
   };
 
-  // Helpers para estatísticas
+  // Helpers estatísticos
   const mean =
     simulationResults.length > 0
       ? simulationResults.reduce((s, r) => s + safeNumber(r.quality), 0) /
@@ -265,338 +266,358 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
         ).toFixed(2)
       : '0.00';
 
+  // ===== Estilos Premium (vidro + gradiente + glow) =====
+  const cardOuter = `rounded-2xl border shadow-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl`;
+  const glass = isDark
+    ? 'backdrop-blur bg-gray-900/40 border-gray-700'
+    : 'backdrop-blur bg-white/70 border-gray-200';
+  const gradHeader = isDark
+    ? 'bg-gradient-to-br from-blue-950/50 via-gray-900/40 to-gray-900/60 border-blue-900/40'
+    : 'bg-gradient-to-br from-blue-50 via-white to-white border-blue-200';
+  const pillTabActive = isDark
+    ? 'bg-gray-600 text-blue-300 shadow-sm'
+    : 'bg-white text-blue-700 shadow-sm';
+  const pillTab = isDark
+    ? 'text-gray-300 hover:text-white'
+    : 'text-gray-600 hover:text-gray-900';
+  const pillsWrap = isDark ? 'bg-gray-800/70' : 'bg-gray-100/70';
+
+  const premiumButton = (tone: 'blue' | 'green') =>
+    `px-4 py-2 rounded-lg font-semibold text-white transition-all duration-300 hover:shadow-lg
+     ${tone === 'blue'
+       ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-700'
+       : 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-700'
+     }`;
+
+  const sectionCard = `${cardOuter} ${glass} p-6`;
+
   return (
     <div className="space-y-6">
-      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6`}>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className={`text-2xl font-bold flex items-center ${isDark ? 'text-white' : 'text-gray-800'}`}>
+      {/* Header premium */}
+      <div className={`${cardOuter} ${gradHeader} p-6`}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className={`text-2xl font-extrabold flex items-center ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
             <FileText className="h-6 w-6 mr-2 text-blue-500" />
             <span>Resultados e Relatórios</span>
           </h2>
-
-          <div className="flex space-x-2">
-            <button
-              onClick={downloadAllResults}
-              className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Baixar CSV
+          <div className="flex gap-2">
+            <button onClick={downloadAllResults} className={premiumButton('blue')}>
+              <span className="inline-flex items-center">
+                <Download className="h-4 w-4 mr-2" /> Baixar CSV
+              </span>
             </button>
-            <button
-              onClick={generateReport}
-              className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Gerar Relatório
+            <button onClick={generateReport} className={premiumButton('green')}>
+              <span className="inline-flex items-center">
+                <FileText className="h-4 w-4 mr-2" /> Gerar Relatório
+              </span>
             </button>
           </div>
         </div>
 
-        {/* View Selector */}
-        <div className="flex space-x-1 mb-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+        {/* View Selector (pílulas) */}
+        <div className={`flex space-x-1 ${pillsWrap} rounded-xl p-1`}>
           <button
             onClick={() => setActiveView('overview')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeView === 'overview'
-                ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+              activeView === 'overview' ? pillTabActive : pillTab
             }`}
           >
             Visão Geral
           </button>
           <button
             onClick={() => setActiveView('detailed')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeView === 'detailed'
-                ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+              activeView === 'detailed' ? pillTabActive : pillTab
             }`}
           >
             Análise Detalhada
           </button>
           <button
             onClick={() => setActiveView('comparison')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              activeView === 'comparison'
-                ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+              activeView === 'comparison' ? pillTabActive : pillTab
             }`}
           >
             Comparação
           </button>
         </div>
-
-        {/* Overview */}
-        {activeView === 'overview' && (
-          <div className="space-y-6">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-blue-50'} border ${isDark ? 'border-gray-600' : 'border-blue-200'}`}>
-                <div className="flex items-center">
-                  <TrendingUp className="h-8 w-8 text-blue-500 mr-3" />
-                  <div>
-                    <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Qualidade Atual</div>
-                    <div className={`text-2xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                      {safeNumber(currentParams.qualidade).toFixed(1)}<span className="text-lg text-gray-500">/400</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {!!optimizationResults && (
-                <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-green-50'} border ${isDark ? 'border-gray-600' : 'border-green-200'}`}>
-                  <div className="flex items-center">
-                    <Award className="h-8 w-8 text-green-500 mr-3" />
-                    <div>
-                      <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Qualidade Otimizada</div>
-                      <div className={`text-2xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                        {optimizationResults?.quality != null
-                          ? safeNumber(optimizationResults.quality).toFixed(1)
-                          : '—'}
-                        <span className="text-lg text-gray-500">/400</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-purple-50'} border ${isDark ? 'border-gray-600' : 'border-purple-200'}`}>
-                <div className="flex items-center">
-                  <BarChart3 className="h-8 w-8 text-purple-500 mr-3" />
-                  <div>
-                    <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Total de Simulações</div>
-                    <div className={`text-2xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                      {simulationResults.length}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {simulationResults.length > 0 && (
-                <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-yellow-50'} border ${isDark ? 'border-gray-600' : 'border-yellow-200'}`}>
-                  <div className="flex items-center">
-                    <PieChart className="h-8 w-8 text-yellow-500 mr-3" />
-                    <div>
-                      <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Melhor Simulação</div>
-                      <div className={`text-2xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                        {Math.max(...simulationResults.map(r => safeNumber(r.quality))).toFixed(1)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Quick Insights */}
-            <div className={`p-6 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-gray-50'}`}>
-              <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
-                Insights Rápidos
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4 className={`font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>📊 Análise de Performance</h4>
-                  <ul className={`space-y-1 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    <li>• {simulationResults.length > 0
-                      ? `Qualidade média das simulações: ${(
-                          simulationResults.reduce((sum, r) => sum + safeNumber(r.quality), 0) /
-                          simulationResults.length
-                        ).toFixed(1)}`
-                      : 'Nenhuma simulação executada ainda'}</li>
-                    <li>• {optimizationResults
-                      ? `Melhoria potencial: +${optimizationResults.improvement ?? '—'} unidades`
-                      : 'Execute a otimização para ver melhorias potenciais'}</li>
-                    <li>• {currentParams.qualidade >= 365
-                      ? 'Parâmetros atuais já produzem excelente qualidade'
-                      : currentParams.qualidade >= 355
-                      ? 'Parâmetros atuais produzem boa qualidade'
-                      : 'Parâmetros atuais precisam de otimização'}</li>
-                    <li>• Consumo energético atual: {safeNumber(currentParams.energia).toFixed(1)} kWh/ton ({
-                      currentParams.energia < 500 ? 'muito eficiente'
-                        : currentParams.energia < 600 ? 'eficiente'
-                        : 'ineficiente'
-                    })</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className={`font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>🎯 Recomendações</h4>
-                  <ul className={`space-y-1 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    <li>• {optimizationResults
-                      ? 'Implemente os parâmetros otimizados gradualmente'
-                      : 'Execute a otimização para encontrar melhores parâmetros'}</li>
-                    <li>• {simulationResults.length < 10
-                      ? 'Execute mais simulações para validar resultados'
-                      : 'Dados suficientes coletados para análise confiável'}</li>
-                    <li>• Monitore a temperatura de perto - é o parâmetro mais crítico</li>
-                    <li>• {currentParams.energia > 600
-                      ? 'Considere reduzir temperatura ou tempo para economizar energia'
-                      : 'Consumo energético está em nível aceitável'}</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Detailed Analysis */}
-        {activeView === 'detailed' && simulationResults.length > 0 && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'} border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                <h3 className={`font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Tendência de Qualidade</h3>
-                <Line
-                  data={qualityTrendData}
-                  options={{
-                    responsive: true,
-                    plugins: { legend: { labels: { color: isDark ? '#e5e7eb' : '#374151' } } },
-                    scales: {
-                      y: {
-                        title: { display: true, text: 'Qualidade', color: isDark ? '#e5e7eb' : '#374151' },
-                        ticks: { color: isDark ? '#e5e7eb' : '#374151' },
-                        grid: { color: isDark ? '#374151' : '#e5e7eb' }
-                      },
-                      x: {
-                        ticks: { color: isDark ? '#e5e7eb' : '#374151' },
-                        grid: { color: isDark ? '#374151' : '#e5e7eb' }
-                      }
-                    }
-                  }}
-                />
-              </div>
-
-              <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'} border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                <h3 className={`font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Distribuição de Qualidade</h3>
-                <Doughnut
-                  data={qualityDistributionData}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        position: 'bottom',
-                        labels: { color: isDark ? '#e5e7eb' : '#374151' }
-                      }
-                    }
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Statistical Summary */}
-            <div className={`p-6 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'} border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-              <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Resumo Estatístico</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Média</div>
-                  <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    {mean.toFixed(2)}
-                  </div>
-                </div>
-                <div>
-                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Mediana</div>
-                  <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    {median}
-                  </div>
-                </div>
-                <div>
-                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Desvio Padrão</div>
-                  <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    {std.toFixed(2)}
-                  </div>
-                </div>
-                <div>
-                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Amplitude</div>
-                  <div className={`text-xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                    {range}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Comparison */}
-        {activeView === 'comparison' && (
-          <div className="space-y-6">
-            {optimizationResults ? (
-              <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'} border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                <h3 className={`font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Comparação: Atual vs Otimizado</h3>
-                <Bar
-                  data={parameterComparisonData}
-                  options={{
-                    responsive: true,
-                    plugins: { legend: { labels: { color: isDark ? '#e5e7eb' : '#374151' } } },
-                    scales: {
-                      y: {
-                        title: { display: true, text: 'Valor', color: isDark ? '#e5e7eb' : '#374151' },
-                        ticks: { color: isDark ? '#e5e7eb' : '#374151' },
-                        grid: { color: isDark ? '#374151' : '#e5e7eb' }
-                      },
-                      x: {
-                        ticks: { color: isDark ? '#e5e7eb' : '#374151' },
-                        grid: { color: isDark ? '#374151' : '#e5e7eb' }
-                      }
-                    }
-                  }}
-                />
-              </div>
-            ) : (
-              <div className={`p-8 text-center ${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
-                <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'} mb-2`}>
-                  Nenhuma otimização executada ainda
-                </div>
-                <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Execute a otimização na aba correspondente para ver comparações
-                </div>
-              </div>
-            )}
-
-            {/* Improvement Summary */}
-            {optimizationResults && (
-              <div className={`p-6 rounded-lg ${isDark ? 'bg-green-900' : 'bg-green-50'} border ${isDark ? 'border-green-700' : 'border-green-200'}`}>
-                <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-green-300' : 'text-green-800'}`}>Resumo das Melhorias</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>Melhoria na Qualidade</div>
-                    <div className={`text-2xl font-bold ${isDark ? 'text-green-200' : 'text-green-800'}`}>
-                      +{optimizationResults.improvement ?? '—'} unidades
-                    </div>
-                    <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>
-                      {currentParams.qualidade
-                        ? `(${((safeNumber(optimizationResults.improvement) / currentParams.qualidade) * 100).toFixed(1)}% de melhoria)`
-                        : '(—)'}
-                    </div>
-                  </div>
-                  <div>
-                    <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>Parâmetro Mais Alterado</div>
-                    <div className={`text-xl font-bold ${isDark ? 'text-green-200' : 'text-green-800'}`}>Temperatura</div>
-                    <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>
-                      {(safeNumber(optimizationResults.temperatura) - currentParams.temperatura) >= 0 ? '+' : ''}
-                      {(safeNumber(optimizationResults.temperatura) - currentParams.temperatura).toFixed(1)}°C
-                    </div>
-                  </div>
-                  <div>
-                    <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>Classificação Final</div>
-                    <div className={`text-xl font-bold ${isDark ? 'text-green-200' : 'text-green-800'}`}>
-                      {optimizationResults?.quality != null
-                        ? (optimizationResults.quality >= 365 ? 'Excelente' :
-                           optimizationResults.quality >= 355 ? 'Boa' : 'Regular')
-                        : '—'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Empty State (detailed sem dados) */}
-        {activeView === 'detailed' && simulationResults.length === 0 && (
-          <div className={`p-8 text-center ${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
-            <BarChart3 className={`h-16 w-16 mx-auto mb-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
-            <div className={`text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'} mb-2`}>Nenhuma simulação executada ainda</div>
-            <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Execute simulações na aba correspondente para ver análises detalhadas</div>
-          </div>
-        )}
       </div>
+
+      {/* Overview */}
+      {activeView === 'overview' && (
+        <div className="space-y-6">
+          {/* Cards de resumo com vidro/gradiente leve */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className={`${cardOuter} ${glass} p-4`}>
+              <div className="flex items-center">
+                <TrendingUp className="h-8 w-8 text-blue-500 mr-3" />
+                <div>
+                  <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Qualidade Atual</div>
+                  <div className={`${isDark ? 'text-gray-100' : 'text-gray-800'} text-2xl font-extrabold`}>
+                    {safeNumber(currentParams.qualidade).toFixed(1)}<span className="text-lg text-gray-500">/400</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {!!optimizationResults && (
+              <div className={`${cardOuter} ${glass} p-4`}>
+                <div className="flex items-center">
+                  <Award className="h-8 w-8 text-emerald-500 mr-3" />
+                  <div>
+                    <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Qualidade Otimizada</div>
+                    <div className={`${isDark ? 'text-gray-100' : 'text-gray-800'} text-2xl font-extrabold`}>
+                      {optimizationResults?.quality != null
+                        ? safeNumber(optimizationResults.quality).toFixed(1)
+                        : '—'}
+                      <span className="text-lg text-gray-500">/400</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className={`${cardOuter} ${glass} p-4`}>
+              <div className="flex items-center">
+                <BarChart3 className="h-8 w-8 text-purple-500 mr-3" />
+                <div>
+                  <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Total de Simulações</div>
+                  <div className={`${isDark ? 'text-gray-100' : 'text-gray-800'} text-2xl font-extrabold`}>
+                    {simulationResults.length}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {simulationResults.length > 0 && (
+              <div className={`${cardOuter} ${glass} p-4`}>
+                <div className="flex items-center">
+                  <PieChart className="h-8 w-8 text-yellow-500 mr-3" />
+                  <div>
+                    <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Melhor Simulação</div>
+                    <div className={`${isDark ? 'text-gray-100' : 'text-gray-800'} text-2xl font-extrabold`}>
+                      {Math.max(...simulationResults.map(r => safeNumber(r.quality))).toFixed(1)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Insights rápidos */}
+          <div className={`${sectionCard}`}>
+            <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Insights Rápidos</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 className={`${isDark ? 'text-gray-300' : 'text-gray-700'} font-semibold mb-2`}>📊 Análise de Performance</h4>
+                <ul className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm space-y-1`}>
+                  <li>• {simulationResults.length > 0
+                    ? `Qualidade média das simulações: ${(
+                        simulationResults.reduce((sum, r) => sum + safeNumber(r.quality), 0) /
+                        simulationResults.length
+                      ).toFixed(1)}`
+                    : 'Nenhuma simulação executada ainda'}
+                  </li>
+                  <li>• {optimizationResults
+                    ? `Melhoria potencial: +${optimizationResults.improvement ?? '—'} unidades`
+                    : 'Execute a otimização para ver melhorias potenciais'}
+                  </li>
+                  <li>• {currentParams.qualidade >= 365
+                    ? 'Parâmetros atuais já produzem excelente qualidade'
+                    : currentParams.qualidade >= 355
+                    ? 'Parâmetros atuais produzem boa qualidade'
+                    : 'Parâmetros atuais precisam de otimização'}
+                  </li>
+                  <li>• Consumo energético atual: {safeNumber(currentParams.energia).toFixed(1)} kWh/ton ({
+                    currentParams.energia < 500 ? 'muito eficiente'
+                      : currentParams.energia < 600 ? 'eficiente'
+                      : 'ineficiente'
+                  })</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className={`${isDark ? 'text-gray-300' : 'text-gray-700'} font-semibold mb-2`}>🎯 Recomendações</h4>
+                <ul className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm space-y-1`}>
+                  <li>• {optimizationResults
+                    ? 'Implemente os parâmetros otimizados gradualmente'
+                    : 'Execute a otimização para encontrar melhores parâmetros'}
+                  </li>
+                  <li>• {simulationResults.length < 10
+                    ? 'Execute mais simulações para validar resultados'
+                    : 'Dados suficientes coletados para análise confiável'}
+                  </li>
+                  <li>• Monitore a temperatura de perto - é o parâmetro mais crítico</li>
+                  <li>• {currentParams.energia > 600
+                    ? 'Considere reduzir temperatura ou tempo para economizar energia'
+                    : 'Consumo energético está em nível aceitável'}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detailed Analysis */}
+      {activeView === 'detailed' && simulationResults.length > 0 && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className={`${sectionCard}`}>
+              <h3 className={`font-semibold mb-4 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Tendência de Qualidade</h3>
+              <Line
+                data={qualityTrendData}
+                options={{
+                  responsive: true,
+                  plugins: { legend: { labels: { color: isDark ? '#e5e7eb' : '#374151' } } },
+                  scales: {
+                    y: {
+                      title: { display: true, text: 'Qualidade', color: isDark ? '#e5e7eb' : '#374151' },
+                      ticks: { color: isDark ? '#e5e7eb' : '#374151' },
+                      grid: { color: isDark ? '#374151' : '#e5e7eb' }
+                    },
+                    x: {
+                      ticks: { color: isDark ? '#e5e7eb' : '#374151' },
+                      grid: { color: isDark ? '#374151' : '#e5e7eb' }
+                    }
+                  }
+                }}
+              />
+            </div>
+
+            <div className={`${sectionCard}`}>
+              <h3 className={`font-semibold mb-4 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Distribuição de Qualidade</h3>
+              <Doughnut
+                data={qualityDistributionData}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      position: 'bottom',
+                      labels: { color: isDark ? '#e5e7eb' : '#374151' }
+                    }
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Resumo Estatístico */}
+          <div className={`${sectionCard}`}>
+            <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Resumo Estatístico</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Média</div>
+                <div className={`${isDark ? 'text-gray-100' : 'text-gray-800'} text-xl font-extrabold`}>
+                  {mean.toFixed(2)}
+                </div>
+              </div>
+              <div>
+                <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Mediana</div>
+                <div className={`${isDark ? 'text-gray-100' : 'text-gray-800'} text-xl font-extrabold`}>
+                  {median}
+                </div>
+              </div>
+              <div>
+                <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Desvio Padrão</div>
+                <div className={`${isDark ? 'text-gray-100' : 'text-gray-800'} text-xl font-extrabold`}>
+                  {std.toFixed(2)}
+                </div>
+              </div>
+              <div>
+                <div className={`${isDark ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Amplitude</div>
+                <div className={`${isDark ? 'text-gray-100' : 'text-gray-800'} text-xl font-extrabold`}>
+                  {range}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Comparison */}
+      {activeView === 'comparison' && (
+        <div className="space-y-6">
+          {optimizationResults ? (
+            <div className={`${sectionCard}`}>
+              <h3 className={`font-semibold mb-4 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Comparação: Atual vs Otimizado</h3>
+              <Bar
+                data={parameterComparisonData}
+                options={{
+                  responsive: true,
+                  plugins: { legend: { labels: { color: isDark ? '#e5e7eb' : '#374151' } } },
+                  scales: {
+                    y: {
+                      title: { display: true, text: 'Valor', color: isDark ? '#e5e7eb' : '#374151' },
+                      ticks: { color: isDark ? '#e5e7eb' : '#374151' },
+                      grid: { color: isDark ? '#374151' : '#e5e7eb' }
+                    },
+                    x: {
+                      ticks: { color: isDark ? '#e5e7eb' : '#374151' },
+                      grid: { color: isDark ? '#374151' : '#e5e7eb' }
+                    }
+                  }
+                }}
+              />
+            </div>
+          ) : (
+            <div className={`${cardOuter} ${glass} p-8 text-center`}>
+              <div className={`${isDark ? 'text-gray-300' : 'text-gray-600'} text-lg mb-2`}>
+                Nenhuma otimização executada ainda
+              </div>
+              <div className={`${isDark ? 'text-gray-400' : 'text-gray-500'} text-sm`}>
+                Execute a otimização na aba correspondente para ver comparações
+              </div>
+            </div>
+          )}
+
+          {/* Improvement Summary */}
+          {optimizationResults && (
+            <div className={`${cardOuter} ${isDark ? 'bg-gradient-to-br from-emerald-950/50 to-gray-900/40 border-emerald-900/40' : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-200'} p-6`}>
+              <h3 className={`text-lg font-extrabold mb-4 ${isDark ? 'text-emerald-300' : 'text-emerald-800'}`}>Resumo das Melhorias</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className={`${glass} p-4 rounded-xl border ${isDark ? 'border-emerald-900/30' : 'border-emerald-200'}`}>
+                  <div className={`${isDark ? 'text-emerald-400' : 'text-emerald-600'} text-sm`}>Melhoria na Qualidade</div>
+                  <div className={`${isDark ? 'text-emerald-200' : 'text-emerald-800'} text-2xl font-extrabold`}>
+                    +{optimizationResults.improvement ?? '—'} unidades
+                  </div>
+                  <div className={`${isDark ? 'text-emerald-400' : 'text-emerald-600'} text-sm`}>
+                    {currentParams.qualidade
+                      ? `(${((safeNumber(optimizationResults.improvement) / currentParams.qualidade) * 100).toFixed(1)}% de melhoria)`
+                      : '(—)'}
+                  </div>
+                </div>
+                <div className={`${glass} p-4 rounded-xl border ${isDark ? 'border-emerald-900/30' : 'border-emerald-200'}`}>
+                  <div className={`${isDark ? 'text-emerald-400' : 'text-emerald-600'} text-sm`}>Parâmetro Mais Alterado</div>
+                  <div className={`${isDark ? 'text-emerald-200' : 'text-emerald-800'} text-xl font-extrabold`}>Temperatura</div>
+                  <div className={`${isDark ? 'text-emerald-400' : 'text-emerald-600'} text-sm`}>
+                    {(safeNumber(optimizationResults.temperatura) - currentParams.temperatura) >= 0 ? '+' : ''}
+                    {(safeNumber(optimizationResults.temperatura) - currentParams.temperatura).toFixed(1)}°C
+                  </div>
+                </div>
+                <div className={`${glass} p-4 rounded-xl border ${isDark ? 'border-emerald-900/30' : 'border-emerald-200'}`}>
+                  <div className={`${isDark ? 'text-emerald-400' : 'text-emerald-600'} text-sm`}>Classificação Final</div>
+                  <div className={`${isDark ? 'text-emerald-200' : 'text-emerald-800'} text-xl font-extrabold`}>
+                    {optimizationResults?.quality != null
+                      ? (optimizationResults.quality >= 365 ? 'Excelente' :
+                          optimizationResults.quality >= 355 ? 'Boa' : 'Regular')
+                      : '—'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Empty State (detailed sem dados) */}
+      {activeView === 'detailed' && simulationResults.length === 0 && (
+        <div className={`${cardOuter} ${glass} p-8 text-center`}>
+          <BarChart3 className={`h-16 w-16 mx-auto mb-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+          <div className={`${isDark ? 'text-gray-300' : 'text-gray-600'} text-lg mb-2`}>Nenhuma simulação executada ainda</div>
+          <div className={`${isDark ? 'text-gray-400' : 'text-gray-500'} text-sm`}>Execute simulações na aba correspondente para ver análises detalhadas</div>
+        </div>
+      )}
     </div>
   );
 };
+
