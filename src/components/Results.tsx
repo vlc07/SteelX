@@ -47,12 +47,7 @@ export const Results: React.FC<ResultsProps> = ({
   const safeNumber = (v: any, fallback = 0) =>
     Number.isFinite(Number(v)) ? Number(v) : fallback;
 
-  /* ===================== NORMALIZAÇÃO DO OBJETO DE OTIMIZAÇÃO ===================== *
-   * Suporta formatos:
-   *  - { temperatura, tempo, pressao, velocidade, quality, improvement }
-   *  - { bestParams: { temperatura, tempo, pressao, velocidade }, best?: { ... }, quality? }
-   *  - { best: { x: { temperatura, tempo, pressao, velocidade }, y?: number }, ... }
-   */
+  /* ===================== NORMALIZAÇÃO DO OBJETO DE OTIMIZAÇÃO ===================== */
   const opt = useMemo(() => {
     const src = optimizationResults;
     if (!src) return null;
@@ -92,7 +87,7 @@ export const Results: React.FC<ResultsProps> = ({
       };
     }
 
-    // 3) Estrutura { best: { x: {...}, y } }
+    // 3) Estrutura { best: { x: { ... }, y? } }
     if (src.best?.x) {
       const p = src.best.x;
       return {
@@ -100,7 +95,6 @@ export const Results: React.FC<ResultsProps> = ({
         tempo: Number(p.tempo),
         pressao: Number(p.pressao),
         velocidade: Number(p.velocidade),
-        // qualidade pode ter sido calculada fora; se não houver, deixa undefined
         quality:
           src.best?.quality != null
             ? Number(src.best.quality)
@@ -114,16 +108,26 @@ export const Results: React.FC<ResultsProps> = ({
     return null;
   }, [optimizationResults]);
 
+  /* ======= Fallback para Qualidade Otimizada =======
+   * Se a otimização não trouxe 'quality', usamos:
+   * qualidade atual + improvement (quando existir).
+   */
+  const optimizedQuality: number | null = useMemo(() => {
+    if (!opt) return null;
+    if (opt.quality != null && Number.isFinite(opt.quality)) return Number(opt.quality);
+    const imp = safeNumber(optimizationResults?.improvement, NaN);
+    const base = safeNumber(currentParams.qualidade, NaN);
+    if (Number.isFinite(imp) && Number.isFinite(base)) {
+      return base + imp;
+    }
+    return null;
+  }, [opt, optimizationResults, currentParams]);
+
   const downloadAllResults = () => {
     const avgQuality =
       simulationResults.length > 0
         ? simulationResults.reduce((sum, r) => sum + safeNumber(r.quality), 0) /
           simulationResults.length
-        : 0;
-
-    const bestQuality =
-      simulationResults.length > 0
-        ? Math.max(...simulationResults.map(r => safeNumber(r.quality)))
         : 0;
 
     const csvContent = [
@@ -140,12 +144,13 @@ export const Results: React.FC<ResultsProps> = ({
             `Optimized,Time,${opt.tempo ?? ''}`,
             `Optimized,Pressure,${opt.pressao ?? ''}`,
             `Optimized,Speed,${opt.velocidade ?? ''}`,
-            `Optimized,Quality,${opt.quality ?? ''}`
+            `Optimized,Quality,${optimizedQuality ?? ''}`
           ]
         : []),
       ...simulationResults.map((result, i) =>
         `Simulation ${i + 1},Quality,${safeNumber(result.quality).toFixed(2)}`
-      )
+      ),
+      `Summary,AverageQuality,${avgQuality.toFixed(2)}`
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -199,11 +204,7 @@ PARÂMETROS OTIMIZADOS:
 - Tempo: ${opt.tempo ?? '—'} min
 - Pressão: ${opt.pressao ?? '—'} kPa
 - Velocidade: ${opt.velocidade ?? '—'} rpm
-- Qualidade Otimizada: ${
-        opt.quality != null
-          ? safeNumber(opt.quality).toFixed(2)
-          : '—'
-      }
+- Qualidade Otimizada: ${optimizedQuality != null ? optimizedQuality.toFixed(2) : '—'}
 - Melhoria: ${optimizationResults?.improvement ?? '—'} unidades
 `
     : ''
@@ -342,7 +343,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
             <span>Resultados e Relatórios</span>
           </h2>
 
-          <div className="flex space-x-2">
+        <div className="flex space-x-2">
             <button
               onClick={downloadAllResults}
               className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
@@ -418,7 +419,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     <div>
                       <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Qualidade Otimizada</div>
                       <div className={`text-2xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                        {opt?.quality != null ? safeNumber(opt.quality).toFixed(1) : '—'}
+                        {optimizedQuality != null ? optimizedQuality.toFixed(1) : '—'}
                         <span className="text-lg text-gray-500">/400</span>
                       </div>
                     </div>
@@ -642,9 +643,9 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                   <div>
                     <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>Classificação Final</div>
                     <div className={`text-xl font-bold ${isDark ? 'text-green-200' : 'text-green-800'}`}>
-                      {opt?.quality != null
-                        ? (opt.quality >= 365 ? 'Excelente' :
-                           opt.quality >= 355 ? 'Boa' : 'Regular')
+                      {optimizedQuality != null
+                        ? (optimizedQuality >= 365 ? 'Excelente' :
+                           optimizedQuality >= 355 ? 'Boa' : 'Regular')
                         : '—'}
                     </div>
                   </div>
@@ -666,5 +667,6 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     </div>
   );
 };
+
 
 
