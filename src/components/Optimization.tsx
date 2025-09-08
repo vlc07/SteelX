@@ -342,61 +342,55 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   }, [runningBO]);
 
   // ===== Exportar histórico (CSV com BOM) =====
-  const exportHistory = React.useCallback(() => {
-    if (!history || history.length === 0) {
-      alert('Não há histórico para exportar.');
-      return;
-    }
-    const header = [
-      'timestamp',
-      'metodo',
-      'score',
-      'testes',
-      'qualidade',
-      'energia_kWh_ton',
-      'lambda',
-      'temperatura_C',
-      'tempo_min',
-      'pressao',
-      'velocidade_rpm'
-    ];
-    const lines = history.map((item) => {
-      const ts = new Date(item.ts).toISOString();
-      const metodo = fullMethodName(item.method);
-      const t = (item.x as any)?.temperatura ?? '';
-      const tm = (item.x as any)?.tempo ?? '';
-      const p = (item.x as any)?.pressao ?? '';
-      const v = (item.x as any)?.velocidade ?? '';
-      return [
-        ts,
-        metodo,
-        item.score,
-        item.evaluations,
-        item.quality,
-        item.energy,
-        item.lambda,
-        t,
-        tm,
-        p,
-        v
-      ]
-        .map((v) => (typeof v === 'string' ? `"${v.replace(/"/g, '""')}"` : String(v)))
-        .join(',');
-    });
-    const csv = [header.join(','), ...lines].join('\n');
-    const csvWithBom = '\uFEFF' + csv;
-    const blob = new Blob([csvWithBom], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const date = new Date().toISOString().slice(0, 10);
-    a.download = `historico_otimizacoes_${date}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, [history]);
+  function exportHistoryCSV() {
+  if (!history || history.length === 0) return;
 
+  const sep = ';';
+  const esc = (s: any) => `"${String(s ?? '').replace(/"/g, '""')}"`;
+
+  const header = [
+    'id','timestamp_iso','method','score','evaluations','quality','energy','lambda',
+    'temperatura','tempo','pressao','velocidade'
+  ].join(sep);
+
+  const rows = history.map((it) => {
+    const t = it.ts ? new Date(it.ts).toISOString() : '';
+    const temp = (it.x as any)?.temperatura ?? '';
+    const tempoVal = (it.x as any)?.tempo ?? '';
+    const press = (it.x as any)?.pressao ?? '';
+    const vel = (it.x as any)?.velocidade ?? '';
+    return [
+      esc(it.id),
+      esc(t),
+      esc(it.method),
+      esc(it.score.toFixed(2)),
+      esc(it.evaluations),
+      esc(it.quality.toFixed(2)),
+      esc(it.energy.toFixed(2)),
+      esc(it.lambda.toFixed(2)),
+      esc(temp),
+      esc(tempoVal),
+      esc(press),
+      esc(vel)
+    ].join(sep);
+  });
+
+  const csv = [header, ...rows].join('\n');
+
+  // >>> chave para o Excel: BOM UTF-8 <<<
+  const BOM = '\uFEFF'; // Byte Order Mark
+  const blob = new Blob([BOM, csv], { type: 'text/csv;charset=utf-8;' });
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.download = `historico_otimizacoes_${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
   // Executar método
   async function executar(method: OptimizeMethod) {
     const setRun =
