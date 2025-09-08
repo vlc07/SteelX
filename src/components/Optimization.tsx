@@ -134,7 +134,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       return { label: 'Baixo', class: isDark ? 'bg-amber-900/50 text-amber-200 border border-amber-700' : 'bg-amber-100 text-amber-700 border border-amber-200' };
     }
     if (v > id.high) {
-      return { label: 'Alto', class: isDark ? 'bg-rose-900/50 text-rose-200 border border-rose-700' : 'bg-rose-100 text-rose-700 border border-rose-200' };
+      return { label: 'Alto', class: isDark ? 'bg-rose-900/50 text-rose-200 border border-rose-700' : 'bg-rose-100 text-rose-700 border-rose-200' };
     }
     return { label: 'Ótimo', class: isDark ? 'bg-emerald-900/50 text-emerald-200 border border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200' };
   }
@@ -289,8 +289,8 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
 
   return (
     <div className="space-y-6">
-      {/* Cabeçalho */}
-      <div className={`${cardBase} ${ringBlue}`}>
+      {/* Cabeçalho — ADICIONADO p-5 para mais respiro */}
+      <div className={`${cardBase} ${ringBlue} p-5`}>
         <div className="flex items-center gap-2 mb-1">
           <Beaker className="h-5 w-5 text-blue-500" />
           <h2 className={`text-xl font-semibold ${text}`}>Otimização de Parâmetros (ML)</h2>
@@ -722,8 +722,8 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
         </div>
       )}
 
-      {/* === HISTÓRICO (card base + glow sutil) === */}
-      <div className={`${cardBase} ${ringBlue}`}>
+      {/* === HISTÓRICO (card base + glow sutil) — ADICIONADO p-5 para mais respiro === */}
+      <div className={`${cardBase} ${ringBlue} p-5`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <HistoryIcon className="h-5 w-5 text-indigo-500" />
@@ -745,11 +745,12 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
             {history.map(item => (
               <div
                 key={item.id}
-                className={`rounded-xl p-4 border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl ${ringBlue}
+                className={`rounded-xl p-6 border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl ${ringBlue}
                   ${isDark ? 'bg-gray-900/40 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-semibold">
+                  {/* TÍTULO VISÍVEL NO DARK */}
+                  <div className={`text-sm font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
                     {fullMethodName(item.method)}
                   </div>
                   <div className="text-xs text-gray-500">
@@ -797,7 +798,7 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
       </div>
 
       {/* Notas finais */}
-      <div className={`${cardBase} ${ringBlue}`}>
+      <div className={`${cardBase} ${ringBlue} p-5`}>
         <p className={`${sub} text-xs leading-relaxed`}>
           Objetivo: <i>qualidade − λ·(energia − 500)</i>. Ative a restrição para exigir qualidade mínima (ex.: 365).
           Grid Search varre combinações; o Genético evolui soluções; a Bayesiana aprende com cada teste para testar menos.
@@ -931,6 +932,7 @@ function RangeCard({
     </div>
   );
 }
+
 
 
 
