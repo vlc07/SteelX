@@ -10,43 +10,6 @@ import { validateAllParameters, validateParameterCombination } from '../utils/pa
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-/* ================= Tema por aba (cores premium para cards e botões) ================= */
-function getParamTheme(tab: 'single' | 'batch' | 'sensitivity', isDark: boolean) {
-  if (tab === 'single') {
-    return {
-      outer: `bg-gradient-to-br ${isDark ? 'from-slate-900 to-gray-900 border-blue-900/40' : 'from-blue-50 via-white to-white border-blue-200'}`,
-      header: `${isDark ? 'bg-slate-900/40' : 'bg-blue-50/60'}`,
-      icon: `${isDark ? 'bg-blue-900/50 text-blue-200' : 'bg-blue-600 text-white'}`,
-      glow: 'via-blue-500/20',
-      btn: 'bg-gradient-to-r from-blue-600 to-blue-500 text-white',
-      btnHover: 'hover:from-blue-700 hover:to-blue-600',
-      ring: 'ring-1 ring-blue-500/30',
-    };
-  }
-  if (tab === 'batch') {
-    return {
-      outer: `bg-gradient-to-br ${isDark ? 'from-emerald-950 to-gray-900 border-emerald-900/40' : 'from-emerald-50 via-white to-white border-emerald-200'}`,
-      header: `${isDark ? 'bg-emerald-950/20' : 'bg-emerald-50/60'}`,
-      icon: `${isDark ? 'bg-emerald-900/50 text-emerald-200' : 'bg-emerald-600 text-white'}`,
-      glow: 'via-emerald-500/20',
-      btn: 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white',
-      btnHover: 'hover:from-emerald-700 hover:to-emerald-600',
-      ring: 'ring-1 ring-emerald-500/30',
-    };
-  }
-  // sensitivity
-  return {
-    outer: `bg-gradient-to-br ${isDark ? 'from-purple-950 to-gray-900 border-purple-900/40' : 'from-purple-50 via-white to-white border-purple-200'}`,
-    header: `${isDark ? 'bg-purple-950/20' : 'bg-purple-50/60'}`,
-    icon: `${isDark ? 'bg-purple-900/50 text-purple-200' : 'bg-purple-600 text-white'}`,
-    glow: 'via-purple-500/20',
-    btn: 'bg-gradient-to-r from-purple-600 to-purple-500 text-white',
-    btnHover: 'hover:from-purple-700 hover:to-purple-600',
-    ring: 'ring-1 ring-purple-500/30',
-  };
-}
-
-/* ================= Props ================= */
 type SimulationPanelProps = {
   temperatura: number;
   setTemperatura: (v: number) => void;
@@ -108,6 +71,40 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     });
   }, [temperatura, tempo, pressao, velocidade]);
 
+  /* ===== Helpers de tema/tom (para gradientes & glow) ===== */
+  const tone = activeTab === 'single' ? 'blue' : activeTab === 'batch' ? 'emerald' : 'purple';
+
+  const toneCardGradient = (tone: 'blue'|'emerald'|'purple') =>
+    tone === 'blue'
+      ? (isDark ? 'from-blue-950/70 to-gray-900/60 border-blue-900/40' : 'from-blue-50 to-white border-blue-200')
+      : tone === 'emerald'
+      ? (isDark ? 'from-emerald-950/70 to-gray-900/60 border-emerald-900/40' : 'from-emerald-50 to-white border-emerald-200')
+      : (isDark ? 'from-purple-950/70 to-gray-900/60 border-purple-900/40' : 'from-purple-50 to-white border-purple-200');
+
+  const toneRing = (tone: 'blue'|'emerald'|'purple') =>
+    tone === 'blue'
+      ? 'hover:ring-blue-400/50'
+      : tone === 'emerald'
+      ? 'hover:ring-emerald-400/50'
+      : 'hover:ring-purple-400/50';
+
+  const toneButton = (tone: 'blue'|'emerald'|'purple') =>
+    tone === 'blue'
+      ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-700'
+      : tone === 'emerald'
+      ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-700'
+      : 'bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-700';
+
+  const toneFocus = (tone: 'blue'|'emerald'|'purple') =>
+    tone === 'blue'
+      ? 'focus:ring-blue-400/40'
+      : tone === 'emerald'
+      ? 'focus:ring-emerald-400/40'
+      : 'focus:ring-purple-400/40';
+
+  const axisColor = isDark ? '#e5e7eb' : '#374151';
+  const gridColor = isDark ? '#374151' : '#e5e7eb';
+
   /* ===== Modelo ML-like ===== */
   const calculateQuality = (temp: number, time: number, press: number, speed: number) => {
     const tempNorm = (temp - 1400) / 200;
@@ -161,7 +158,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
       const N = 20;
       for (let i = 0; i < N; i++) {
         const tVar = Math.max(1400, Math.min(1600, temperatura + (Math.random() - 0.5) * 30));
-        const tmVar = Math.max(10, Math.min(120, tempo + (Math.random() - 0.5) * 18));
+        const tmVar = Math.max(10, Math.min(120, tempo + (Math.random() - 0) * 18));
         const pVar = Math.max(95, Math.min(110, pressao + (Math.random() - 0.5) * 2));
         const vVar = Math.max(250, Math.min(350, velocidade + (Math.random() - 0.5) * 18));
 
@@ -293,10 +290,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     return recs;
   };
 
-  /* ===== Helpers Chart/Style ===== */
-  const axisColor = isDark ? '#e5e7eb' : '#374151';
-  const gridColor = isDark ? '#374151' : '#e5e7eb';
-
+  /* ===== Configuração dos gráficos ===== */
   const makeSensitivityChart = (label: string, arr: { x: number; y: number }[], color: string) => ({
     data: {
       labels: arr.map((d) => d.x),
@@ -403,9 +397,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
     };
   }
 
-  /* ================= UI ================= */
-  const paramTheme = getParamTheme(activeTab, isDark);
-
+  /* ===== UI ===== */
   return (
     <div className="space-y-6">
       {/* Tabs no topo */}
@@ -427,108 +419,86 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
         ))}
       </div>
 
-      {/* Configuração de Parâmetros — Card premium por aba */}
-      <div className={`relative rounded-2xl border ${paramTheme.outer} ${paramTheme.ring} overflow-hidden`}>
-        {/* Glow suave */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-transparent">
-          <div className={`absolute -inset-32 bg-gradient-to-r from-transparent ${paramTheme.glow} to-transparent blur-3xl opacity-70`} />
-        </div>
+      {/* Configuração de Parâmetros — Premium (com glow e gradiente por aba) */}
+      <div
+        className={`rounded-2xl border bg-gradient-to-br ${toneCardGradient(tone)} p-6 transition-all duration-300 hover:translate-y-[-1px] hover:shadow-xl hover:ring-2 ${toneRing(tone)} ${toneFocus(tone)}`}
+      >
+        {/* brilho suave no topo */}
+        <div className="pointer-events-none absolute" />
+        <h3 className={`text-lg font-bold mb-5 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+          Configuração de Parâmetros
+        </h3>
 
-        {/* Header do card */}
-        <div className={`px-6 py-4 ${paramTheme.header} border-b ${isDark ? 'border-white/10' : 'border-black/5'} flex items-center gap-3`}>
-          <div className={`p-2 rounded-lg ${paramTheme.icon}`}>
-            <Sparkles className="h-5 w-5" />
-          </div>
-          <h3 className={`text-lg font-semibold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Configuração de Parâmetros</h3>
-        </div>
-
-        {/* Inputs */}
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Card de parâmetro com glow */}
+          <div className={`group rounded-xl border ${isDark ? 'border-white/10' : 'border-black/10'} p-4 bg-white/70 dark:bg-white/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-2 ${toneRing(tone)}`}>
             <ParameterInput label="Temperatura" parameterName="temperatura" value={temperatura} onChange={setTemperatura} isDark={isDark} />
+          </div>
+          <div className={`group rounded-xl border ${isDark ? 'border-white/10' : 'border-black/10'} p-4 bg-white/70 dark:bg-white/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-2 ${toneRing(tone)}`}>
             <ParameterInput label="Tempo" parameterName="tempo" value={tempo} onChange={setTempo} isDark={isDark} />
+          </div>
+          <div className={`group rounded-xl border ${isDark ? 'border-white/10' : 'border-black/10'} p-4 bg-white/70 dark:bg-white/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-2 ${toneRing(tone)}`}>
             <ParameterInput label="Pressão" parameterName="pressao" value={pressao} onChange={setPressao} isDark={isDark} />
+          </div>
+          <div className={`group rounded-xl border ${isDark ? 'border-white/10' : 'border-black/10'} p-4 bg-white/70 dark:bg-white/5 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:ring-2 ${toneRing(tone)}`}>
             <ParameterInput label="Velocidade" parameterName="velocidade" value={velocidade} onChange={setVelocidade} isDark={isDark} />
           </div>
-
-          {(!validationState.isValid || validationState.warnings.length > 0) && (
-            <div className="mt-4 space-y-2">
-              {validationState.errors.map((e, i) => (
-                <div key={i} className={`p-3 rounded-lg border ${isDark ? 'bg-red-900 text-red-200 border-red-700' : 'bg-red-50 text-red-700 border-red-200'}`}>
-                  <div className="flex items-start">
-                    <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">{e}</span>
-                  </div>
-                </div>
-              ))}
-              {validationState.warnings.map((w, i) => (
-                <div key={i} className={`p-3 rounded-lg border ${isDark ? 'bg-yellow-900 text-yellow-200 border-yellow-700' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
-                  <div className="flex items-start">
-                    <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-sm">{w}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
+
+        {(!validationState.isValid || validationState.warnings.length > 0) && (
+          <div className="mt-4 space-y-2">
+            {validationState.errors.map((e, i) => (
+              <div key={i} className={`p-3 rounded-lg border ${isDark ? 'bg-red-900 text-red-200 border-red-700' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                <div className="flex items-start">
+                  <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">{e}</span>
+                </div>
+              </div>
+            ))}
+            {validationState.warnings.map((w, i) => (
+              <div key={i} className={`p-3 rounded-lg border ${isDark ? 'bg-yellow-900 text-yellow-200 border-yellow-700' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
+                <div className="flex items-start">
+                  <AlertCircle className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">{w}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Botões — premium por aba */}
+      {/* Botões — Premium (gradiente + glow por aba) */}
       <div className="flex flex-wrap items-center justify-center gap-3">
-        {(() => {
-          const theme = getParamTheme(activeTab, isDark);
-
-          if (activeTab === 'single') {
-            return (
-              <button
-                onClick={runSingle}
-                disabled={isRunning || !validationState.isValid}
-                className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all shadow-md
-                  ${isRunning || !validationState.isValid
-                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : `${theme.btn} ${theme.btnHover} shadow-lg shadow-blue-500/20`} `}
-              >
-                <Play className="h-5 w-5 mr-2" />
-                {isRunning ? 'Simulando...' : 'Executar Simulação'}
-              </button>
-            );
-          }
-
-          if (activeTab === 'batch') {
-            return (
-              <button
-                onClick={runBatch}
-                disabled={isRunning || !validationState.isValid}
-                className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all shadow-md
-                  ${isRunning || !validationState.isValid
-                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : `${theme.btn} ${theme.btnHover} shadow-lg shadow-emerald-500/20`} `}
-              >
-                <TrendingUp className="h-5 w-5 mr-2" />
-                {isRunning ? 'Executando Lote...' : 'Executar Lote (20x)'}
-              </button>
-            );
-          }
-
-          if (activeTab === 'sensitivity') {
-            return (
-              <button
-                onClick={runSensitivity}
-                disabled={isRunning || !validationState.isValid}
-                className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all shadow-md
-                  ${isRunning || !validationState.isValid
-                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : `${theme.btn} ${theme.btnHover} shadow-lg shadow-purple-500/20`} `}
-              >
-                <Zap className="h-5 w-5 mr-2" />
-                {isRunning ? 'Analisando...' : 'Executar Análise de Sensibilidade'}
-              </button>
-            );
-          }
-
-          return null;
-        })()}
+        {activeTab === 'single' && (
+          <button
+            onClick={runSingle}
+            disabled={isRunning || !validationState.isValid}
+            className={`flex items-center px-6 py-3 rounded-xl font-semibold shadow-md text-white transition-all duration-300 ${toneButton('blue')} ${toneFocus('blue')} focus:outline-none hover:shadow-lg hover:ring-2 ${toneRing('blue')} disabled:opacity-60 disabled:cursor-not-allowed`}
+          >
+            <Play className="h-5 w-5 mr-2" />
+            {isRunning ? 'Simulando...' : 'Executar Simulação'}
+          </button>
+        )}
+        {activeTab === 'batch' && (
+          <button
+            onClick={runBatch}
+            disabled={isRunning || !validationState.isValid}
+            className={`flex items-center px-6 py-3 rounded-xl font-semibold shadow-md text-white transition-all duration-300 ${toneButton('emerald')} ${toneFocus('emerald')} focus:outline-none hover:shadow-lg hover:ring-2 ${toneRing('emerald')} disabled:opacity-60 disabled:cursor-not-allowed`}
+          >
+            <TrendingUp className="h-5 w-5 mr-2" />
+            {isRunning ? 'Executando Lote...' : 'Executar Lote (20x)'}
+          </button>
+        )}
+        {activeTab === 'sensitivity' && (
+          <button
+            onClick={runSensitivity}
+            disabled={isRunning || !validationState.isValid}
+            className={`flex items-center px-6 py-3 rounded-xl font-semibold shadow-md text-white transition-all duration-300 ${toneButton('purple')} ${toneFocus('purple')} focus:outline-none hover:shadow-lg hover:ring-2 ${toneRing('purple')} disabled:opacity-60 disabled:cursor-not-allowed`}
+          >
+            <Zap className="h-5 w-5 mr-2" />
+            {isRunning ? 'Analisando...' : 'Executar Análise de Sensibilidade'}
+          </button>
+        )}
       </div>
 
       {/* Loading */}
@@ -679,7 +649,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({
   );
 };
 
-/* ================= Componentes auxiliares ================= */
+/* ===== Componentes auxiliares ===== */
 
 function KPI({
   title,
@@ -885,6 +855,7 @@ function SensitivityRow({
 }
 
 export default SimulationPanel;
+
 
 
 
