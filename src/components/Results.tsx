@@ -6,6 +6,7 @@ import {
   BarElement, Title, Tooltip, Legend, ArcElement
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import { getModel } from '../ml/engine';
 
 ChartJS.register(
   CategoryScale,
@@ -46,6 +47,9 @@ export const Results: React.FC<ResultsProps> = ({
 
   const safeNumber = (v: any, fallback = 0) =>
     Number.isFinite(Number(v)) ? Number(v) : fallback;
+
+  /* ===== modelo para fallback de qualidade otimizada ===== */
+  const model = useMemo(() => getModel('inference'), []);
 
   /* ===================== NORMALIZAÇÃO DO OBJETO DE OTIMIZAÇÃO ===================== */
   const opt = useMemo(() => {
@@ -108,20 +112,46 @@ export const Results: React.FC<ResultsProps> = ({
     return null;
   }, [optimizationResults]);
 
-  /* ======= Fallback para Qualidade Otimizada =======
-   * Se a otimização não trouxe 'quality', usamos:
-   * qualidade atual + improvement (quando existir).
-   */
+  /* ======= Qualidade Otimizada com 3 níveis de fallback ======= */
   const optimizedQuality: number | null = useMemo(() => {
     if (!opt) return null;
-    if (opt.quality != null && Number.isFinite(opt.quality)) return Number(opt.quality);
+
+    // 1) veio pronto
+    if (opt.quality != null && Number.isFinite(opt.quality)) {
+      return Number(opt.quality);
+    }
+
+    // 2) melhoria + qualidade atual
     const imp = safeNumber(optimizationResults?.improvement, NaN);
     const base = safeNumber(currentParams.qualidade, NaN);
     if (Number.isFinite(imp) && Number.isFinite(base)) {
       return base + imp;
     }
+
+    // 3) prever com o modelo a partir dos parâmetros otimizados
+    if (
+      Number.isFinite(opt.temperatura) &&
+      Number.isFinite(opt.tempo) &&
+      Number.isFinite(opt.pressao) &&
+      Number.isFinite(opt.velocidade)
+    ) {
+      try {
+        const pred = model.predict({
+          temp: Number(opt.temperatura),
+          time: Number(opt.tempo),
+          press: Number(opt.pressao),
+          speed: Number(opt.velocidade),
+        });
+        const q = safeNumber(pred?.quality, NaN);
+        if (Number.isFinite(q)) return q;
+      } catch (e) {
+        // silencioso: se o modelo não estiver disponível aqui, seguimos sem derrubar a página
+        console.warn('Falha ao prever qualidade otimizada no Results:', e);
+      }
+    }
+
     return null;
-  }, [opt, optimizationResults, currentParams]);
+  }, [opt, optimizationResults, currentParams, model]);
 
   const downloadAllResults = () => {
     const avgQuality =
@@ -343,7 +373,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
             <span>Resultados e Relatórios</span>
           </h2>
 
-        <div className="flex space-x-2">
+          <div className="flex space-x-2">
             <button
               onClick={downloadAllResults}
               className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
@@ -667,6 +697,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     </div>
   );
 };
+
 
 
 
