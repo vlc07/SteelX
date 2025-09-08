@@ -1,106 +1,131 @@
+// src/components/Sidebar.tsx
 import React from 'react';
-import { 
-  Home, 
-  BarChart3, 
-  GitCompare, 
-  Settings, 
-  FileText, 
-  HelpCircle, 
-  BookOpen,
-  Presentation,
-  FileCode,
-  X
+import {
+  Monitor, // Apresentação
+  BarChart3, // Simulação
+  GitBranch, // Comparação
+  Settings,  // Otimização
+  ClipboardCheck, // Resultados
+  HelpCircle, // Ajuda
+  BookOpen, // Glossário
+  FileText // Documentação Técnica
 } from 'lucide-react';
 
-interface SidebarProps {
+type Props = {
   activeTab: string;
   onTabChange: (tab: string) => void;
   isOpen: boolean;
   onClose: () => void;
-  t: (key: string) => string;
+  t: (k: string) => string;
   isDark: boolean;
-}
+};
 
-export const Sidebar: React.FC<SidebarProps> = ({ 
-  activeTab, 
-  onTabChange, 
-  isOpen, 
-  onClose, 
+export const Sidebar: React.FC<Props> = ({
+  activeTab,
+  onTabChange,
+  isOpen,
+  onClose,
   t,
-  isDark 
+  isDark,
 }) => {
-  const menuItems = [
-    { id: 'presentation', icon: Presentation, label: t('presentation'), tourId: 'presentation-tab' },
-    { id: 'dashboard', icon: Home, label: t('dashboard'), tourId: 'dashboard-tab' },
-    { id: 'simulation', icon: BarChart3, label: t('simulation'), tourId: 'simulation-tab' },
-    { id: 'comparison', icon: GitCompare, label: t('comparison'), tourId: 'comparison-tab' },
-    { id: 'optimization', icon: Settings, label: t('optimization'), tourId: 'optimization-tab' },
-    { id: 'results', icon: FileText, label: t('results'), tourId: 'results-tab' },
-    { id: 'help', icon: HelpCircle, label: t('help'), tourId: 'help-tab' },
-    { id: 'glossary', icon: BookOpen, label: t('glossary'), tourId: 'glossary-tab' },
-    { id: 'technical-docs', icon: FileCode, label: t('technicalDocs'), tourId: 'technical-docs-tab' }
+  // Mapa de itens na ordem pedida
+  const items: Array<{
+    key: string;
+    label: string;
+    icon: React.ReactNode;
+  }> = [
+    { key: 'presentation', label: t('presentation') || 'Apresentação', icon: <Monitor className="h-5 w-5" /> },
+    { key: 'simulation', label: 'Simulação', icon: <BarChart3 className="h-5 w-5" /> },
+    { key: 'comparison', label: t('comparison') || 'Comparação', icon: <GitBranch className="h-5 w-5" /> },
+    { key: 'optimization', label: t('optimization') || 'Otimização', icon: <Settings className="h-5 w-5" /> },
+    { key: 'results', label: t('results') || 'Resultados', icon: <ClipboardCheck className="h-5 w-5" /> },
+    { key: 'help', label: t('help') || 'Ajuda', icon: <HelpCircle className="h-5 w-5" /> },
+    { key: 'glossary', label: t('glossary') || 'Glossário', icon: <BookOpen className="h-5 w-5" /> },
+    { key: 'technical-docs', label: t('technicalDocs') || 'Documentação Técnica', icon: <FileText className="h-5 w-5" /> },
   ];
 
+  // Estilos base
+  const bg = isDark ? 'bg-gray-900' : 'bg-white';
+  const border = isDark ? 'border-gray-800' : 'border-gray-200';
+  const textMuted = isDark ? 'text-gray-300' : 'text-gray-700';
+
+  const ItemButton: React.FC<{
+    isActive: boolean;
+    onClick: () => void;
+    icon: React.ReactNode;
+    children: React.ReactNode;
+  }> = ({ isActive, onClick, icon, children }) => (
+    <button
+      onClick={onClick}
+      className={[
+        'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition',
+        isActive
+          ? // destaque do item ativo (premium, levemente “neon”)
+            (isDark
+              ? 'bg-blue-600/25 text-white ring-1 ring-inset ring-blue-500/40 shadow-[0_0_0_1px_rgba(59,130,246,.15)]'
+              : 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-200')
+          : (isDark
+              ? 'text-gray-300 hover:bg-gray-800'
+              : 'text-gray-700 hover:bg-gray-100'),
+      ].join(' ')}
+    >
+      <span className={isActive ? (isDark ? 'text-blue-300' : 'text-blue-600') : textMuted}>
+        {icon}
+      </span>
+      <span className="text-sm font-medium truncate">{children}</span>
+    </button>
+  );
+
+  // Sidebar (desktop + mobile)
   return (
     <>
-      {/* Overlay */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={onClose}
-        />
-      )}
-      
-      {/* Sidebar */}
-      <div className={`
-        fixed left-0 top-0 h-full w-64 z-50 transform transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:z-auto
-        ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}
-        border-r shadow-lg
-      `}>
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-              Menu
-            </h2>
-            <button
-              onClick={onClose}
-              className={`lg:hidden p-1 rounded ${isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}
-            >
-              <X className="h-5 w-5" />
-            </button>
+      {/* Overlay mobile */}
+      <div
+        className={[
+          'fixed inset-0 z-30 lg:hidden transition',
+          isOpen ? 'bg-black/40 backdrop-blur-[1px] opacity-100' : 'pointer-events-none opacity-0',
+        ].join(' ')}
+        onClick={onClose}
+      />
+
+      {/* Drawer */}
+      <aside
+        className={[
+          'fixed z-40 top-0 left-0 h-full w-72 border-r px-3 py-4 lg:static lg:translate-x-0 lg:w-64',
+          bg, border,
+          'transition-transform',
+          isOpen ? 'translate-x-0' : '-translate-x-full',
+        ].join(' ')}
+      >
+        {/* Logo / título */}
+        <div className="px-2 py-2 mb-2">
+          <div className="text-lg font-bold tracking-tight">
+            <span className={isDark ? 'text-white' : 'text-gray-900'}>Menu</span>
           </div>
-          
-          <nav className="space-y-2">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    onTabChange(item.id);
-                    onClose();
-                  }}
-                  className={`
-                    w-full flex items-center px-3 py-2 rounded-lg text-left transition-colors
-                    ${isActive 
-                      ? (isDark ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700')
-                      : (isDark ? 'text-gray-300 hover:bg-gray-700 hover:text-white' : 'text-gray-600 hover:bg-gray-100')
-                    }
-                  `}
-                  data-tour={item.tourId}
-                >
-                  <Icon className="h-5 w-5 mr-3" />
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
         </div>
-      </div>
+
+        {/* Lista de itens */}
+        <nav className="mt-2 space-y-1.5">
+          {items.map((item) => (
+            <ItemButton
+              key={item.key}
+              isActive={activeTab === item.key}
+              onClick={() => {
+                onTabChange(item.key);
+                onClose();
+              }}
+              icon={item.icon}
+            >
+              {item.label}
+            </ItemButton>
+          ))}
+        </nav>
+
+        {/* Rodapé opcional */}
+        <div className="mt-auto hidden lg:block" />
+      </aside>
     </>
   );
 };
+
+export default Sidebar;
