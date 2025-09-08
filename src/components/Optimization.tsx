@@ -57,6 +57,11 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   const [runningGA, setRunningGA] = React.useState(false);
   const [runningBO, setRunningBO] = React.useState(false);
 
+  // Progresso da BO (worker)
+  const [boProgress, setBoProgress] = React.useState<number>(0);
+  const boTickerRef = React.useRef<number | null>(null);
+  const boWorkerRef = React.useRef<Worker | null>(null);
+
   const [last, setLast] = React.useState<LastSummary | null>(null);
 
   // Histórico
@@ -312,27 +317,142 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     }
   };
 
-  // Executar método
-  async function executar(method: OptimizeMethod) {
-    const setRun =
-      method === 'grid' ? setRunningGrid : method === 'ga' ? setRunningGA : setRunningBO;
-    setRun(true);
-    try {
-      const boundsPayload = {
-        temperatura: {
-          min: ranges.temperatura.min,
-          max: ranges.temperatura.max,
-          step: ranges.temperatura.step
-        },
-        tempo: { min: ranges.tempo.min, max: ranges.tempo.max, step: ranges.tempo.step },
-        pressao: { min: ranges.pressao.min, max: ranges.pressao.max, step: ranges.pressao.step },
-        velocidade: {
-          min: ranges.velocidade.min,
-          max: ranges.velocidade.max,
-          step: ranges.velocidade.step
+  // ==================== BO: execução em Worker + progresso ====================
+  function startBOProgress() {
+    setBoProgress(0);
+    if (boTickerRef.current) window.clearInterval(boTickerRef.current);
+    // avança suave até ~92%
+    const id = window.setInterval(() => {
+      setBoProgress(prev => {
+        if (prev >= 92) return prev;
+        const step = 0.5 + Math.random() * 2.2; // 0.5%..2.7%
+        return Math.min(92, prev + step);
+      });
+    }, 140);
+    boTickerRef.current = id;
+  }
+
+  function stopBOProgress(done: boolean) {
+    if (boTickerRef.current) {
+      window.clearInterval(boTickerRef.current);
+      boTickerRef.current = null;
+    }
+    setBoProgress(done ? 100 : 0);
+  }
+
+  function runBOInWorker(payload: any): Promise<any> {
+    if (boWorkerRef.current) {
+      try { boWorkerRef.current.terminate(); } catch {}
+      boWorkerRef.current = null;
+    }
+    const worker = new Worker(new URL('../optim/boWorker.ts', import.meta.url), { type: 'module' });
+    boWorkerRef.current = worker;
+
+    return new Promise((resolve, reject) => {
+      worker.onmessage = (e: MessageEvent<any>) => {
+        const msg = e.data;
+        if (msg?.type === 'progress' && typeof msg.value === 'number') {
+          // opcional: se o worker enviar progresso real, refletimos aqui (máx 98%)
+          setBoProgress(v => Math.max(v, Math.min(98, msg.value)));
+          return;
+        }
+        if (msg?.type === 'done') {
+          try { worker.terminate(); } catch {}
+          boWorkerRef.current = null;
+          resolve(msg.res);
+        } else if (msg?.type === 'error') {
+          try { worker.terminate(); } catch {}
+          boWorkerRef.current = null;
+          reject(new Error(msg.message));
         }
       };
+      worker.onerror = (err) => {
+        try { worker.terminate(); } catch {}
+        boWorkerRef.current = null;
+        reject(err);
+      };
+      worker.postMessage({ type: 'start', payload });
+    });
+  }
 
+  // Executar método
+  async function executar(method: OptimizeMethod) {
+    const boundsPayload = {
+      temperatura: {
+        min: ranges.temperatura.min,
+        max: ranges.temperatura.max,
+        step: ranges.temperatura.step
+      },
+      tempo: { min: ranges.tempo.min, max: ranges.tempo.max, step: ranges.tempo.step },
+      pressao: { min: ranges.pressao.min, max: ranges.pressao.max, step: ranges.pressao.step },
+      velocidade: {
+        min: ranges.velocidade.min,
+        max: ranges.velocidade.max,
+        step: ranges.velocidade.step
+      }
+    };
+
+    if (method === 'bo') {
+      setRunningBO(true);
+      startBOProgress();
+      try {
+        const res = await runBOInWorker({
+          method,
+          budget,
+          lambda,
+          useQualityConstraint,
+          qualityMin,
+          seed: 2025,
+          bounds: boundsPayload
+        });
+
+        const qe = model.predict({
+          temp: Number(res.best.x.temperatura),
+          time: Number(res.best.x.tempo),
+          press: Number(res.best.x.pressao),
+          speed: Number(res.best.x.velocidade)
+        });
+
+        const summary: LastSummary = {
+          method,
+          score: res.best.y,
+          x: res.best.x,
+          evaluations: res.evaluations,
+          quality: qe.quality,
+          energy: qe.energy
+        };
+
+        setLast(summary);
+
+        const item: HistoryItem = {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          ts: Date.now(),
+          method,
+          score: summary.score,
+          evaluations: summary.evaluations,
+          x: summary.x,
+          quality: summary.quality,
+          energy: summary.energy,
+          lambda
+        };
+        pushHistory(item);
+
+        onOptimizationComplete({ ...res, bestParams: res.best.x });
+        stopBOProgress(true);
+      } catch (e) {
+        console.error(e);
+        stopBOProgress(false);
+        alert('Falha ao executar a otimização Bayesiana.');
+      } finally {
+        setRunningBO(false);
+      }
+      return;
+    }
+
+    // GRID / GA (mantido)
+    const setRun = method === 'grid' ? setRunningGrid : setRunningGA;
+    setRun(true);
+    try {
       const res = await runOptimization({
         method,
         budget,
@@ -382,6 +502,20 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       setRun(false);
     }
   }
+
+  // cleanup do worker ao desmontar
+  React.useEffect(() => {
+    return () => {
+      if (boWorkerRef.current) {
+        try { boWorkerRef.current.terminate(); } catch {}
+        boWorkerRef.current = null;
+      }
+      if (boTickerRef.current) {
+        window.clearInterval(boTickerRef.current);
+        boTickerRef.current = null;
+      }
+    };
+  }, []);
 
   // ===== estilos premium para sliders (glow + thumb centralizado) =====
   const sliderStyle = (
@@ -595,7 +729,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             </button>
           </div>
 
-          {/* BAYESIANA */}
+          {/* BAYESIANA (com barra de progresso quando rodando) */}
           <div
             className={`rounded-2xl border bg-gradient-to-br ${gradBlue} p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${ringBlue}`}
           >
@@ -618,6 +752,21 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
               <Play className="h-5 w-5" />
               {runningBO ? 'Executando…' : 'Executar Otimização Bayesiana'}
             </button>
+
+            {runningBO && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Progresso</span>
+                  <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{Math.round(boProgress)}%</span>
+                </div>
+                <div className={`h-2 rounded-full ${isDark ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                  <div
+                    className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-[width] duration-150 ease-out"
+                    style={{ width: `${boProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -789,7 +938,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
                   className={`cursor-help text-xs ${
                     isDark
                       ? 'bg-blue-900/60 text-blue-200 border border-blue-800'
-                      : 'bg-blue-100 text-blue-700 border border-blue-200'
+                      : 'bg-blue-100 text-blue-700 border-blue-200'
                   } px-2 py-0.5 rounded-full`}
                   title={`O score combina qualidade prevista e consumo de energia em um só valor.
 Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores priorizam economia de energia.`}
@@ -1154,5 +1303,6 @@ function RangeCard({
     </div>
   );
 }
+
 
 
