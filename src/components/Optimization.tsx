@@ -84,22 +84,9 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   const clearHistory = () => saveHistory([]);
 
   const label = isDark ? 'text-gray-300' : 'text-gray-700';
-  const text = isDark ? 'text-gray-100' : 'text-gray-900';
+  const text = isDark ? 'text-gray-200' : 'text-gray-800';
   const sub = isDark ? 'text-gray-400' : 'text-gray-600';
-
-  // Helpers premium
-  const ringBlue = 'hover:ring-2 hover:ring-blue-400/50 focus:outline-none focus:ring-2 focus:ring-blue-400/50';
-  const ringEmerald = 'hover:ring-2 hover:ring-emerald-400/50 focus:outline-none focus:ring-2 focus:ring-emerald-400/50';
-  const ringViolet = 'hover:ring-2 hover:ring-violet-400/50 focus:outline-none focus:ring-2 focus:ring-violet-400/50';
-
-  // Cards (base) com efeito hover glow
-  const cardBase = `${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} 
-    rounded-xl border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl`;
-
-  // Cards (gradiente premium)
-  const gradBlue = `${isDark ? 'from-blue-950/70 to-gray-900/60 border-blue-900/40' : 'from-blue-50 to-white border-blue-200'}`;
-  const gradEmerald = `${isDark ? 'from-emerald-950/70 to-gray-900/60 border-emerald-900/40' : 'from-emerald-50 to-white border-emerald-200'}`;
-  const gradViolet = `${isDark ? 'from-violet-950/70 to-gray-900/60 border-violet-900/40' : 'from-violet-50 to-white border-violet-200'}`;
+  const card = `${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-5`;
 
   const model = React.useMemo(() => getModel('inference'), []);
 
@@ -136,29 +123,29 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     if (v > id.high) {
       return { label: 'Alto', class: isDark ? 'bg-rose-900/50 text-rose-200 border border-rose-700' : 'bg-rose-100 text-rose-700 border border-rose-200' };
     }
-    return { label: 'Ótimo', class: isDark ? 'bg-emerald-900/50 text-emerald-200 border border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200' };
+    return { label: 'Ótimo', class: isDark ? 'bg-emerald-900/50 text-emerald-200 border border-emerald-700' : 'bg-emerald-100 text-emerald-800 border border-emerald-200' };
   }
 
   // Badge de qualidade prevista
   function qualityBadge(q: number) {
     if (q < 355) {
-      return { label: 'Ruim', class: isDark ? 'bg-rose-900/50 text-rose-200 border border-rose-700' : 'bg-rose-100 text-rose-700 border-rose-200' };
+      return { label: 'Ruim', class: isDark ? 'bg-rose-900/50 text-rose-200 border border-rose-700' : 'bg-rose-100 text-rose-700 border border-rose-200' };
     }
     if (q < 365) {
-      return { label: 'Boa', class: isDark ? 'bg-amber-900/50 text-amber-200 border border-amber-700' : 'bg-amber-100 text-amber-700 border-amber-200' };
+      return { label: 'Boa', class: isDark ? 'bg-amber-900/50 text-amber-200 border border-amber-700' : 'bg-amber-100 text-amber-700 border border-amber-200' };
     }
-    return { label: 'Excelente', class: isDark ? 'bg-emerald-900/50 text-emerald-200 border border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200' };
+    return { label: 'Excelente', class: isDark ? 'bg-emerald-900/50 text-emerald-200 border border-emerald-700' : 'bg-emerald-100 text-emerald-800 border border-emerald-200' };
   }
 
   // Badge de energia
   function energyBadge(e: number) {
     if (e < 450) {
-      return { label: 'Muito eficiente', class: isDark ? 'bg-emerald-900/50 text-emerald-200 border border-emerald-700' : 'bg-emerald-100 text-emerald-800 border-emerald-200' };
+      return { label: 'Muito eficiente', class: isDark ? 'bg-emerald-900/50 text-emerald-200 border border-emerald-700' : 'bg-emerald-100 text-emerald-800 border border-emerald-200' };
     }
     if (e < 550) {
-      return { label: 'Eficiente', class: isDark ? 'bg-amber-900/50 text-amber-200 border border-amber-700' : 'bg-amber-100 text-amber-700 border-amber-200' };
+      return { label: 'Eficiente', class: isDark ? 'bg-amber-900/50 text-amber-200 border border-amber-700' : 'bg-amber-100 text-amber-700 border border-amber-200' };
     }
-    return { label: 'Ineficiente', class: isDark ? 'bg-rose-900/50 text-rose-200 border border-rose-700' : 'bg-rose-100 text-rose-700 border-rose-200' };
+    return { label: 'Ineficiente', class: isDark ? 'bg-rose-900/50 text-rose-200 border border-rose-700' : 'bg-rose-100 text-rose-700 border border-rose-200' };
   }
 
   // Posição em % no intervalo (para a barra das cards de parâmetros)
@@ -176,10 +163,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
 
   /** ============ PRESETS POR OBJETIVO ============ */
   type PresetKey = 'resistencia' | 'ductilidade' | 'energia' | 'balanceado';
-  const [activePreset, setActivePreset] = React.useState<PresetKey | null>(null);
-
   const applyPreset = (p: PresetKey) => {
-    setActivePreset(p);
     if (p === 'resistencia') {
       setLambda(0.08);
       setRanges(prev => ({
@@ -232,7 +216,6 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     const setRun = method === 'grid' ? setRunningGrid : method === 'ga' ? setRunningGA : setRunningBO;
     setRun(true);
     try {
-      /** bounds vindos dos cards editáveis */
       const boundsPayload = {
         temperatura: { min: ranges.temperatura.min, max: ranges.temperatura.max, step: ranges.temperatura.step },
         tempo:       { min: ranges.tempo.min,       max: ranges.tempo.max,       step: ranges.tempo.step },
@@ -290,18 +273,18 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
-      <div className={`${cardBase} ${ringBlue}`}>
-        <div className="flex items-center gap-2 mb-1">
+      <div className={`${card} p-6 md:p-7 leading-relaxed`}>
+        <div className="flex items-center gap-2 mb-2">
           <Beaker className="h-5 w-5 text-blue-500" />
           <h2 className={`text-xl font-semibold ${text}`}>Otimização de Parâmetros (ML)</h2>
         </div>
         <p className={`${sub} text-sm`}>
-          Escolha um método para buscar os melhores parâmetros. As configurações ao lado valem para todos os métodos.
+          Escolha um método e ajuste as preferências. O sistema busca a melhor combinação com base em qualidade e energia.
         </p>
       </div>
 
-      {/* === PRESETS POR OBJETIVO (com highlight do selecionado + glow) === */}
-      <div className={`rounded-2xl border bg-gradient-to-br ${gradBlue} p-5 transition-all duration-300 hover:shadow-xl ${ringBlue}`}>
+      {/* === NOVO: PRESETS POR OBJETIVO === */}
+      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-5`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Settings2 className={`h-5 w-5 ${isDark ? 'text-gray-300' : 'text-gray-600'}`} />
@@ -314,15 +297,12 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           {/* Alta resistência */}
           <button
             onClick={() => applyPreset('resistencia')}
-            className={`group rounded-xl p-4 border transition ${ringBlue}
-              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white/70 backdrop-blur border-gray-200 hover:bg-white'}
-              hover:-translate-y-0.5 hover:shadow-lg
-              ${activePreset === 'resistencia' ? 'ring-2 ring-blue-400/60 shadow-lg' : ''}
-            `}
+            className={`group rounded-xl p-4 border transition
+              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
           >
             <div className="flex items-center gap-2">
               <Flame className="h-5 w-5 text-rose-500" />
-              <div className={`font-semibold ${text}`}>Alta Resistência</div>
+              <div className="font-semibold">Alta Resistência</div>
             </div>
             <div className="text-xs text-gray-500 mt-1">Foco em qualidade. T e tempo mais altos (λ baixo).</div>
             <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
@@ -333,15 +313,12 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           {/* Alta ductilidade */}
           <button
             onClick={() => applyPreset('ductilidade')}
-            className={`group rounded-xl p-4 border transition ${ringBlue}
-              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white/70 backdrop-blur border-gray-200 hover:bg-white'}
-              hover:-translate-y-0.5 hover:shadow-lg
-              ${activePreset === 'ductilidade' ? 'ring-2 ring-blue-400/60 shadow-lg' : ''}
-            `}
+            className={`group rounded-xl p-4 border transition
+              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
           >
             <div className="flex items-center gap-2">
               <Dna className="h-5 w-5 text-green-500" />
-              <div className={`font-semibold ${text}`}>Alta Ductilidade</div>
+              <div className="font-semibold">Alta Ductilidade</div>
             </div>
             <div className="text-xs text-gray-500 mt-1">Maleabilidade com boa qualidade. T/tempo moderados.</div>
             <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
@@ -352,15 +329,12 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           {/* Economia de energia */}
           <button
             onClick={() => applyPreset('energia')}
-            className={`group rounded-xl p-4 border transition ${ringBlue}
-              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white/70 backdrop-blur border-gray-200 hover:bg-white'}
-              hover:-translate-y-0.5 hover:shadow-lg
-              ${activePreset === 'energia' ? 'ring-2 ring-blue-400/60 shadow-lg' : ''}
-            `}
+            className={`group rounded-xl p-4 border transition
+              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
           >
             <div className="flex items-center gap-2">
               <Leaf className="h-5 w-5 text-emerald-500" />
-              <div className={`font-semibold ${text}`}>Economia de Energia</div>
+              <div className="font-semibold">Economia de Energia</div>
             </div>
             <div className="text-xs text-gray-500 mt-1">Reduz custo/CO₂. T/tempo menores (λ mais alto).</div>
             <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
@@ -371,18 +345,15 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           {/* Balanceado */}
           <button
             onClick={() => applyPreset('balanceado')}
-            className={`group rounded-xl p-4 border transition ${ringBlue}
-              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white/70 backdrop-blur border-gray-200 hover:bg-white'}
-              hover:-translate-y-0.5 hover:shadow-lg
-              ${activePreset === 'balanceado' ? 'ring-2 ring-blue-400/60 shadow-lg' : ''}
-            `}
+            className={`group rounded-xl p-4 border transition
+              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white border-gray-200 hover:bg-gray-50'}`}
           >
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-blue-500" />
-              <div className={`font-semibold ${text}`}>Balanceado</div>
+              <div className="font-semibold">Balanceado</div>
             </div>
             <div className="text-xs text-gray-500 mt-1">Equilíbrio padrão. Você ajusta depois, se quiser.</div>
-            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border-blue-200">
+            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
               λ ≈ 0.15 · Qualidade mínima opcional
             </div>
           </button>
@@ -391,10 +362,10 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
 
       {/* Cards dos métodos + Configurações */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Métodos (cada um com gradiente azul + glow) */}
+        {/* Métodos */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:col-span-3">
           {/* GRID SEARCH */}
-          <div className={`rounded-2xl border bg-gradient-to-br ${gradBlue} p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${ringBlue}`}>
+          <div className={card}>
             <div className="flex items-center gap-2 mb-2">
               <Beaker className="h-5 w-5 text-purple-500" />
               <h3 className={`font-semibold ${text}`}>Grid Search</h3>
@@ -405,10 +376,9 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             <button
               onClick={() => executar('grid')}
               disabled={runningGrid}
-              className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 text-white 
-                bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-700
-                transition-all duration-300 hover:shadow-lg ${ringBlue}
-                disabled:opacity-60 disabled:cursor-not-allowed`}
+              className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
+                runningGrid ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+              } text-white`}
             >
               <Play className="h-5 w-5" />
               {runningGrid ? 'Executando…' : 'Executar Grid Search'}
@@ -416,7 +386,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           </div>
 
           {/* GENÉTICO */}
-          <div className={`rounded-2xl border bg-gradient-to-br ${gradBlue} p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${ringBlue}`}>
+          <div className={card}>
             <div className="flex items-center gap-2 mb-2">
               <Dna className="h-5 w-5 text-green-500" />
               <h3 className={`font-semibold ${text}`}>Algoritmo Genético</h3>
@@ -427,10 +397,9 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             <button
               onClick={() => executar('ga')}
               disabled={runningGA}
-              className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 text-white 
-                bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-700
-                transition-all duration-300 hover:shadow-lg ${ringBlue}
-                disabled:opacity-60 disabled:cursor-not-allowed`}
+              className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
+                runningGA ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+              } text-white`}
             >
               <Play className="h-5 w-5" />
               {runningGA ? 'Executando…' : 'Executar Algoritmo Genético'}
@@ -438,7 +407,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           </div>
 
           {/* BAYESIANA */}
-          <div className={`rounded-2xl border bg-gradient-to-br ${gradBlue} p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${ringBlue}`}>
+          <div className={card}>
             <div className="flex items-center gap-2 mb-2">
               <Brain className="h-5 w-5 text-rose-500" />
               <h3 className={`font-semibold ${text}`}>Otimização Bayesiana</h3>
@@ -449,10 +418,9 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             <button
               onClick={() => executar('bo')}
               disabled={runningBO}
-              className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 text-white 
-                bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-700
-                transition-all duration-300 hover:shadow-lg ${ringBlue}
-                disabled:opacity-60 disabled:cursor-not-allowed`}
+              className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
+                runningBO ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+              } text-white`}
             >
               <Play className="h-5 w-5" />
               {runningBO ? 'Executando…' : 'Executar Otimização Bayesiana'}
@@ -460,8 +428,8 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           </div>
         </div>
 
-        {/* Configurações (gradiente verde + glow) */}
-        <div className={`rounded-2xl border bg-gradient-to-br ${gradEmerald} p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${ringEmerald}`}>
+        {/* Configurações */}
+        <div className={`${card} p-6`}>
           <div className="flex items-center gap-2 mb-3">
             <Gauge className="h-5 w-5 text-emerald-500" />
             <h3 className={`font-semibold ${text}`}>Configurações</h3>
@@ -470,19 +438,15 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           {/* Budget */}
           <div className="mb-4">
             <label className={`block text-sm mb-1 ${label}`}>Budget (nº de testes)</label>
-            <div className="relative">
-              <input
-                type="range"
-                min={50}
-                max={1000}
-                step={10}
-                value={budget}
-                onChange={(e) => setBudget(parseInt(e.target.value))}
-                className="w-full appearance-none bg-transparent"
-              />
-              {/* trilha */}
-              <div className="h-1.5 rounded-full bg-gray-300 dark:bg-gray-700 -mt-2" />
-            </div>
+            <input
+              type="range"
+              min={50}
+              max={1000}
+              step={10}
+              value={budget}
+              onChange={(e) => setBudget(parseInt(e.target.value))}
+              className="w-full"
+            />
             <div className={`${text} text-sm mt-1`}>{budget}</div>
           </div>
 
@@ -494,18 +458,15 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
                 Valores menores = foco em qualidade · Valores maiores = foco em economia de energia
               </span>
             </label>
-            <div className="relative">
-              <input
-                type="range"
-                min={0}
-                max={0.5}
-                step={0.01}
-                value={lambda}
-                onChange={(e) => setLambda(parseFloat(e.target.value))}
-                className="w-full appearance-none bg-transparent"
-              />
-              <div className="h-1.5 rounded-full bg-gray-300 dark:bg-gray-700 -mt-2" />
-            </div>
+            <input
+              type="range"
+              min={0}
+              max={0.5}
+              step={0.01}
+              value={lambda}
+              onChange={(e) => setLambda(parseFloat(e.target.value))}
+              className="w-full"
+            />
             <div className={`${text} text-sm mt-1`}>{lambda.toFixed(2)}</div>
           </div>
 
@@ -523,27 +484,25 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           </div>
           <div className={`${useQualityConstraint ? '' : 'opacity-50 pointer-events-none'}`}>
             <label className={`block text-sm mb-1 ${label}`}>Qualidade mínima</label>
-            <div className="relative">
-              <input
-                type="range"
-                min={340}
-                max={380}
-                step={1}
-                value={qualityMin}
-                onChange={(e) => setQualityMin(parseInt(e.target.value))}
-                className="w-full appearance-none bg-transparent"
-              />
-              <div className="h-1.5 rounded-full bg-gray-300 dark:bg-gray-700 -mt-2" />
-            </div>
+            <input
+              type="range"
+              min={340}
+              max={380}
+              step={1}
+              value={qualityMin}
+              onChange={(e) => setQualityMin(parseInt(e.target.value))}
+              className="w-full"
+            />
             <div className={`${text} text-sm mt-1`}>{qualityMin}</div>
           </div>
         </div>
       </div>
 
-      {/* === Faixas de Otimização (gradiente violeta + glow) === */}
-      <div className={`rounded-2xl border bg-gradient-to-br ${gradViolet} p-5 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${ringViolet}`}>
+      {/* === Faixas de Otimização (editáveis) === */}
+      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-5`}>
         <div className="flex items-center justify-between mb-3">
-          <h3 className={`${isDark ? 'text-gray-100' : 'text-gray-900'} font-semibold`}>Faixas de Otimização</h3>
+          <h3 className={`${isDark ? 'text-gray-200' : 'text-gray-700'} font-semibold`}>Faixas de Otimização</h3>
+          <span className="text-xs text-gray-500">Defina onde cada algoritmo pode buscar o melhor ajuste</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -589,8 +548,9 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       {/* Resultado premium */}
       {last && (
         <div
-          className={`rounded-2xl border overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5
-            ${isDark ? 'border-green-700 bg-gradient-to-br from-gray-800 to-gray-900' : 'border-green-200 bg-gradient-to-br from-green-50 to-white'}`}
+          className={`rounded-2xl border overflow-hidden ${
+            isDark ? 'border-green-700 bg-gradient-to-br from-gray-800 to-gray-900' : 'border-green-200 bg-gradient-to-br from-green-50 to-white'
+          }`}
         >
           {/* Header */}
           <div className={`flex items-center justify-between px-6 py-5 ${isDark ? 'bg-gray-900/40' : 'bg-green-100/80'}`}>
@@ -628,13 +588,13 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Método usado */}
-              <div className={`${cardBase} ${ringEmerald}`}>
+              <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
                 <div className="text-xs uppercase tracking-wide text-gray-500">Método utilizado</div>
                 <div className={`mt-1 text-lg font-semibold ${text}`}>{fullMethodName(last.method)}</div>
               </div>
 
               {/* Qualidade prevista */}
-              <div className={`${cardBase} ${ringEmerald}`}>
+              <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs uppercase tracking-wide text-gray-500">Qualidade prevista</span>
                   <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${qualityBadge(last.quality).class}`}>
@@ -647,7 +607,7 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
               </div>
 
               {/* Energia */}
-              <div className={`${cardBase} ${ringEmerald}`}>
+              <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs uppercase tracking-wide text-gray-500">Consumo energético</span>
                   <span className={`px-2.5 py-1 rounded-full text-[11px] font-semibold ${energyBadge(last.energy).class}`}>
@@ -722,17 +682,18 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
         </div>
       )}
 
-      {/* === HISTÓRICO (card base + glow sutil) === */}
-      <div className={`${cardBase} ${ringBlue}`}>
+      {/* === HISTÓRICO BÁSICO (com mais respiro e contraste corrigido) === */}
+      <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-lg p-6 md:p-7`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <HistoryIcon className="h-5 w-5 text-indigo-500" />
-            <h3 className={`font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>Histórico de Otimizações</h3>
+            <h3 className={`font-semibold ${text}`}>Histórico de Otimizações</h3>
           </div>
           <button
             onClick={clearHistory}
-            className={`text-xs px-3 py-1 rounded-md border transition 
-              ${isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+            className={`text-xs px-3.5 py-1.5 rounded-md border ${
+              isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+            }`}
           >
             Limpar histórico
           </button>
@@ -745,11 +706,11 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
             {history.map(item => (
               <div
                 key={item.id}
-                className={`rounded-xl p-4 border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl ${ringBlue}
+                className={`rounded-xl p-5 md:p-6 border min-h-[140px] break-words leading-6
                   ${isDark ? 'bg-gray-900/40 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-semibold">
+                  <div className={`text-sm font-semibold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
                     {fullMethodName(item.method)}
                   </div>
                   <div className="text-xs text-gray-500">
@@ -797,7 +758,7 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
       </div>
 
       {/* Notas finais */}
-      <div className={`${cardBase} ${ringBlue}`}>
+      <div className={card}>
         <p className={`${sub} text-xs leading-relaxed`}>
           Objetivo: <i>qualidade − λ·(energia − 500)</i>. Ative a restrição para exigir qualidade mínima (ex.: 365).
           Grid Search varre combinações; o Genético evolui soluções; a Bayesiana aprende com cada teste para testar menos.
@@ -822,11 +783,10 @@ function ParamCard(props: {
 }) {
   const { title, value, unit, min, max, badge, icon, isDark, pct } = props;
   return (
-    <div className={`rounded-xl p-4 border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl
-      ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} ${isDark ? 'hover:ring-2 hover:ring-emerald-400/50' : 'hover:ring-2 hover:ring-emerald-300/60'}`}>
+    <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-xl p-4 shadow-sm`}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <div className={`p-2 rounded-md ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>
+          <div className={`p-2 rounded-md ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
             {icon}
           </div>
           <span className="text-xs uppercase tracking-wide text-gray-500">{title}</span>
@@ -857,7 +817,7 @@ function ParamCard(props: {
   );
 }
 
-/** Card reutilizável para edição de faixas — com glow violeta */
+/** Card reutilizável para edição de faixas */
 function RangeCard({
   title, name, unit, isDark, value, onChange, showGridHint = true
 }: {
@@ -869,7 +829,7 @@ function RangeCard({
   onChange: (next: Range) => void;
   showGridHint?: boolean;
 }) {
-  const card = `rounded-xl p-4 border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl ${isDark ? 'bg-gray-800 border-gray-700 hover:ring-2 hover:ring-violet-400/50' : 'bg-white border-gray-200 hover:ring-2 hover:ring-violet-300/60'}`;
+  const card = `${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-xl p-4 border shadow-sm`;
   const label = 'text-xs text-gray-500';
   const set = (patch: Partial<Range>) => onChange({ ...value, ...patch });
 
@@ -880,12 +840,10 @@ function RangeCard({
   const points = Math.floor((value.max - value.min) / step) + 1;
   const invalid = value.min >= value.max;
 
-  const inputBase = `w-full mt-1 rounded border px-2 py-1 bg-transparent ${isDark ? 'text-gray-100 placeholder-gray-400 border-gray-600 focus:border-violet-400' : 'text-gray-800 placeholder-gray-400 border-gray-300 focus:border-violet-500'}`;
-
   return (
     <div className={card}>
       <div className="flex items-center justify-between">
-        <h4 className={`${isDark ? 'text-gray-100' : 'text-gray-900'} font-semibold`}>{title}</h4>
+        <h4 className={`${isDark ? 'text-gray-200' : 'text-gray-800'} font-semibold`}>{title}</h4>
         <span className="text-xs text-gray-500">Limites industriais: {value.industrial.min}–{value.industrial.max} {unit}</span>
       </div>
 
@@ -896,7 +854,7 @@ function RangeCard({
             type="number"
             value={value.min}
             onChange={e => set({ min: clamp(Number(e.target.value)) })}
-            className={inputBase}
+            className="w-full mt-1 rounded border px-2 py-1 bg-transparent"
           />
         </div>
         <div>
@@ -905,7 +863,7 @@ function RangeCard({
             type="number"
             value={value.max}
             onChange={e => set({ max: clamp(Number(e.target.value)) })}
-            className={inputBase}
+            className="w-full mt-1 rounded border px-2 py-1 bg-transparent"
           />
         </div>
         <div>
@@ -915,7 +873,7 @@ function RangeCard({
             value={value.step ?? 1}
             min={1}
             onChange={e => set({ step: Math.max(1, Number(e.target.value)) })}
-            className={inputBase}
+            className="w-full mt-1 rounded border px-2 py-1 bg-transparent"
           />
         </div>
       </div>
@@ -931,6 +889,9 @@ function RangeCard({
     </div>
   );
 }
+
+export default Optimization;
+
 
 
 
