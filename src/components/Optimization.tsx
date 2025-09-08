@@ -391,6 +391,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
   // Executar método
   async function executar(method: OptimizeMethod) {
     const setRun =
