@@ -33,8 +33,6 @@ export const Header: React.FC<HeaderProps> = ({
     ? 'bg-gradient-to-b from-slate-900/90 to-slate-800/80 border-slate-800'
     : 'bg-gradient-to-b from-white/90 to-blue-50/70 border-blue-200/70';
 
-  const logoTint = isDark ? 'text-white' : 'text-gray-900';
-
   const iconBtnBase =
     'p-2 rounded-lg transition shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-0';
   const iconBtnTone = isDark
@@ -68,21 +66,13 @@ export const Header: React.FC<HeaderProps> = ({
               <Menu className="h-5 w-5" />
             </button>
 
-            <div className="flex items-center gap-2">
-              {/* Logo (mantida) */}
-              <img
-                src="/Metalyicscerta.png"
-                alt="MetaLytics"
-                className="block"
-                style={{ height: '22px', width: 'auto' }}
-              />
-              {/* Nome opcional (mantive discreto/premium) */}
-              <span
-                className={`hidden sm:inline text-sm font-semibold tracking-tight ${logoTint}`}
-              >
-                MetaLytics
-              </span>
-            </div>
+            {/* Logo com efeito premium */}
+            <img
+              src="/Metalyicscerta.png"
+              alt="MetaLytics"
+              className="block transition duration-300 hover:drop-shadow-[0_0_10px_rgba(59,130,246,0.7)]"
+              style={{ height: '22px', width: 'auto' }}
+            />
           </div>
 
           {/* Direita: idioma + tema */}
@@ -122,7 +112,7 @@ export const Header: React.FC<HeaderProps> = ({
                           setShowLanguageMenu(false);
                         }}
                         className={[
-                          'w-full text-left px-3.5 py-2.5 text-sm flex items-center justify-between',
+                          'w-full text-left px-3.5 py-2 text-sm flex items-center justify-between',
                           active
                             ? isDark
                               ? 'bg-blue-600/20 text-blue-200'
