@@ -48,7 +48,7 @@ export const Results: React.FC<ResultsProps> = ({
   const safeNumber = (v: any, fallback = 0) =>
     Number.isFinite(Number(v)) ? Number(v) : fallback;
 
-  /* ===== modelo para fallback de qualidade otimizada ===== */
+  /* ===== modelo para fallbacks ===== */
   const model = useMemo(() => getModel('inference'), []);
 
   /* ===================== NORMALIZAÇÃO DO OBJETO DE OTIMIZAÇÃO ===================== */
@@ -56,7 +56,6 @@ export const Results: React.FC<ResultsProps> = ({
     const src = optimizationResults;
     if (!src) return null;
 
-    // 1) Campos planos
     if (
       src.temperatura != null ||
       src.tempo != null ||
@@ -73,7 +72,6 @@ export const Results: React.FC<ResultsProps> = ({
       };
     }
 
-    // 2) bestParams prioritário
     if (src.bestParams) {
       const p = src.bestParams;
       return {
@@ -91,7 +89,6 @@ export const Results: React.FC<ResultsProps> = ({
       };
     }
 
-    // 3) Estrutura { best: { x: { ... }, y? } }
     if (src.best?.x) {
       const p = src.best.x;
       return {
@@ -116,19 +113,16 @@ export const Results: React.FC<ResultsProps> = ({
   const optimizedQuality: number | null = useMemo(() => {
     if (!opt) return null;
 
-    // 1) veio pronto
     if (opt.quality != null && Number.isFinite(opt.quality)) {
       return Number(opt.quality);
     }
 
-    // 2) melhoria + qualidade atual
     const imp = safeNumber(optimizationResults?.improvement, NaN);
     const base = safeNumber(currentParams.qualidade, NaN);
     if (Number.isFinite(imp) && Number.isFinite(base)) {
       return base + imp;
     }
 
-    // 3) prever com o modelo a partir dos parâmetros otimizados
     if (
       Number.isFinite(opt.temperatura) &&
       Number.isFinite(opt.tempo) &&
@@ -145,13 +139,38 @@ export const Results: React.FC<ResultsProps> = ({
         const q = safeNumber(pred?.quality, NaN);
         if (Number.isFinite(q)) return q;
       } catch (e) {
-        // silencioso: se o modelo não estiver disponível aqui, seguimos sem derrubar a página
         console.warn('Falha ao prever qualidade otimizada no Results:', e);
       }
     }
 
     return null;
   }, [opt, optimizationResults, currentParams, model]);
+
+  /* ======= Qualidade (e Energia) Atual com fallback de predição ======= */
+  const { currentQuality, currentEnergy } = useMemo(() => {
+    let q = safeNumber(currentParams.qualidade, NaN);
+    let e = safeNumber(currentParams.energia, NaN);
+
+    if (!Number.isFinite(q) || !Number.isFinite(e)) {
+      try {
+        const pred = model.predict({
+          temp: Number(currentParams.temperatura),
+          time: Number(currentParams.tempo),
+          press: Number(currentParams.pressao),
+          speed: Number(currentParams.velocidade),
+        });
+        if (!Number.isFinite(q)) q = safeNumber(pred?.quality, NaN);
+        if (!Number.isFinite(e)) e = safeNumber(pred?.energy, NaN);
+      } catch (err) {
+        // mantém NaN se não for possível prever
+      }
+    }
+
+    return {
+      currentQuality: Number.isFinite(q) ? q : 0,
+      currentEnergy: Number.isFinite(e) ? e : safeNumber(currentParams.energia, 0),
+    };
+  }, [currentParams, model]);
 
   const downloadAllResults = () => {
     const avgQuality =
@@ -166,8 +185,8 @@ export const Results: React.FC<ResultsProps> = ({
       `Current,Time,${currentParams.tempo}`,
       `Current,Pressure,${currentParams.pressao}`,
       `Current,Speed,${currentParams.velocidade}`,
-      `Current,Quality,${currentParams.qualidade}`,
-      `Current,Energy,${currentParams.energia}`,
+      `Current,Quality,${currentQuality}`,
+      `Current,Energy,${currentEnergy}`,
       ...(opt
         ? [
             `Optimized,Temperature,${opt.temperatura ?? ''}`,
@@ -223,8 +242,8 @@ PARÂMETROS ATUAIS:
 - Tempo: ${currentParams.tempo} min
 - Pressão: ${currentParams.pressao} kPa
 - Velocidade: ${currentParams.velocidade} rpm
-- Qualidade Prevista: ${safeNumber(currentParams.qualidade).toFixed(2)}
-- Energia Prevista: ${safeNumber(currentParams.energia).toFixed(1)} kWh/ton
+- Qualidade Prevista: ${safeNumber(currentQuality).toFixed(2)}
+- Energia Prevista: ${safeNumber(currentEnergy).toFixed(1)} kWh/ton
 
 ${
   opt
@@ -373,7 +392,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
             <span>Resultados e Relatórios</span>
           </h2>
 
-          <div className="flex space-x-2">
+        <div className="flex space-x-2">
             <button
               onClick={downloadAllResults}
               className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
@@ -436,7 +455,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                   <div>
                     <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Qualidade Atual</div>
                     <div className={`text-2xl font-bold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-                      {safeNumber(currentParams.qualidade).toFixed(1)}<span className="text-lg text-gray-500">/400</span>
+                      {safeNumber(currentQuality).toFixed(1)}<span className="text-lg text-gray-500">/400</span>
                     </div>
                   </div>
                 </div>
@@ -502,14 +521,14 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     <li>• {opt
                       ? `Melhoria potencial: +${optimizationResults?.improvement ?? '—'} unidades`
                       : 'Execute a otimização para ver melhorias potenciais'}</li>
-                    <li>• {currentParams.qualidade >= 365
+                    <li>• {currentQuality >= 365
                       ? 'Parâmetros atuais já produzem excelente qualidade'
-                      : currentParams.qualidade >= 355
+                      : currentQuality >= 355
                       ? 'Parâmetros atuais produzem boa qualidade'
                       : 'Parâmetros atuais precisam de otimização'}</li>
-                    <li>• Consumo energético atual: {safeNumber(currentParams.energia).toFixed(1)} kWh/ton ({
-                      currentParams.energia < 500 ? 'muito eficiente'
-                        : currentParams.energia < 600 ? 'eficiente'
+                    <li>• Consumo energético atual: {safeNumber(currentEnergy).toFixed(1)} kWh/ton ({
+                      currentEnergy < 500 ? 'muito eficiente'
+                        : currentEnergy < 600 ? 'eficiente'
                         : 'ineficiente'
                     })</li>
                   </ul>
@@ -524,7 +543,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                       ? 'Execute mais simulações para validar resultados'
                       : 'Dados suficientes coletados para análise confiável'}</li>
                     <li>• Monitore a temperatura de perto - é o parâmetro mais crítico</li>
-                    <li>• {currentParams.energia > 600
+                    <li>• {currentEnergy > 600
                       ? 'Considere reduzir temperatura ou tempo para economizar energia'
                       : 'Consumo energético está em nível aceitável'}</li>
                   </ul>
@@ -657,8 +676,8 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                       +{optimizationResults?.improvement ?? '—'} unidades
                     </div>
                     <div className={`text-sm ${isDark ? 'text-green-400' : 'text-green-600'}`}>
-                      {currentParams.qualidade
-                        ? `(${((safeNumber(optimizationResults?.improvement) / Math.max(1, currentParams.qualidade)) * 100).toFixed(1)}% de melhoria)`
+                      {currentQuality
+                        ? `(${((safeNumber(optimizationResults?.improvement) / Math.max(1, currentQuality)) * 100).toFixed(1)}% de melhoria)`
                         : '(—)'}
                     </div>
                   </div>
@@ -697,6 +716,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     </div>
   );
 };
+
 
 
 
