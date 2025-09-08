@@ -86,17 +86,18 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
 
   const clearHistory = () => saveHistory([]);
 
-  // === ADIÇÃO: Exportar histórico para CSV (Excel-friendly, com BOM) ===
+  // === Exportar CSV (Excel-friendly) ===
   function exportHistoryCSV() {
     if (!history || history.length === 0) return;
 
-    const sep = ';';
+    const sep = ';'; // Excel pt-BR costuma esperar ponto-e-vírgula
     const esc = (s: any) => `"${String(s ?? '').replace(/"/g, '""')}"`;
 
-    const header = [
+    const headerCols = [
       'id','timestamp_iso','method','score','evaluations','quality','energy','lambda',
       'temperatura','tempo','pressao','velocidade'
-    ].join(sep);
+    ];
+    const header = headerCols.join(sep);
 
     const rows = history.map((it) => {
       const tsIso = it.ts ? new Date(it.ts).toISOString() : '';
@@ -120,11 +121,12 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       ].join(sep);
     });
 
-    const csv = [header, ...rows].join('\n');
+    // CRLF ajuda o Excel no Windows a tratar como planilha
+    const csv = [header, ...rows].join('\r\n');
 
-    // BOM UTF-8 para o Excel reconhecer corretamente
+    // BOM UTF-8 + MIME de Excel para melhor detecção
     const BOM = '\uFEFF';
-    const blob = new Blob([BOM, csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([BOM, csv], { type: 'application/vnd.ms-excel;charset=utf-8;' });
 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -136,7 +138,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
-  // === FIM DA ADIÇÃO ===
+  // === fim export ===
 
   const label = isDark ? 'text-gray-300' : 'text-gray-700';
   const text = isDark ? 'text-gray-100' : 'text-gray-900';
@@ -242,7 +244,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
     return {
       label: 'Ótimo',
       class: isDark
-        ? 'bg-emerald-900/50 text-emerald-200 border border-emerald-700'
+        ? 'bg-emerald-900/50 text-emerald-200 border-emerald-700'
         : 'bg-emerald-100 text-emerald-800 border-emerald-200'
     };
   }
@@ -546,7 +548,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             <div className="text-xs text-gray-500 mt-1">
               Maleabilidade com boa qualidade. T/tempo moderados.
             </div>
-            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
+            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700 border-green-200">
               λ ≈ 0.12 · Qualidade ≥ 360
             </div>
           </button>
@@ -841,7 +843,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
                   className={`cursor-help text-xs ${
                     isDark
                       ? 'bg-blue-900/60 text-blue-200 border border-blue-800'
-                      : 'bg-blue-100 text-blue-700 border border-blue-200'
+                      : 'bg-blue-100 text-blue-700 border-blue-200'
                   } px-2 py-0.5 rounded-full`}
                   title={`O score combina qualidade prevista e consumo de energia em um só valor.
 Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores priorizam economia de energia.`}
@@ -972,7 +974,7 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
         </div>
       )}
 
-      {/* Histórico – mais respiro (gap-6) e título visível no dark */}
+      {/* Histórico – botões no padrão premium */}
       <div className={`${cardBase} ${ringBlue} p-6`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -981,24 +983,26 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
               Histórico de Otimizações
             </h3>
           </div>
-          {/* ADIÇÃO: Botões lado a lado (Exportar + Limpar) */}
+
+        {/* Botões premium */}
           <div className="flex items-center gap-2">
             <button
               onClick={exportHistoryCSV}
-              className={`text-xs px-3 py-1 rounded-md border transition 
-                ${isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+              className={`text-xs px-3 py-1.5 rounded-md font-semibold transition 
+                text-white bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-600
+                shadow-sm hover:shadow-md hover:-translate-y-0.5 ${ringBlue}`}
             >
               Exportar histórico (.csv)
             </button>
             <button
               onClick={clearHistory}
-              className={`text-xs px-3 py-1 rounded-md border transition 
-                ${isDark ? 'border-gray-600 text-gray-300 hover:bg-gray-700' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+              className={`text-xs px-3 py-1.5 rounded-md font-semibold transition 
+                text-white bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-600
+                shadow-sm hover:shadow-md hover:-translate-y-0.5 ${ringBlue}`}
             >
               Limpar histórico
             </button>
           </div>
-          {/* FIM ADIÇÃO */}
         </div>
 
         {history.length === 0 ? (
@@ -1217,6 +1221,7 @@ function RangeCard({
     </div>
   );
 }
+
 
 
 
