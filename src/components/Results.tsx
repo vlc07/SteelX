@@ -160,7 +160,7 @@ ${
 3. Considere análise de sensibilidade para entender melhor os parâmetros`
 }
 
-Gerado por: Otimizador de Processos
+Gerado por: Metalyics Software
 Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     `;
 
