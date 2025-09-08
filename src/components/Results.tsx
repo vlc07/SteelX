@@ -48,10 +48,9 @@ export const Results: React.FC<ResultsProps> = ({
   const safeNumber = (v: any, fallback = 0) =>
     Number.isFinite(Number(v)) ? Number(v) : fallback;
 
-  // modelo p/ fallbacks
   const model = useMemo(() => getModel('inference'), []);
 
-  // normalização do objeto de otimização (compatível com vários formatos)
+  // Normaliza possível estrutura dos resultados de otimização
   const opt = useMemo(() => {
     const src = optimizationResults;
     if (!src) return null;
@@ -109,7 +108,7 @@ export const Results: React.FC<ResultsProps> = ({
     return null;
   }, [optimizationResults]);
 
-  // qualidade otimizada com fallbacks
+  // Qualidade otimizada com fallbacks
   const optimizedQuality: number | null = useMemo(() => {
     if (!opt) return null;
 
@@ -119,7 +118,7 @@ export const Results: React.FC<ResultsProps> = ({
 
     const imp = safeNumber(optimizationResults?.improvement, NaN);
     const base = safeNumber(currentParams.qualidade, NaN);
-    if (Number.isFinite(imp) && Number.isFinite(base)) {
+    if (Number.isFinite(imp) && Number.isFinite(base) && base > 0) {
       return base + imp;
     }
 
@@ -144,14 +143,17 @@ export const Results: React.FC<ResultsProps> = ({
     return null;
   }, [opt, optimizationResults, currentParams, model]);
 
-  // ===== Qualidade/Energia atuais com fallbacks adicionais =====
+  // ===== Qualidade/Energia atuais com fallbacks robustos =====
   const { currentQuality, currentEnergy } = useMemo(() => {
-    // 1) tentar usar o que veio nos props
-    let q = safeNumber(currentParams.qualidade, NaN);
-    let e = safeNumber(currentParams.energia, NaN);
+    // 1) pegar dos props
+    let q = Number(currentParams.qualidade);
+    let e = Number(currentParams.energia);
 
-    // 2) se não vierem, tentar prever pelo modelo
-    if (!Number.isFinite(q) || !Number.isFinite(e)) {
+    const qInvalid = !Number.isFinite(q) || q <= 0; // <= 0 passa a acionar fallback
+    const eInvalid = !Number.isFinite(e) || e <= 0;
+
+    // 2) tentar prever pelo modelo (se inválidos)
+    if (qInvalid || eInvalid) {
       try {
         const pred = model.predict({
           temp: Number(currentParams.temperatura),
@@ -159,24 +161,24 @@ export const Results: React.FC<ResultsProps> = ({
           press: Number(currentParams.pressao),
           speed: Number(currentParams.velocidade),
         });
-        if (!Number.isFinite(q)) q = safeNumber(pred?.quality, NaN);
-        if (!Number.isFinite(e)) e = safeNumber(pred?.energy, NaN);
+        if (qInvalid) q = safeNumber(pred?.quality, NaN);
+        if (eInvalid) e = safeNumber(pred?.energy, NaN);
       } catch {}
     }
 
-    // 3) se ainda assim a qualidade for inválida, usar a ÚLTIMA qualidade das simulações
-    if (!Number.isFinite(q) && simulationResults.length > 0) {
+    // 3) se ainda sem qualidade, usa a última simulação disponível
+    if ((!Number.isFinite(q) || q <= 0) && simulationResults.length > 0) {
       const last = simulationResults[simulationResults.length - 1];
       q = safeNumber(last?.quality, NaN);
     }
 
     return {
-      currentQuality: Number.isFinite(q) ? q : 0,
-      currentEnergy: Number.isFinite(e) ? e : safeNumber(currentParams.energia, 0),
+      currentQuality: Number.isFinite(q) && q > 0 ? q : 0,
+      currentEnergy: Number.isFinite(e) && e > 0 ? e : 0,
     };
   }, [currentParams, simulationResults, model]);
 
-  // exportar CSV
+  // Baixar CSV
   const downloadAllResults = () => {
     const avgQuality =
       simulationResults.length > 0
@@ -218,7 +220,7 @@ export const Results: React.FC<ResultsProps> = ({
     window.URL.revokeObjectURL(url);
   };
 
-  // gerar relatório TXT
+  // Gerar relatório TXT
   const generateReport = () => {
     const avg =
       simulationResults.length > 0
@@ -299,7 +301,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     window.URL.revokeObjectURL(url);
   };
 
-  // dados dos gráficos
+  // Dados dos gráficos
   const qualityTrendData = {
     labels: simulationResults.map((_, i) => `Teste ${i + 1}`),
     datasets: [
@@ -361,7 +363,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     ]
   };
 
-  // estatísticas auxiliares
+  // Estatísticas auxiliares
   const mean =
     simulationResults.length > 0
       ? simulationResults.reduce((s, r) => s + safeNumber(r.quality), 0) /
@@ -398,7 +400,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
             <span>Resultados e Relatórios</span>
           </h2>
 
-          <div className="flex space-x-2">
+        <div className="flex space-x-2">
             <button
               onClick={downloadAllResults}
               className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
@@ -416,7 +418,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
           </div>
         </div>
 
-        {/* Selector */}
+        {/* View Selector */}
         <div className="flex space-x-1 mb-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
           <button
             onClick={() => setActiveView('overview')}
@@ -559,7 +561,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
           </div>
         )}
 
-        {/* Detailed */}
+        {/* Detailed Analysis */}
         {activeView === 'detailed' && simulationResults.length > 0 && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -602,6 +604,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
               </div>
             </div>
 
+            {/* Statistical Summary */}
             <div className={`p-6 rounded-lg ${isDark ? 'bg-gray-700' : 'bg-white'} border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
               <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>Resumo Estatístico</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -670,6 +673,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
               </div>
             )}
 
+            {/* Improvement Summary */}
             {opt && (
               <div className={`p-6 rounded-lg ${isDark ? 'bg-green-900' : 'bg-green-50'} border ${isDark ? 'border-green-700' : 'border-green-200'}`}>
                 <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-green-300' : 'text-green-800'}`}>Resumo das Melhorias</h3>
@@ -708,6 +712,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
           </div>
         )}
 
+        {/* Empty State (detailed sem dados) */}
         {activeView === 'detailed' && simulationResults.length === 0 && (
           <div className={`p-8 text-center ${isDark ? 'bg-gray-700' : 'bg-gray-50'} rounded-lg`}>
             <BarChart3 className={`h-16 w-16 mx-auto mb-4 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
@@ -719,6 +724,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     </div>
   );
 };
+
 
 
 
