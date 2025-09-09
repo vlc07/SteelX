@@ -63,6 +63,29 @@ export const Results: React.FC<ResultsProps> = ({
   const safeNumber = (v: any, fallback = 0) =>
     Number.isFinite(Number(v)) ? Number(v) : fallback;
 
+  /* ---------- CORREÇÃO DE FONTE DE DADOS PARA QUALIDADES ---------- */
+  // Qualidade Atual: tenta currentParams.qualidade -> currentParams.quality -> última simulação
+  const lastSimQ =
+    simulationResults.length > 0
+      ? safeNumber(simulationResults[simulationResults.length - 1].quality, 0)
+      : 0;
+
+  const currentQuality =
+    [currentParams?.qualidade, (currentParams as any)?.quality]
+      .map((v) => safeNumber(v, NaN))
+      .find((v) => Number.isFinite(v) && v > 0) ?? lastSimQ;
+
+  // Qualidade Otimizada: cobre diferentes formatos vindos da otimização
+  const optimizedQualityRaw =
+    optimizationResults?.quality ??
+    optimizationResults?.predictedQuality ??
+    optimizationResults?.bestQuality ??
+    optimizationResults?.best?.quality;
+
+  const optimizedQuality = Number.isFinite(Number(optimizedQualityRaw))
+    ? Number(optimizedQualityRaw)
+    : null;
+
   /* ===== Exportação ===== */
   const downloadAllResults = () => {
     const avgQuality =
@@ -82,7 +105,7 @@ export const Results: React.FC<ResultsProps> = ({
       `Current,Time,${currentParams.tempo}`,
       `Current,Pressure,${currentParams.pressao}`,
       `Current,Speed,${currentParams.velocidade}`,
-      `Current,Quality,${currentParams.qualidade}`,
+      `Current,Quality,${currentQuality}`,
       `Current,Energy,${currentParams.energia}`,
       ...(optimizationResults
         ? [
@@ -90,7 +113,7 @@ export const Results: React.FC<ResultsProps> = ({
             `Optimized,Time,${optimizationResults.tempo ?? ''}`,
             `Optimized,Pressure,${optimizationResults.pressao ?? ''}`,
             `Optimized,Speed,${optimizationResults.velocidade ?? ''}`,
-            `Optimized,Quality,${optimizationResults.quality ?? ''}`,
+            `Optimized,Quality,${optimizedQuality ?? ''}`,
             `Optimized,Energy,${optimizationResults.energy ?? ''}`,
           ]
         : []),
@@ -150,10 +173,8 @@ PARÂMETROS ATUAIS:
 - Tempo: ${currentParams.tempo} min
 - Pressão: ${currentParams.pressao} kPa
 - Velocidade: ${currentParams.velocidade} rpm
-- Qualidade Prevista: ${safeNumber(currentParams.qualidade).toFixed(2)}
-- Energia Prevista: ${safeNumber(currentParams.energia).toFixed(
-      1
-    )} kWh/ton
+- Qualidade Prevista: ${safeNumber(currentQuality).toFixed(2)}
+- Energia Prevista: ${safeNumber(currentParams.energia).toFixed(1)} kWh/ton
 ${
   optimizationResults
     ? `
@@ -162,11 +183,7 @@ PARÂMETROS OTIMIZADOS:
 - Tempo: ${optimizationResults.tempo ?? '—'} min
 - Pressão: ${optimizationResults.pressao ?? '—'} kPa
 - Velocidade: ${optimizationResults.velocidade ?? '—'} rpm
-- Qualidade Otimizada: ${
-        optimizationResults.quality != null
-          ? safeNumber(optimizationResults.quality).toFixed(2)
-          : '—'
-      }
+- Qualidade Otimizada: ${optimizedQuality != null ? optimizedQuality.toFixed(2) : '—'}
 - Energia Otimizada: ${
         optimizationResults.energy != null
           ? safeNumber(optimizationResults.energy).toFixed(1)
@@ -326,7 +343,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
   const energyOptim = safeNumber(
     optimizationResults?.energy,
     energyNow
-  ); // se não houver otimização, economia 0
+  );
   const energySavingPerTon = Math.max(0, energyNow - energyOptim);
   const energySavingBRL =
     energySavingPerTon *
@@ -499,7 +516,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                         isDark ? 'text-gray-100' : 'text-gray-800'
                       }`}
                     >
-                      {safeNumber(currentParams.qualidade).toFixed(1)}
+                      {safeNumber(currentQuality).toFixed(1)}
                       <span className="text-lg text-gray-500">/400</span>
                     </div>
                   </div>
@@ -537,10 +554,14 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                           isDark ? 'text-gray-100' : 'text-gray-800'
                         }`}
                       >
-                        {optimizationResults?.quality != null
-                          ? safeNumber(optimizationResults.quality).toFixed(1)
-                          : '—'}
-                        <span className="text-lg text-gray-500">/400</span>
+                        {optimizedQuality != null ? (
+                          <>
+                            {optimizedQuality.toFixed(1)}
+                            <span className="text-lg text-gray-500">/400</span>
+                          </>
+                        ) : (
+                          <>—<span className="text-lg text-gray-500">/400</span></>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -662,9 +683,9 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     </li>
                     <li>
                       •{' '}
-                      {currentParams.qualidade >= 365
+                      {currentQuality >= 365
                         ? 'Parâmetros atuais já produzem excelente qualidade'
-                        : currentParams.qualidade >= 355
+                        : currentQuality >= 355
                         ? 'Parâmetros atuais produzem boa qualidade'
                         : 'Parâmetros atuais precisam de otimização'}
                     </li>
@@ -911,8 +932,12 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                       isDark ? 'text-gray-100' : 'text-emerald-900'
                     }`}
                   >
-                    R${' '}
-                    {energySavingBRL.toLocaleString('pt-BR', {
+                    R{'$ '}
+                    {(
+                      energySavingPerTon *
+                      ENERGY_PRICE_BRL_PER_KWH *
+                      PRODUCTION_TONS_PERIOD
+                    ).toLocaleString('pt-BR', {
                       maximumFractionDigits: 0,
                     })}
                   </div>
@@ -921,7 +946,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                       isDark ? 'text-gray-400' : 'text-gray-600'
                     }`}
                   >
-                    {energySavingPerTon.toFixed(1)} kWh/ton × R${' '}
+                    {energySavingPerTon.toFixed(1)} kWh/ton × R{'$ '}
                     {ENERGY_PRICE_BRL_PER_KWH.toFixed(2)} ×{' '}
                     {PRODUCTION_TONS_PERIOD} ton
                   </div>
@@ -946,8 +971,12 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                       isDark ? 'text-gray-100' : 'text-blue-900'
                     }`}
                   >
-                    R${' '}
-                    {scrapSavingBRL.toLocaleString('pt-BR', {
+                    R{'$ '}
+                    {(
+                      scrapSavingRate *
+                      SCRAP_COST_R_PER_TON *
+                      PRODUCTION_TONS_PERIOD
+                    ).toLocaleString('pt-BR', {
                       maximumFractionDigits: 0,
                     })}
                   </div>
@@ -956,7 +985,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                       isDark ? 'text-gray-400' : 'text-gray-600'
                     }`}
                   >
-                    queda ~{SCRAP_RATE_DROP_POINTS}% × R${' '}
+                    queda ~{SCRAP_RATE_DROP_POINTS}% × R{'$ '}
                     {SCRAP_COST_R_PER_TON.toLocaleString('pt-BR')} ×{' '}
                     {PRODUCTION_TONS_PERIOD} ton
                   </div>
@@ -981,8 +1010,8 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                       isDark ? 'text-gray-100' : 'text-violet-900'
                     }`}
                   >
-                    R${' '}
-                    {totalSavingBRL.toLocaleString('pt-BR', {
+                    R{'$ '}
+                    {(totalSavingBRL).toLocaleString('pt-BR', {
                       maximumFractionDigits: 0,
                     })}
                   </div>
@@ -1145,10 +1174,10 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                         isDark ? 'text-emerald-300' : 'text-emerald-600'
                       }`}
                     >
-                      {currentParams.qualidade
+                      {currentQuality
                         ? `(${(
                             (safeNumber(optimizationResults.improvement) /
-                              currentParams.qualidade) *
+                              currentQuality) *
                             100
                           ).toFixed(1)}% de melhoria)`
                         : '(—)'}
@@ -1200,10 +1229,10 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                         isDark ? 'text-emerald-100' : 'text-emerald-800'
                       }`}
                     >
-                      {optimizationResults?.quality != null
-                        ? optimizationResults.quality >= 365
+                      {optimizedQuality != null
+                        ? optimizedQuality >= 365
                           ? 'Excelente'
-                          : optimizationResults.quality >= 355
+                          : optimizedQuality >= 355
                           ? 'Boa'
                           : 'Regular'
                         : '—'}
@@ -1218,6 +1247,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     </div>
   );
 };
+
 
 
 
