@@ -22,6 +22,7 @@ import {
   ArcElement,
 } from 'chart.js';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import { getModel } from '../ml/engine';
 
 ChartJS.register(
   CategoryScale,
@@ -78,10 +79,10 @@ export const Results: React.FC<ResultsProps> = ({
   // Qualidade Otimizada: cobre diferentes formatos vindos da otimização
   const optimizedQualityRaw =
     optimizationResults?.quality ??
-    optimizationResults?.qualidade ?? // <- fallback extra
     optimizationResults?.predictedQuality ??
     optimizationResults?.bestQuality ??
-    optimizationResults?.best?.quality;
+    optimizationResults?.best?.quality ??
+    optimizationResults?.qualidade;
 
   const optimizedQuality = Number.isFinite(Number(optimizedQualityRaw))
     ? Number(optimizedQualityRaw)
@@ -115,7 +116,7 @@ export const Results: React.FC<ResultsProps> = ({
             `Optimized,Pressure,${optimizationResults.pressao ?? ''}`,
             `Optimized,Speed,${optimizationResults.velocidade ?? ''}`,
             `Optimized,Quality,${optimizedQuality ?? ''}`,
-            `Optimized,Energy,${optimizationResults.energy ?? optimizationResults.energia ?? ''}`, // <- fallback
+            `Optimized,Energy,${optimizationResults.energy ?? optimizationResults.energia ?? ''}`,
           ]
         : []),
       ...simulationResults.map(
@@ -186,10 +187,8 @@ PARÂMETROS OTIMIZADOS:
 - Velocidade: ${optimizationResults.velocidade ?? '—'} rpm
 - Qualidade Otimizada: ${optimizedQuality != null ? optimizedQuality.toFixed(2) : '—'}
 - Energia Otimizada: ${
-        optimizationResults.energy != null
-          ? safeNumber(optimizationResults.energy).toFixed(1)
-          : optimizationResults.energia != null
-          ? safeNumber(optimizationResults.energia).toFixed(1)
+        (optimizationResults.energy ?? optimizationResults.energia) != null
+          ? safeNumber(optimizationResults.energy ?? optimizationResults.energia).toFixed(1)
           : '—'
       } kWh/ton
 - Melhoria: ${optimizationResults.improvement ?? '—'} unidades
@@ -336,18 +335,48 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
         ).toFixed(2)
       : '0.00';
 
+  /* ====== INFERÊNCIA DE ENERGIA PARA ECONOMIA (CORREÇÃO) ====== */
+  const model = React.useMemo(() => getModel('inference'), []);
+  const inferEnergyFromParams = (p: any): number => {
+    if (!p) return NaN;
+    try {
+      const pred = model.predict({
+        temp: Number(p.temperatura ?? p.temp),
+        time: Number(p.tempo ?? p.time),
+        press: Number(p.pressao ?? p.press),
+        speed: Number(p.velocidade ?? p.speed),
+      });
+      return Number(pred?.energy);
+    } catch {
+      return NaN;
+    }
+  };
+
   /* ===== Economia Estimada (R$) — usa dados já existentes ===== */
   const ENERGY_PRICE_BRL_PER_KWH = 0.75; // R$/kWh (padrão)
   const PRODUCTION_TONS_PERIOD = 100; // ton no período (padrão)
   const SCRAP_COST_R_PER_TON = 1500; // R$/ton refugo (padrão)
   const SCRAP_RATE_DROP_POINTS = 1.5; // queda percentual absoluta estimada (%)
 
-  const energyNow = safeNumber(currentParams?.energia, 0); // kWh/ton atual
-  const energyOptim = safeNumber(
-    optimizationResults?.energy ?? optimizationResults?.energia, // <- fallback extra
-    energyNow
+  // Energia atual (kWh/ton)
+  let energyNow = safeNumber(currentParams?.energia, NaN);
+  if (!Number.isFinite(energyNow) || energyNow <= 0) {
+    energyNow = safeNumber(inferEnergyFromParams(currentParams), 0);
+  }
+
+  // Energia otimizada (kWh/ton)
+  let energyOptim = safeNumber(
+    optimizationResults?.energy ?? optimizationResults?.energia,
+    NaN
   );
+  if (!Number.isFinite(energyOptim)) {
+    const sourceParams = optimizationResults?.bestParams ?? optimizationResults;
+    energyOptim = safeNumber(inferEnergyFromParams(sourceParams), energyNow);
+  }
+
+  // Economia por tonelada (somente se otimizar de fato reduzir)
   const energySavingPerTon = Math.max(0, energyNow - energyOptim);
+
   const energySavingBRL =
     energySavingPerTon *
     ENERGY_PRICE_BRL_PER_KWH *
@@ -421,8 +450,6 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
             </span>
             <span>Resultados e Relatórios</span>
           </h2>
-
-        {/* ... (UI inteira mantida) ... */}
 
           <div className="flex gap-2">
             <button
@@ -696,10 +723,10 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     </li>
                     <li>
                       • Consumo energético atual:{' '}
-                      {safeNumber(currentParams.energia).toFixed(1)} kWh/ton (
-                      {currentParams.energia < 500
+                      {safeNumber(energyNow).toFixed(1)} kWh/ton (
+                      {energyNow < 500
                         ? 'muito eficiente'
-                        : currentParams.energia < 600
+                        : energyNow < 600
                         ? 'eficiente'
                         : 'ineficiente'}
                       )
@@ -734,7 +761,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     <li>• Monitore a temperatura de perto - é o parâmetro mais crítico</li>
                     <li>
                       •{' '}
-                      {currentParams.energia > 600
+                      {energyNow > 600
                         ? 'Considere reduzir temperatura ou tempo para economizar energia'
                         : 'Consumo energético está em nível aceitável'}
                     </li>
@@ -938,11 +965,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     }`}
                   >
                     R{'$ '}
-                    {(
-                      energySavingPerTon *
-                      ENERGY_PRICE_BRL_PER_KWH *
-                      PRODUCTION_TONS_PERIOD
-                    ).toLocaleString('pt-BR', {
+                    {energySavingBRL.toLocaleString('pt-BR', {
                       maximumFractionDigits: 0,
                     })}
                   </div>
@@ -1181,7 +1204,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     >
                       {currentQuality
                         ? `(${(
-                            (safeNumber(optimizationResults.improvement, 0) / // <- safe fallback
+                            (safeNumber(optimizationResults.improvement) /
                               currentQuality) *
                             100
                           ).toFixed(1)}% de melhoria)`
@@ -1252,6 +1275,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     </div>
   );
 };
+
 
 
 
