@@ -78,6 +78,7 @@ export const Results: React.FC<ResultsProps> = ({
   // Qualidade Otimizada: cobre diferentes formatos vindos da otimização
   const optimizedQualityRaw =
     optimizationResults?.quality ??
+    optimizationResults?.qualidade ?? // <- fallback extra
     optimizationResults?.predictedQuality ??
     optimizationResults?.bestQuality ??
     optimizationResults?.best?.quality;
@@ -114,7 +115,7 @@ export const Results: React.FC<ResultsProps> = ({
             `Optimized,Pressure,${optimizationResults.pressao ?? ''}`,
             `Optimized,Speed,${optimizationResults.velocidade ?? ''}`,
             `Optimized,Quality,${optimizedQuality ?? ''}`,
-            `Optimized,Energy,${optimizationResults.energy ?? ''}`,
+            `Optimized,Energy,${optimizationResults.energy ?? optimizationResults.energia ?? ''}`, // <- fallback
           ]
         : []),
       ...simulationResults.map(
@@ -187,6 +188,8 @@ PARÂMETROS OTIMIZADOS:
 - Energia Otimizada: ${
         optimizationResults.energy != null
           ? safeNumber(optimizationResults.energy).toFixed(1)
+          : optimizationResults.energia != null
+          ? safeNumber(optimizationResults.energia).toFixed(1)
           : '—'
       } kWh/ton
 - Melhoria: ${optimizationResults.improvement ?? '—'} unidades
@@ -341,7 +344,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
 
   const energyNow = safeNumber(currentParams?.energia, 0); // kWh/ton atual
   const energyOptim = safeNumber(
-    optimizationResults?.energy,
+    optimizationResults?.energy ?? optimizationResults?.energia, // <- fallback extra
     energyNow
   );
   const energySavingPerTon = Math.max(0, energyNow - energyOptim);
@@ -418,6 +421,8 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
             </span>
             <span>Resultados e Relatórios</span>
           </h2>
+
+        {/* ... (UI inteira mantida) ... */}
 
           <div className="flex gap-2">
             <button
@@ -1176,7 +1181,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     >
                       {currentQuality
                         ? `(${(
-                            (safeNumber(optimizationResults.improvement) /
+                            (safeNumber(optimizationResults.improvement, 0) / // <- safe fallback
                               currentQuality) *
                             100
                           ).toFixed(1)}% de melhoria)`
@@ -1247,6 +1252,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     </div>
   );
 };
+
 
 
 
