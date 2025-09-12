@@ -388,23 +388,24 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     energyOptim = energyNow;
   }
 
-  // delta COM SINAL (pode ser negativo se a otimizada consumir mais)
-  const energyDeltaPerTon = energyNow - energyOptim;
+  // delta *com sentido de economia* (nunca negativo)
+const rawEnergyDeltaPerTon = energyNow - energyOptim; // kWh/ton
+const energyDeltaPerTon = Math.max(0, rawEnergyDeltaPerTon);
 
-  /* ===== Economia Estimada (R$) ===== */
-  const ENERGY_PRICE_BRL_PER_KWH = 0.75; // R$/kWh
-  const PRODUCTION_TONS_PERIOD = 100;    // ton no período
-  const SCRAP_COST_R_PER_TON = 1500;     // R$/ton refugo
-  const SCRAP_RATE_DROP_POINTS = 1.5;    // queda percentual absoluta estimada (%)
+// ===== Economia Estimada (R$) =====
+const ENERGY_PRICE_BRL_PER_KWH = 0.75; // R$/kWh
+const PRODUCTION_TONS_PERIOD = 100;    // ton no período
+const SCRAP_COST_R_PER_TON = 1500;     // R$/ton refugo
+const SCRAP_RATE_DROP_POINTS = 1.5;    // queda percentual absoluta estimada (%)
 
-  const energySavingBRL =
-    energyDeltaPerTon * ENERGY_PRICE_BRL_PER_KWH * PRODUCTION_TONS_PERIOD;
+const energySavingBRL =
+  energyDeltaPerTon * ENERGY_PRICE_BRL_PER_KWH * PRODUCTION_TONS_PERIOD;
 
-  const scrapSavingRate = Math.max(0, SCRAP_RATE_DROP_POINTS / 100);
-  const scrapSavingBRL =
-    scrapSavingRate * SCRAP_COST_R_PER_TON * PRODUCTION_TONS_PERIOD;
+const scrapSavingRate = Math.max(0, SCRAP_RATE_DROP_POINTS / 100);
+const scrapSavingBRL =
+  scrapSavingRate * SCRAP_COST_R_PER_TON * PRODUCTION_TONS_PERIOD;
 
-  const totalSavingBRL = energySavingBRL + scrapSavingBRL;
+const totalSavingBRL = energySavingBRL + scrapSavingBRL;
 
   const axisColor = isDark ? '#e5e7eb' : '#374151';
   const gridColor = isDark ? '#374151' : '#e5e7eb';
