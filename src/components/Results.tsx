@@ -408,9 +408,9 @@ const qualityGain = Math.max(0, (qualityOpt ?? 0) - qualityNow);
 const scrapSavingRate = Math.min(MAX_SCRAP_DROP_RATE, qualityGain * DROP_PER_QUALITY_POINT);
 
 // Qualidade atual e otimizada (já tratadas anteriormente)
-const qualityNow  = safeNumber(currentQuality, 0);
 const qualityOpt  = Number.isFinite(Number(optimizedQuality)) ? Number(optimizedQuality) : null;
-const qualityGain = Math.max(0, (qualityOpt ?? 0) - qualityNow);
+const qualityGain = Math.max(0, (qualityOpt ?? 0) - safeNumber(currentQuality, 0));
+
 
 // Queda de taxa de sucata vinculada ao ganho de qualidade (cap no teto definido)
 const scrapSavingRate = Math.min(MAX_SCRAP_DROP_RATE, qualityGain * DROP_PER_QUALITY_POINT);
