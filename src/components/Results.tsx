@@ -392,16 +392,32 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
 const rawEnergyDeltaPerTon = energyNow - energyOptim; // kWh/ton
 const energyDeltaPerTon = Math.max(0, rawEnergyDeltaPerTon);
 
-// ===== Economia Estimada (R$) =====
-const ENERGY_PRICE_BRL_PER_KWH = 0.75; // R$/kWh
-const PRODUCTION_TONS_PERIOD = 100;    // ton no período
-const SCRAP_COST_R_PER_TON = 1500;     // R$/ton refugo
-const SCRAP_RATE_DROP_POINTS = 1.5;    // queda percentual absoluta estimada (%)
+/* ===== Economia Estimada (R$) — baseada em energia + refugo vinculado à melhoria real ===== */
+const ENERGY_PRICE_BRL_PER_KWH = 0.75;    // R$/kWh (ajuste conforme cenário real)
+const PRODUCTION_TONS_PERIOD   = 100;     // ton no período (ex.: mês ou campanha)
+const SCRAP_COST_R_PER_TON     = 1500;    // R$/ton sucata/retrabalho (média)
+const MAX_SCRAP_DROP_RATE      = 0.06;    // teto 6% de queda absoluta (conservador)
+const DROP_PER_QUALITY_POINT   = 0.002;   // ~0,2% de queda de sucata por ponto de qualidade
 
+// Qualidade atual e otimizada (já tratadas anteriormente)
+const qualityNow  = safeNumber(currentQuality, 0);
+const qualityOpt  = Number.isFinite(Number(optimizedQuality)) ? Number(optimizedQuality) : null;
+const qualityGain = Math.max(0, (qualityOpt ?? 0) - qualityNow);
+
+// Queda de taxa de sucata vinculada ao ganho de qualidade (cap no teto definido)
+const scrapSavingRate = Math.min(MAX_SCRAP_DROP_RATE, qualityGain * DROP_PER_QUALITY_POINT);
+
+// Energia atual x otimizada
+const energyNow  = safeNumber(currentParams?.energia, 0);          // kWh/ton atual
+const energyOptim = safeNumber(optimizationResults?.energy, energyNow);
+
+// Delta de energia com sentido de economia (nunca negativo no gráfico de "economia")
+const energyDeltaPerTon = Math.max(0, energyNow - energyOptim);
+
+// Componentes de economia
 const energySavingBRL =
   energyDeltaPerTon * ENERGY_PRICE_BRL_PER_KWH * PRODUCTION_TONS_PERIOD;
 
-const scrapSavingRate = Math.max(0, SCRAP_RATE_DROP_POINTS / 100);
 const scrapSavingBRL =
   scrapSavingRate * SCRAP_COST_R_PER_TON * PRODUCTION_TONS_PERIOD;
 
