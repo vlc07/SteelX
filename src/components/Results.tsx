@@ -333,8 +333,65 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
         ).toFixed(2)
       : '0.00';
 
-  /* ===== Energia: fontes robustas + proxy quando necessário ===== */
+  /* ===== Energia + Economia Estimada (valores estáveis entre re-renders) ===== */
   const model = React.useMemo(() => getModel('inference'), []);
+
+  // Constantes de negócio (ficam estáveis)
+  const ENERGY_PRICE_BRL_PER_KWH = 0.75;  // R$/kWh
+  const PRODUCTION_TONS_PERIOD   = 100;   // ton no período
+  const SCRAP_COST_R_PER_TON     = 1500;  // R$/ton sucata/retrabalho
+  const MAX_SCRAP_DROP_RATE      = 0.06;  // teto 6% absolutos
+  const DROP_PER_QUALITY_POINT   = 0.002; // ~0,2% por ponto de qualidade
+  const MIN_ENERGY_KWH_TON       = 100;   // piso de segurança
+  const ENERGY_SAVING_PER_QUALITY_POINT = 1.5; // kWh/ton por ponto de qualidade
+
+  // Estado estável com os números consolidados
+  type Econ = {
+    energyNow: number;
+    energyOptim: number;
+    energyDeltaPerTon: number;
+    scrapSavingRate: number;
+    energySavingBRL: number;
+    scrapSavingBRL: number;
+    totalSavingBRL: number;
+  };
+  const [econ, setEcon] = React.useState<Econ>({
+    energyNow: 0,
+    energyOptim: 0,
+    energyDeltaPerTon: 0,
+    scrapSavingRate: 0,
+    energySavingBRL: 0,
+    scrapSavingBRL: 0,
+    totalSavingBRL: 0,
+  });
+
+  // chave de dependência compacta (recalcula só quando entradas mudarem)
+  const econKey = React.useMemo(() => {
+    const lastSimEnergy =
+      (simulationResults as any[]).find(s =>
+        Number.isFinite(Number(s?.energy ?? s?.energia))
+      )?.energy ??
+      (simulationResults as any[]).find(s =>
+        Number.isFinite(Number(s?.energia))
+      )?.energia ??
+      null;
+
+    return JSON.stringify({
+      currentParams,
+      opt: {
+        temperatura: optimizationResults?.temperatura,
+        tempo: optimizationResults?.tempo,
+        pressao: optimizationResults?.pressao,
+        velocidade: optimizationResults?.velocidade,
+        energy: optimizationResults?.energy ?? optimizationResults?.energia,
+        quality: optimizedQuality,
+      },
+      currentQuality,
+      lastSimEnergy,
+      simCount: simulationResults.length,
+    });
+  }, [currentParams, optimizationResults, optimizedQuality, currentQuality, simulationResults]);
+
   const inferEnergyFromParams = (p: any): number => {
     if (!p) return NaN;
     try {
@@ -350,76 +407,77 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     }
   };
 
-  // Energia atual (kWh/ton) – diversas fontes + inferência + fallback
-  let energyNow =
-    safeNumber(
+  React.useEffect(() => {
+    // energia atual
+    let energyNowLocal = safeNumber(
       (currentParams as any)?.energia ?? (currentParams as any)?.energy,
       NaN
     );
-  if (!Number.isFinite(energyNow) || energyNow <= 0) {
-    energyNow = safeNumber(inferEnergyFromParams(currentParams), NaN);
-  }
-  if (!Number.isFinite(energyNow) || energyNow <= 0) {
-    const simWithEnergy = simulationResults.find((s: any) =>
-      Number.isFinite(Number((s as any)?.energy ?? (s as any)?.energia))
-    ) as any;
-    energyNow = safeNumber(simWithEnergy?.energy ?? simWithEnergy?.energia, NaN);
-  }
-  if (!Number.isFinite(energyNow) || energyNow <= 0) {
-    energyNow = 600; // fallback conservador
-  }
+    if (!Number.isFinite(energyNowLocal) || energyNowLocal <= 0) {
+      energyNowLocal = safeNumber(inferEnergyFromParams(currentParams), NaN);
+    }
+    if (!Number.isFinite(energyNowLocal) || energyNowLocal <= 0) {
+      const simWithEnergy = simulationResults.find((s: any) =>
+        Number.isFinite(Number((s as any)?.energy ?? (s as any)?.energia))
+      ) as any;
+      energyNowLocal = safeNumber(simWithEnergy?.energy ?? simWithEnergy?.energia, NaN);
+    }
+    if (!Number.isFinite(energyNowLocal) || energyNowLocal <= 0) {
+      energyNowLocal = 600; // fallback conservador
+    }
 
-  // Qualidade: ganho real (se houver)
-  const qualityNowVal = safeNumber(currentQuality, 0);
-  const qualityOptVal =
-    optimizedQuality != null && Number.isFinite(optimizedQuality)
+    // qualidade (ganho)
+    const qNow = safeNumber(currentQuality, 0);
+    const qOpt = optimizedQuality != null && Number.isFinite(optimizedQuality)
       ? Number(optimizedQuality)
       : null;
-  const qualityGain = Math.max(0, (qualityOptVal ?? 0) - qualityNowVal);
+    const qualityGain = Math.max(0, (qOpt ?? 0) - qNow);
 
-  // Energia otimizada (kWh/ton) – usa dado real; se não houver melhoria, aplica proxy
-  let energyOptimRaw = safeNumber(
-    optimizationResults?.energy ?? optimizationResults?.energia,
-    NaN
-  );
-  if (!Number.isFinite(energyOptimRaw)) {
-    const sourceParams = optimizationResults?.bestParams ?? optimizationResults;
-    energyOptimRaw = safeNumber(inferEnergyFromParams(sourceParams), NaN);
-  }
-  if (!Number.isFinite(energyOptimRaw)) {
-    energyOptimRaw = energyNow; // sem dado → igual ao atual
-  }
+    // energia otimizada
+    let energyOptimLocal = safeNumber(
+      optimizationResults?.energy ?? optimizationResults?.energia,
+      NaN
+    );
+    if (!Number.isFinite(energyOptimLocal)) {
+      const sourceParams = optimizationResults?.bestParams ?? optimizationResults;
+      energyOptimLocal = safeNumber(inferEnergyFromParams(sourceParams), NaN);
+    }
+    if (!Number.isFinite(energyOptimLocal)) {
+      energyOptimLocal = energyNowLocal; // sem dado → igual ao atual
+    }
+    // proxy pró-economia quando não há redução explícita
+    if (energyOptimLocal >= energyNowLocal) {
+      energyOptimLocal = Math.max(
+        MIN_ENERGY_KWH_TON,
+        energyNowLocal - qualityGain * ENERGY_SAVING_PER_QUALITY_POINT
+      );
+    }
 
-  // Proxy: se não houve redução de energia, vincula ao ganho de qualidade
-  const MIN_ENERGY_KWH_TON = 100;               // piso de segurança
-  const ENERGY_SAVING_PER_QUALITY_POINT = 1.5;  // kWh/ton por ponto de qualidade (ajustável)
-  const energyOptim =
-    energyOptimRaw >= energyNow
-      ? Math.max(MIN_ENERGY_KWH_TON, energyNow - qualityGain * ENERGY_SAVING_PER_QUALITY_POINT)
-      : energyOptimRaw;
+    // deltas e economias
+    const energyDeltaPerTonLocal = Math.max(0, energyNowLocal - energyOptimLocal);
+    const scrapSavingRateLocal = Math.min(
+      MAX_SCRAP_DROP_RATE,
+      qualityGain * DROP_PER_QUALITY_POINT
+    );
 
-  // Delta com sentido de economia (nunca negativo)
-  const energyDeltaPerTon = Math.max(0, energyNow - energyOptim);
+    const energySavingBRLLocal =
+      energyDeltaPerTonLocal * ENERGY_PRICE_BRL_PER_KWH * PRODUCTION_TONS_PERIOD;
 
-  /* ===== Economia Estimada (R$) — energia + refugo atrelado à qualidade ===== */
-  const ENERGY_PRICE_BRL_PER_KWH = 0.75;  // R$/kWh
-  const PRODUCTION_TONS_PERIOD   = 100;   // ton no período
-  const SCRAP_COST_R_PER_TON     = 1500;  // R$/ton de sucata/retrabalho
-  const MAX_SCRAP_DROP_RATE      = 0.06;  // teto 6% absolutos
-  const DROP_PER_QUALITY_POINT   = 0.002; // ~0,2% por ponto de qualidade
+    const scrapSavingBRLLocal =
+      scrapSavingRateLocal * SCRAP_COST_R_PER_TON * PRODUCTION_TONS_PERIOD;
 
-  // Queda de sucata vinculada ao ganho de qualidade (com teto)
-  const scrapSavingRate = Math.min(MAX_SCRAP_DROP_RATE, qualityGain * DROP_PER_QUALITY_POINT);
+    setEcon({
+      energyNow: energyNowLocal,
+      energyOptim: energyOptimLocal,
+      energyDeltaPerTon: energyDeltaPerTonLocal,
+      scrapSavingRate: scrapSavingRateLocal,
+      energySavingBRL: energySavingBRLLocal,
+      scrapSavingBRL: scrapSavingBRLLocal,
+      totalSavingBRL: energySavingBRLLocal + scrapSavingBRLLocal,
+    });
+  }, [econKey]);
 
-  // Componentes de economia
-  const energySavingBRL =
-    energyDeltaPerTon * ENERGY_PRICE_BRL_PER_KWH * PRODUCTION_TONS_PERIOD;
-
-  const scrapSavingBRL =
-    scrapSavingRate * SCRAP_COST_R_PER_TON * PRODUCTION_TONS_PERIOD;
-
-  const totalSavingBRL = energySavingBRL + scrapSavingBRL;
-
+  // ===== Chart (usa valores estáveis do estado)
   const axisColor = isDark ? '#e5e7eb' : '#374151';
   const gridColor = isDark ? '#374151' : '#e5e7eb';
 
@@ -428,7 +486,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     datasets: [
       {
         label: 'Economia',
-        data: [energySavingBRL, scrapSavingBRL, totalSavingBRL],
+        data: [econ.energySavingBRL, econ.scrapSavingBRL, econ.totalSavingBRL],
         backgroundColor: [
           'rgba(59,130,246,0.85)',
           'rgba(16,185,129,0.85)',
@@ -755,10 +813,10 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     </li>
                     <li>
                       • Consumo energético atual:{' '}
-                      {safeNumber(energyNow).toFixed(1)} kWh/ton (
-                      {energyNow < 500
+                      {safeNumber(econ.energyNow).toFixed(1)} kWh/ton (
+                      {econ.energyNow < 500
                         ? 'muito eficiente'
-                        : energyNow < 600
+                        : econ.energyNow < 600
                         ? 'eficiente'
                         : 'ineficiente'}
                       )
@@ -793,7 +851,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     <li>• Monitore a temperatura de perto - é o parâmetro mais crítico</li>
                     <li>
                       •{' '}
-                      {energyNow > 600
+                      {econ.energyNow > 600
                         ? 'Considere reduzir temperatura ou tempo para economizar energia'
                         : 'Consumo energético está em nível aceitável'}
                     </li>
@@ -997,7 +1055,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     }`}
                   >
                     R{'$ '}
-                    {energySavingBRL.toLocaleString('pt-BR', {
+                    {econ.energySavingBRL.toLocaleString('pt-BR', {
                       maximumFractionDigits: 0,
                     })}
                   </div>
@@ -1006,9 +1064,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                       isDark ? 'text-gray-400' : 'text-gray-600'
                     }`}
                   >
-                    {energyDeltaPerTon.toFixed(1)} kWh/ton × R{'$ '}
-                    {ENERGY_PRICE_BRL_PER_KWH.toFixed(2)} ×{' '}
-                    {PRODUCTION_TONS_PERIOD} ton
+                    {econ.energyDeltaPerTon.toFixed(1)} kWh/ton × R$ {ENERGY_PRICE_BRL_PER_KWH.toFixed(2)} × {PRODUCTION_TONS_PERIOD} ton
                   </div>
                 </div>
 
@@ -1032,10 +1088,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     }`}
                   >
                     R{'$ '}
-                    {(scrapSavingRate *
-                      SCRAP_COST_R_PER_TON *
-                      PRODUCTION_TONS_PERIOD
-                    ).toLocaleString('pt-BR', {
+                    {(econ.scrapSavingBRL).toLocaleString('pt-BR', {
                       maximumFractionDigits: 0,
                     })}
                   </div>
@@ -1044,9 +1097,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                       isDark ? 'text-gray-400' : 'text-gray-600'
                     }`}
                   >
-                    queda ~{(scrapSavingRate * 100).toFixed(1)}% × R{'$ '}
-                    {SCRAP_COST_R_PER_TON.toLocaleString('pt-BR')} ×{' '}
-                    {PRODUCTION_TONS_PERIOD} ton
+                    queda ~{(econ.scrapSavingRate * 100).toFixed(1)}% × R$ {SCRAP_COST_R_PER_TON.toLocaleString('pt-BR')} × {PRODUCTION_TONS_PERIOD} ton
                   </div>
                 </div>
 
@@ -1070,7 +1121,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     }`}
                   >
                     R{'$ '}
-                    {totalSavingBRL.toLocaleString('pt-BR', {
+                    {(econ.totalSavingBRL).toLocaleString('pt-BR', {
                       maximumFractionDigits: 0,
                     })}
                   </div>
@@ -1306,6 +1357,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     </div>
   );
 };
+
 
 
 
