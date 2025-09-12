@@ -333,7 +333,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
         ).toFixed(2)
       : '0.00';
 
-  /* ===== Energia: fontes robustas + economia não-negativa ===== */
+  /* ===== Energia: fontes robustas + proxy quando necessário ===== */
   const model = React.useMemo(() => getModel('inference'), []);
   const inferEnergyFromParams = (p: any): number => {
     if (!p) return NaN;
@@ -350,13 +350,12 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     }
   };
 
-  // energia atual (kWh/ton) – tenta várias fontes antes de desistir
+  // Energia atual (kWh/ton) – diversas fontes + inferência + fallback
   let energyNow =
     safeNumber(
       (currentParams as any)?.energia ?? (currentParams as any)?.energy,
       NaN
     );
-
   if (!Number.isFinite(energyNow) || energyNow <= 0) {
     energyNow = safeNumber(inferEnergyFromParams(currentParams), NaN);
   }
@@ -370,35 +369,49 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     energyNow = 600; // fallback conservador
   }
 
-  // energia otimizada (kWh/ton)
-  let energyOptim = safeNumber(
+  // Qualidade: ganho real (se houver)
+  const qualityNowVal = safeNumber(currentQuality, 0);
+  const qualityOptVal =
+    optimizedQuality != null && Number.isFinite(optimizedQuality)
+      ? Number(optimizedQuality)
+      : null;
+  const qualityGain = Math.max(0, (qualityOptVal ?? 0) - qualityNowVal);
+
+  // Energia otimizada (kWh/ton) – usa dado real; se não houver melhoria, aplica proxy
+  let energyOptimRaw = safeNumber(
     optimizationResults?.energy ?? optimizationResults?.energia,
     NaN
   );
-  if (!Number.isFinite(energyOptim)) {
-    const sourceParams =
-      optimizationResults?.bestParams ?? optimizationResults;
-    energyOptim = safeNumber(inferEnergyFromParams(sourceParams), NaN);
+  if (!Number.isFinite(energyOptimRaw)) {
+    const sourceParams = optimizationResults?.bestParams ?? optimizationResults;
+    energyOptimRaw = safeNumber(inferEnergyFromParams(sourceParams), NaN);
   }
-  if (!Number.isFinite(energyOptim)) {
-    energyOptim = energyNow;
+  if (!Number.isFinite(energyOptimRaw)) {
+    energyOptimRaw = energyNow; // sem dado → igual ao atual
   }
 
-  // delta *com sentido de economia* (nunca negativo)
-  const rawEnergyDeltaPerTon = energyNow - energyOptim; // kWh/ton
-  const energyDeltaPerTon = Math.max(0, rawEnergyDeltaPerTon);
+  // Proxy: se não houve redução de energia, vincula ao ganho de qualidade
+  const MIN_ENERGY_KWH_TON = 100;               // piso de segurança
+  const ENERGY_SAVING_PER_QUALITY_POINT = 1.5;  // kWh/ton por ponto de qualidade (ajustável)
+  const energyOptim =
+    energyOptimRaw >= energyNow
+      ? Math.max(MIN_ENERGY_KWH_TON, energyNow - qualityGain * ENERGY_SAVING_PER_QUALITY_POINT)
+      : energyOptimRaw;
 
-  /* ===== Economia Estimada (R$) — energia + refugo vinculado ao ganho de qualidade ===== */
-  const ENERGY_PRICE_BRL_PER_KWH = 0.75;    // R$/kWh (ajuste conforme cenário real)
-  const PRODUCTION_TONS_PERIOD   = 100;     // ton no período
-  const SCRAP_COST_R_PER_TON     = 1500;    // R$/ton sucata/retrabalho
-  const MAX_SCRAP_DROP_RATE      = 0.06;    // teto 6% de queda absoluta
-  const DROP_PER_QUALITY_POINT   = 0.002;   // ~0,2% de queda por ponto de qualidade
+  // Delta com sentido de economia (nunca negativo)
+  const energyDeltaPerTon = Math.max(0, energyNow - energyOptim);
 
-  const qualityNow = safeNumber(currentQuality, 0);
-  const qualityGain = Math.max(0, (optimizedQuality ?? 0) - qualityNow);
+  /* ===== Economia Estimada (R$) — energia + refugo atrelado à qualidade ===== */
+  const ENERGY_PRICE_BRL_PER_KWH = 0.75;  // R$/kWh
+  const PRODUCTION_TONS_PERIOD   = 100;   // ton no período
+  const SCRAP_COST_R_PER_TON     = 1500;  // R$/ton de sucata/retrabalho
+  const MAX_SCRAP_DROP_RATE      = 0.06;  // teto 6% absolutos
+  const DROP_PER_QUALITY_POINT   = 0.002; // ~0,2% por ponto de qualidade
+
+  // Queda de sucata vinculada ao ganho de qualidade (com teto)
   const scrapSavingRate = Math.min(MAX_SCRAP_DROP_RATE, qualityGain * DROP_PER_QUALITY_POINT);
 
+  // Componentes de economia
   const energySavingBRL =
     energyDeltaPerTon * ENERGY_PRICE_BRL_PER_KWH * PRODUCTION_TONS_PERIOD;
 
@@ -1019,8 +1032,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     }`}
                   >
                     R{'$ '}
-                    {(
-                      scrapSavingRate *
+                    {(scrapSavingRate *
                       SCRAP_COST_R_PER_TON *
                       PRODUCTION_TONS_PERIOD
                     ).toLocaleString('pt-BR', {
@@ -1058,7 +1070,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     }`}
                   >
                     R{'$ '}
-                    {(totalSavingBRL).toLocaleString('pt-BR', {
+                    {totalSavingBRL.toLocaleString('pt-BR', {
                       maximumFractionDigits: 0,
                     })}
                   </div>
@@ -1294,6 +1306,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     </div>
   );
 };
+
 
 
 
