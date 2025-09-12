@@ -462,7 +462,21 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       };
       pushHistory(item);
 
-      onOptimizationComplete({ ...res, bestParams: res.best.x });
+      // ===== CORREÇÃO: enviar qualidade/energia/params otimizados =====
+      onOptimizationComplete({
+        ...res,
+        bestParams: res.best.x,
+        qualidade: qe.quality,          // para quem usa "qualidade"
+        quality: qe.quality,            // para quem usa "quality"
+        energia: qe.energy,             // para quem usa "energia"
+        energy: qe.energy,              // para quem usa "energy"
+        temperatura: res.best.x.temperatura,
+        tempo: res.best.x.tempo,
+        pressao: res.best.x.pressao,
+        velocidade: res.best.x.velocidade,
+        score: res.best.y,
+        evaluations: res.evaluations
+      });
 
       // Força progresso a 100% ao terminar a Bayesiana
       if (method === 'bo') setBoProgress(100);
@@ -1340,6 +1354,7 @@ function RangeCard({
     </div>
   );
 }
+
 
 
 
