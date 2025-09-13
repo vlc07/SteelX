@@ -1,5 +1,5 @@
 // src/components/Results.tsx
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   FileText,
   Download,
@@ -8,6 +8,8 @@ import {
   BarChart3,
   PieChart,
   Coins,
+  Brain,
+  Lightbulb,
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -333,89 +335,80 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
         ).toFixed(2)
       : '0.00';
 
-  /* ===== Energia + Economia (memoizado, sem piso forçado) ===== */
-  const model = React.useMemo(() => getModel('inference'), []);
-  const {
-    energyNow,
-    energyOptim,
-    energyDeltaPerTon,
-    energySavingBRL,
-    scrapSavingRate,
-    scrapSavingBRL,
-    totalSavingBRL,
-  } = React.useMemo(() => {
-    const safeNum = (v: any, fb = NaN) =>
-      Number.isFinite(Number(v)) ? Number(v) : fb;
-
-    const inferEnergyFromParams = (p: any): number => {
-      if (!p) return NaN;
-      try {
-        const pred = model.predict({
-          temp: Number(p.temperatura ?? p.temp),
-          time: Number(p.tempo ?? p.time),
-          press: Number(p.pressao ?? p.press),
-          speed: Number(p.velocidade ?? p.speed),
-        });
-        return Number(pred?.energy);
-      } catch {
-        return NaN;
-      }
-    };
-
-    // Energia atual (kWh/ton)
-    let eNow =
-      safeNum((currentParams as any)?.energia ?? (currentParams as any)?.energy, NaN);
-    if (!Number.isFinite(eNow) || eNow <= 0) eNow = safeNum(inferEnergyFromParams(currentParams), NaN);
-    if (!Number.isFinite(eNow) || eNow <= 0) {
-      const simWithE = (simulationResults as any[])?.find(
-        (s: any) => Number.isFinite(Number(s?.energy ?? s?.energia))
-      );
-      eNow = safeNum(simWithE?.energy ?? simWithE?.energia, NaN);
+  /* ===== Energia: fontes robustas + delta com sinal ===== */
+  const model = useMemo(() => getModel('inference'), []);
+  const inferEnergyFromParams = (p: any): number => {
+    if (!p) return NaN;
+    try {
+      const pred = model.predict({
+        temp: Number(p.temperatura ?? p.temp),
+        time: Number(p.tempo ?? p.time),
+        press: Number(p.pressao ?? p.press),
+        speed: Number(p.velocidade ?? p.speed),
+      });
+      return Number(pred?.energy);
+    } catch {
+      return NaN;
     }
-    if (!Number.isFinite(eNow) || eNow <= 0) eNow = 600; // fallback conservador
+  };
 
-    // Energia otimizada (kWh/ton)
-    let eOpt = safeNum(
-      optimizationResults?.energy ?? optimizationResults?.energia,
+  // energia atual (kWh/ton) – tenta várias fontes antes de desistir
+  let energyNow =
+    safeNumber(
+      (currentParams as any)?.energia ?? (currentParams as any)?.energy,
       NaN
     );
-    if (!Number.isFinite(eOpt)) {
-      const src = optimizationResults?.bestParams ?? optimizationResults;
-      eOpt = safeNum(inferEnergyFromParams(src), NaN);
-    }
-    if (!Number.isFinite(eOpt)) eOpt = eNow; // sem economia fictícia
 
-    // Delta positivo (economia). Se piorou/igualou, vira 0.
-    const deltaPerTon = Math.max(0, eNow - eOpt);
+  if (!Number.isFinite(energyNow) || energyNow <= 0) {
+    energyNow = safeNumber(inferEnergyFromParams(currentParams), NaN);
+  }
+  if (!Number.isFinite(energyNow) || energyNow <= 0) {
+    const simWithEnergy = simulationResults.find((s: any) =>
+      Number.isFinite(Number((s as any)?.energy ?? (s as any)?.energia))
+    ) as any;
+    energyNow = safeNumber(simWithEnergy?.energy ?? simWithEnergy?.energia, NaN);
+  }
+  if (!Number.isFinite(energyNow) || energyNow <= 0) {
+    energyNow = 600; // fallback conservador
+  }
 
-    // Parâmetros financeiros
-    const ENERGY_PRICE_BRL_PER_KWH = 0.75;
-    const PRODUCTION_TONS_PERIOD = 100;
-    const SCRAP_COST_R_PER_TON = 1500;
-    const MAX_SCRAP_DROP_RATE = 0.06;
-    const DROP_PER_QUALITY_POINT = 0.002;
+  // energia otimizada (kWh/ton)
+  let energyOptim = safeNumber(
+    optimizationResults?.energy ?? optimizationResults?.energia,
+    NaN
+  );
+  if (!Number.isFinite(energyOptim)) {
+    const sourceParams =
+      optimizationResults?.bestParams ?? optimizationResults;
+    energyOptim = safeNumber(inferEnergyFromParams(sourceParams), NaN);
+  }
+  if (!Number.isFinite(energyOptim)) {
+    energyOptim = energyNow; // sem economia fictícia
+  }
 
-    // Ganho de qualidade -> queda de sucata (limitada ao teto)
-    const qNow = safeNum(currentQuality, 0);
-    const qOpt = Number.isFinite(Number(optimizedQuality)) ? Number(optimizedQuality) : null;
-    const qGain = Math.max(0, (qOpt ?? 0) - qNow);
-    const scrapRate = Math.min(MAX_SCRAP_DROP_RATE, qGain * DROP_PER_QUALITY_POINT);
+  // deltas e economia (sempre não-negativos para o card de “Economia”)
+  const rawEnergyDeltaPerTon = energyNow - energyOptim; // kWh/ton (positivo = economia)
+  const energyDeltaPerTon = Math.max(0, rawEnergyDeltaPerTon);
 
-    // Componentes de economia (R$)
-    const energyBRL = deltaPerTon * ENERGY_PRICE_BRL_PER_KWH * PRODUCTION_TONS_PERIOD;
-    const scrapBRL  = scrapRate * SCRAP_COST_R_PER_TON * PRODUCTION_TONS_PERIOD;
-    const totalBRL  = energyBRL + scrapBRL;
+  const ENERGY_PRICE_BRL_PER_KWH = 0.75;
+  const PRODUCTION_TONS_PERIOD   = 100;
+  const SCRAP_COST_R_PER_TON     = 1500;
+  const MAX_SCRAP_DROP_RATE      = 0.06;
+  const DROP_PER_QUALITY_POINT   = 0.002;
 
-    return {
-      energyNow: eNow,
-      energyOptim: eOpt,
-      energyDeltaPerTon: deltaPerTon,
-      energySavingBRL: energyBRL,
-      scrapSavingRate: scrapRate,
-      scrapSavingBRL: scrapBRL,
-      totalSavingBRL: totalBRL,
-    };
-  }, [currentParams, optimizationResults, simulationResults, currentQuality, optimizedQuality, model]);
+  const qualityNow  = safeNumber(currentQuality, 0);
+  const qualityOpt  = Number.isFinite(Number(optimizedQuality)) ? Number(optimizedQuality) : null;
+  const qualityGain = Math.max(0, (qualityOpt ?? 0) - qualityNow);
+
+  const scrapSavingRate = Math.min(MAX_SCRAP_DROP_RATE, qualityGain * DROP_PER_QUALITY_POINT);
+
+  const energySavingBRL =
+    energyDeltaPerTon * ENERGY_PRICE_BRL_PER_KWH * PRODUCTION_TONS_PERIOD;
+
+  const scrapSavingBRL =
+    scrapSavingRate * SCRAP_COST_R_PER_TON * PRODUCTION_TONS_PERIOD;
+
+  const totalSavingBRL = energySavingBRL + scrapSavingBRL;
 
   const axisColor = isDark ? '#e5e7eb' : '#374151';
   const gridColor = isDark ? '#374151' : '#e5e7eb';
@@ -438,6 +431,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
 
   const savingsBarOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: {
       y: {
@@ -450,7 +444,70 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
         grid: { display: false },
       },
     },
+    animation: false,
   };
+
+  /* ======= Insights/IA helpers ======= */
+  const aiCard = (title: string, lines: string[]) => (
+    <div
+      className={`mt-3 rounded-xl border p-3 flex gap-2 items-start ${
+        isDark ? 'bg-gray-900/60 border-gray-700' : 'bg-gray-50 border-gray-200'
+      }`}
+    >
+      <div
+        className={`p-2 rounded-md ${
+          isDark ? 'bg-blue-900/30 text-blue-200' : 'bg-blue-100 text-blue-700'
+        }`}
+        aria-hidden
+      >
+        <Brain className="h-4 w-4" />
+      </div>
+      <div>
+        <div className={`text-sm font-semibold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+          {title}
+        </div>
+        <ul className={`mt-1 text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'} list-disc pl-5`}>
+          {lines.map((l, i) => (
+            <li key={i}>{l}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+
+  // IA – Tendência
+  const firstQ = simulationResults.length > 0 ? safeNumber(simulationResults[0].quality) : 0;
+  const lastQ  = simulationResults.length > 0 ? safeNumber(simulationResults[simulationResults.length - 1].quality) : 0;
+  const trendDelta = lastQ - firstQ;
+
+  const trendInsights = [
+    `Variação do primeiro ao último teste: ${trendDelta >= 0 ? '+' : ''}${trendDelta.toFixed(1)} pontos.`,
+    `Média: ${mean.toFixed(1)} · Desvio-padrão: ${std.toFixed(1)} · Amplitude: ${range}.`,
+    trendDelta > 0
+      ? 'Tendência levemente ascendente — há sinais de melhoria ao longo das execuções.'
+      : trendDelta < 0
+      ? 'Tendência descendente — revise parâmetros recentes (T/tempo costumam impactar).'
+      : 'Tendência estável — variações dentro da oscilação esperada.',
+  ];
+
+  // IA – Distribuição
+  const cPoor = simulationResults.filter((r) => safeNumber(r.quality) < 355).length;
+  const cGood = simulationResults.filter((r) => safeNumber(r.quality) >= 355 && safeNumber(r.quality) < 365).length;
+  const cExc  = simulationResults.filter((r) => safeNumber(r.quality) >= 365).length;
+  const distInsights = [
+    `Excelente: ${cExc} · Boa: ${cGood} · Ruim: ${cPoor}.`,
+    cExc > cPoor
+      ? 'Mais amostras em faixas “Boa/Excelente” — controle atual tende a ser adequado.'
+      : 'Muitas amostras “Ruim” — recomenda-se otimizar e estreitar variação de T/tempo.',
+    'Aumentar a densidade na faixa 365+ melhora também o proxy de sucata.',
+  ];
+
+  // IA – Economia
+  const econInsights = [
+    `Δ energia: ${energyDeltaPerTon.toFixed(1)} kWh/ton → R$ ${energySavingBRL.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}.`,
+    `Ganho de qualidade: +${qualityGain.toFixed(1)} → queda estimada de sucata: ${(scrapSavingRate * 100).toFixed(1)}%.`,
+    `Economia total estimada: R$ ${totalSavingBRL.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}.`,
+  ];
 
   /* ======================= UI ======================= */
   return (
@@ -804,7 +861,9 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
         {/* ===== Detailed ===== */}
         {activeView === 'detailed' && simulationResults.length > 0 && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* === 3 gráficos lado a lado (mesmo tamanho) === */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Tendência de Qualidade */}
               <div
                 className={`rounded-2xl border p-4 bg-gradient-to-br ${
                   isDark
@@ -819,32 +878,39 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                 >
                   Tendência de Qualidade
                 </h3>
-                <Line
-                  data={qualityTrendData}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: { labels: { color: isDark ? '#e5e7eb' : '#374151' } },
-                    },
-                    scales: {
-                      y: {
-                        title: {
-                          display: true,
-                          text: 'Qualidade',
-                          color: isDark ? '#e5e7eb' : '#374151',
+                <div className="h-64">
+                  <Line
+                    data={qualityTrendData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: { labels: { color: isDark ? '#e5e7eb' : '#374151' } },
+                      },
+                      scales: {
+                        y: {
+                          title: {
+                            display: true,
+                            text: 'Qualidade',
+                            color: isDark ? '#e5e7eb' : '#374151',
+                          },
+                          ticks: { color: isDark ? '#e5e7eb' : '#374151' },
+                          grid: { color: isDark ? '#374151' : '#e5e7eb' },
                         },
-                        ticks: { color: isDark ? '#e5e7eb' : '#374151' },
-                        grid: { color: isDark ? '#374151' : '#e5e7eb' },
+                        x: {
+                          ticks: { color: isDark ? '#e5e7eb' : '#374151' },
+                          grid: { color: isDark ? '#374151' : '#e5e7eb' },
+                        },
                       },
-                      x: {
-                        ticks: { color: isDark ? '#e5e7eb' : '#374151' },
-                        grid: { color: isDark ? '#374151' : '#e5e7eb' },
-                      },
-                    },
-                  }}
-                />
+                      animation: false,
+                    }}
+                  />
+                </div>
+
+                {aiCard('Análise de IA — Tendência', trendInsights)}
               </div>
 
+              {/* Distribuição de Qualidade */}
               <div
                 className={`rounded-2xl border p-4 bg-gradient-to-br ${
                   isDark
@@ -859,18 +925,52 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                 >
                   Distribuição de Qualidade
                 </h3>
-                <Doughnut
-                  data={qualityDistributionData}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        position: 'bottom',
-                        labels: { color: isDark ? '#e5e7eb' : '#374151' },
+                <div className="h-64">
+                  <Doughnut
+                    data={qualityDistributionData}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: 'bottom',
+                          labels: { color: isDark ? '#e5e7eb' : '#374151' },
+                        },
                       },
-                    },
-                  }}
-                />
+                      animation: false,
+                    }}
+                  />
+                </div>
+
+                {aiCard('Análise de IA — Distribuição', distInsights)}
+              </div>
+
+              {/* Economia Estimada (mesmo tamanho) */}
+              <div
+                className={`rounded-2xl border p-4 bg-gradient-to-br ${
+                  isDark
+                    ? 'from-emerald-950/60 to-gray-900/60 border-emerald-900/40'
+                    : 'from-emerald-50 to-white border-emerald-200'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3
+                    className={`font-semibold ${
+                      isDark ? 'text-gray-100' : 'text-gray-700'
+                    }`}
+                  >
+                    Economia Estimada (R$)
+                  </h3>
+                  <div className={`text-[11px] ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                    Modelo interno (tarifa/produção/refugo)
+                  </div>
+                </div>
+
+                <div className="h-64">
+                  <Bar data={savingsBarData} options={savingsBarOptions as any} />
+                </div>
+
+                {aiCard('Análise de IA — Economia', econInsights)}
               </div>
             </div>
 
@@ -938,152 +1038,6 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     {range}
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Economia Estimada (R$) */}
-            <div
-              className={`rounded-2xl border p-6 bg-gradient-to-br transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${
-                isDark
-                  ? 'from-emerald-950/60 to-gray-900/60 border-emerald-900/40'
-                  : 'from-emerald-50 to-white border-emerald-200'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`p-2.5 rounded-lg ${
-                      isDark
-                        ? 'bg-emerald-900/40 text-emerald-200'
-                        : 'bg-emerald-600 text-white'
-                    }`}
-                  >
-                    <Coins className="h-5 w-5" />
-                  </div>
-                  <h3
-                    className={`text-lg font-bold ${
-                      isDark ? 'text-gray-100' : 'text-gray-800'
-                    }`}
-                  >
-                    Economia Estimada (R$) — baseada na sua simulação/otimização
-                  </h3>
-                </div>
-                <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                  Sem entradas extras · valores padrão internos (tarifa/produção/refugo)
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
-                <div
-                  className={`rounded-xl p-4 border ${
-                    isDark
-                      ? 'bg-gray-900/40 border-emerald-900/30'
-                      : 'bg-emerald-50 border-emerald-200'
-                  }`}
-                >
-                  <div
-                    className={`text-xs ${
-                      isDark ? 'text-gray-300' : 'text-emerald-700'
-                    }`}
-                  >
-                    Economia de Energia
-                  </div>
-                  <div
-                    className={`text-2xl font-extrabold ${
-                      isDark ? 'text-gray-100' : 'text-emerald-900'
-                    }`}
-                  >
-                    R{'$ '}
-                    {energySavingBRL.toLocaleString('pt-BR', {
-                      maximumFractionDigits: 0,
-                    })}
-                  </div>
-                  <div
-                    className={`text-xs mt-1 ${
-                      isDark ? 'text-gray-400' : 'text-gray-600'
-                    }`}
-                  >
-                    {energyDeltaPerTon.toFixed(1)} kWh/ton × R{'$ '}
-                    {(0.75).toFixed(2)} × {100} ton
-                  </div>
-                </div>
-
-                <div
-                  className={`rounded-xl p-4 border ${
-                    isDark
-                      ? 'bg-gray-900/40 border-blue-900/30'
-                      : 'bg-blue-50 border-blue-200'
-                  }`}
-                >
-                  <div
-                    className={`text-xs ${
-                      isDark ? 'text-gray-300' : 'text-blue-700'
-                    }`}
-                  >
-                    Economia por Desperdício
-                  </div>
-                  <div
-                    className={`text-2xl font-extrabold ${
-                      isDark ? 'text-gray-100' : 'text-blue-900'
-                    }`}
-                  >
-                    R{'$ '}
-                    {scrapSavingBRL.toLocaleString('pt-BR', {
-                      maximumFractionDigits: 0,
-                    })}
-                  </div>
-                  <div
-                    className={`text-xs mt-1 ${
-                      isDark ? 'text-gray-400' : 'text-gray-600'
-                    }`}
-                  >
-                    queda ~{(scrapSavingRate * 100).toFixed(1)}% × R{'$ '}
-                    {(1500).toLocaleString('pt-BR')} × {100} ton
-                  </div>
-                </div>
-
-                <div
-                  className={`rounded-xl p-4 border ${
-                    isDark
-                      ? 'bg-gray-900/40 border-violet-900/30'
-                      : 'bg-violet-50 border-violet-200'
-                  }`}
-                >
-                  <div
-                    className={`text-xs ${
-                      isDark ? 'text-gray-300' : 'text-violet-700'
-                    }`}
-                  >
-                    Total Estimado
-                  </div>
-                  <div
-                    className={`text-3xl font-black ${
-                      isDark ? 'text-gray-100' : 'text-violet-900'
-                    }`}
-                  >
-                    R{'$ '}
-                    {totalSavingBRL.toLocaleString('pt-BR', {
-                      maximumFractionDigits: 0,
-                    })}
-                  </div>
-                  <div
-                    className={`text-xs mt-1 ${
-                      isDark ? 'text-gray-400' : 'text-gray-600'
-                    }`}
-                  >
-                    Com base em “Atual vs Otimizado” que você já executou
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className={`rounded-xl p-4 ${
-                  isDark
-                    ? 'bg-gray-800/70 border border-gray-700'
-                    : 'bg-white/60 backdrop-blur border border-gray-200'
-                }`}
-              >
-                <Bar data={savingsBarData} options={savingsBarOptions as any} />
               </div>
             </div>
           </div>
@@ -1161,6 +1115,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                         grid: { color: isDark ? '#374151' : '#e5e7eb' },
                       },
                     },
+                    animation: false,
                   }}
                 />
               </div>
@@ -1298,3 +1253,4 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     </div>
   );
 };
+
