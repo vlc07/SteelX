@@ -1,5 +1,5 @@
 // src/components/Results.tsx
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   FileText,
   Download,
@@ -334,89 +334,88 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
       : '0.00';
 
   /* ===== Energia + Economia (memoizado, sem piso forçado) ===== */
-const {
-  energyNow,
-  energyOptim,
-  energyDeltaPerTon,
-  energySavingBRL,
-  scrapSavingRate,
-  scrapSavingBRL,
-  totalSavingBRL,
-} = React.useMemo(() => {
-  const safeNum = (v: any, fb = NaN) =>
-    Number.isFinite(Number(v)) ? Number(v) : fb;
+  const model = React.useMemo(() => getModel('inference'), []);
+  const {
+    energyNow,
+    energyOptim,
+    energyDeltaPerTon,
+    energySavingBRL,
+    scrapSavingRate,
+    scrapSavingBRL,
+    totalSavingBRL,
+  } = React.useMemo(() => {
+    const safeNum = (v: any, fb = NaN) =>
+      Number.isFinite(Number(v)) ? Number(v) : fb;
 
-  // Usa o mesmo `model` já criado acima
-  const inferEnergyFromParams = (p: any): number => {
-    if (!p) return NaN;
-    try {
-      const pred = model.predict({
-        temp: Number(p.temperatura ?? p.temp),
-        time: Number(p.tempo ?? p.time),
-        press: Number(p.pressao ?? p.press),
-        speed: Number(p.velocidade ?? p.speed),
-      });
-      return Number(pred?.energy);
-    } catch {
-      return NaN;
+    const inferEnergyFromParams = (p: any): number => {
+      if (!p) return NaN;
+      try {
+        const pred = model.predict({
+          temp: Number(p.temperatura ?? p.temp),
+          time: Number(p.tempo ?? p.time),
+          press: Number(p.pressao ?? p.press),
+          speed: Number(p.velocidade ?? p.speed),
+        });
+        return Number(pred?.energy);
+      } catch {
+        return NaN;
+      }
+    };
+
+    // Energia atual (kWh/ton)
+    let eNow =
+      safeNum((currentParams as any)?.energia ?? (currentParams as any)?.energy, NaN);
+    if (!Number.isFinite(eNow) || eNow <= 0) eNow = safeNum(inferEnergyFromParams(currentParams), NaN);
+    if (!Number.isFinite(eNow) || eNow <= 0) {
+      const simWithE = (simulationResults as any[])?.find(
+        (s: any) => Number.isFinite(Number(s?.energy ?? s?.energia))
+      );
+      eNow = safeNum(simWithE?.energy ?? simWithE?.energia, NaN);
     }
-  };
+    if (!Number.isFinite(eNow) || eNow <= 0) eNow = 600; // fallback conservador
 
-  // Energia atual (kWh/ton): tenta várias fontes e cai para 600 se nada vier
-  let eNow =
-    safeNum((currentParams as any)?.energia ?? (currentParams as any)?.energy, NaN);
-  if (!Number.isFinite(eNow) || eNow <= 0) eNow = safeNum(inferEnergyFromParams(currentParams), NaN);
-  if (!Number.isFinite(eNow) || eNow <= 0) {
-    const simWithE = (simulationResults as any[])?.find(
-      (s: any) => Number.isFinite(Number(s?.energy ?? s?.energia))
+    // Energia otimizada (kWh/ton)
+    let eOpt = safeNum(
+      optimizationResults?.energy ?? optimizationResults?.energia,
+      NaN
     );
-    eNow = safeNum(simWithE?.energy ?? simWithE?.energia, NaN);
-  }
-  if (!Number.isFinite(eNow) || eNow <= 0) eNow = 600;
+    if (!Number.isFinite(eOpt)) {
+      const src = optimizationResults?.bestParams ?? optimizationResults;
+      eOpt = safeNum(inferEnergyFromParams(src), NaN);
+    }
+    if (!Number.isFinite(eOpt)) eOpt = eNow; // sem economia fictícia
 
-  // Energia otimizada (kWh/ton)
-  let eOpt = safeNum(
-    optimizationResults?.energy ?? optimizationResults?.energia,
-    NaN
-  );
-  if (!Number.isFinite(eOpt)) {
-    const src = optimizationResults?.bestParams ?? optimizationResults;
-    eOpt = safeNum(inferEnergyFromParams(src), NaN);
-  }
-  if (!Number.isFinite(eOpt)) eOpt = eNow; // sem economia fictícia
+    // Delta positivo (economia). Se piorou/igualou, vira 0.
+    const deltaPerTon = Math.max(0, eNow - eOpt);
 
-  // Delta positivo (economia). Se piorou ou igualou, vira 0.
-  const deltaPerTon = Math.max(0, eNow - eOpt);
+    // Parâmetros financeiros
+    const ENERGY_PRICE_BRL_PER_KWH = 0.75;
+    const PRODUCTION_TONS_PERIOD = 100;
+    const SCRAP_COST_R_PER_TON = 1500;
+    const MAX_SCRAP_DROP_RATE = 0.06;
+    const DROP_PER_QUALITY_POINT = 0.002;
 
-  // Parâmetros financeiros
-  const ENERGY_PRICE_BRL_PER_KWH = 0.75;
-  const PRODUCTION_TONS_PERIOD = 100;
-  const SCRAP_COST_R_PER_TON = 1500;
-  const MAX_SCRAP_DROP_RATE = 0.06;
-  const DROP_PER_QUALITY_POINT = 0.002;
+    // Ganho de qualidade -> queda de sucata (limitada ao teto)
+    const qNow = safeNum(currentQuality, 0);
+    const qOpt = Number.isFinite(Number(optimizedQuality)) ? Number(optimizedQuality) : null;
+    const qGain = Math.max(0, (qOpt ?? 0) - qNow);
+    const scrapRate = Math.min(MAX_SCRAP_DROP_RATE, qGain * DROP_PER_QUALITY_POINT);
 
-  // Ganho de qualidade -> queda de sucata (cap no teto)
-  const qNow = safeNum(currentQuality, 0);
-  const qOpt = Number.isFinite(Number(optimizedQuality)) ? Number(optimizedQuality) : null;
-  const qGain = Math.max(0, (qOpt ?? 0) - qNow);
-  const scrapRate = Math.min(MAX_SCRAP_DROP_RATE, qGain * DROP_PER_QUALITY_POINT);
+    // Componentes de economia (R$)
+    const energyBRL = deltaPerTon * ENERGY_PRICE_BRL_PER_KWH * PRODUCTION_TONS_PERIOD;
+    const scrapBRL  = scrapRate * SCRAP_COST_R_PER_TON * PRODUCTION_TONS_PERIOD;
+    const totalBRL  = energyBRL + scrapBRL;
 
-  // Componentes de economia (R$)
-  const energyBRL = deltaPerTon * ENERGY_PRICE_BRL_PER_KWH * PRODUCTION_TONS_PERIOD;
-  const scrapBRL  = scrapRate * SCRAP_COST_R_PER_TON * PRODUCTION_TONS_PERIOD;
-  const totalBRL  = energyBRL + scrapBRL;
-
-  return {
-    energyNow: eNow,
-    energyOptim: eOpt,
-    energyDeltaPerTon: deltaPerTon,
-    energySavingBRL: energyBRL,
-    scrapSavingRate: scrapRate,
-    scrapSavingBRL: scrapBRL,
-    totalSavingBRL: totalBRL,
-  };
-}, [currentParams, optimizationResults, simulationResults, currentQuality, optimizedQuality, model]);
-
+    return {
+      energyNow: eNow,
+      energyOptim: eOpt,
+      energyDeltaPerTon: deltaPerTon,
+      energySavingBRL: energyBRL,
+      scrapSavingRate: scrapRate,
+      scrapSavingBRL: scrapBRL,
+      totalSavingBRL: totalBRL,
+    };
+  }, [currentParams, optimizationResults, simulationResults, currentQuality, optimizedQuality, model]);
 
   const axisColor = isDark ? '#e5e7eb' : '#374151';
   const gridColor = isDark ? '#374151' : '#e5e7eb';
@@ -439,7 +438,6 @@ const {
 
   const savingsBarOptions = {
     responsive: true,
-    maintainAspectRatio: false, // <— garante que a altura siga o container
     plugins: { legend: { display: false } },
     scales: {
       y: {
@@ -452,7 +450,6 @@ const {
         grid: { display: false },
       },
     },
-    animation: false,
   };
 
   /* ======================= UI ======================= */
@@ -944,7 +941,7 @@ const {
               </div>
             </div>
 
-            {/* Economia Estimada (R$) — MESMA POSIÇÃO, TAMANHO CORRIGIDO */}
+            {/* Economia Estimada (R$) */}
             <div
               className={`rounded-2xl border p-6 bg-gradient-to-br transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${
                 isDark
@@ -1007,8 +1004,7 @@ const {
                     }`}
                   >
                     {energyDeltaPerTon.toFixed(1)} kWh/ton × R{'$ '}
-                    {ENERGY_PRICE_BRL_PER_KWH.toFixed(2)} ×{' '}
-                    {PRODUCTION_TONS_PERIOD} ton
+                    {(0.75).toFixed(2)} × {100} ton
                   </div>
                 </div>
 
@@ -1032,11 +1028,7 @@ const {
                     }`}
                   >
                     R{'$ '}
-                    {(
-                      scrapSavingRate *
-                      SCRAP_COST_R_PER_TON *
-                      PRODUCTION_TONS_PERIOD
-                    ).toLocaleString('pt-BR', {
+                    {scrapSavingBRL.toLocaleString('pt-BR', {
                       maximumFractionDigits: 0,
                     })}
                   </div>
@@ -1046,8 +1038,7 @@ const {
                     }`}
                   >
                     queda ~{(scrapSavingRate * 100).toFixed(1)}% × R{'$ '}
-                    {SCRAP_COST_R_PER_TON.toLocaleString('pt-BR')} ×{' '}
-                    {PRODUCTION_TONS_PERIOD} ton
+                    {(1500).toLocaleString('pt-BR')} × {100} ton
                   </div>
                 </div>
 
@@ -1085,7 +1076,6 @@ const {
                 </div>
               </div>
 
-              {/* === Apenas correção de tamanho: altura fixa + maintainAspectRatio:false === */}
               <div
                 className={`rounded-xl p-4 ${
                   isDark
@@ -1093,9 +1083,7 @@ const {
                     : 'bg-white/60 backdrop-blur border border-gray-200'
                 }`}
               >
-                <div className="h-64">
-                  <Bar data={savingsBarData} options={savingsBarOptions as any} />
-                </div>
+                <Bar data={savingsBarData} options={savingsBarOptions as any} />
               </div>
             </div>
           </div>
@@ -1173,7 +1161,6 @@ const {
                         grid: { color: isDark ? '#374151' : '#e5e7eb' },
                       },
                     },
-                    animation: false,
                   }}
                 />
               </div>
