@@ -972,16 +972,25 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                   : 'from-blue-50 to-white border-blue-200'
               }`}
             >
-              <div className="flex items-center justify-between mb-3">
-                <span
-                  className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg ${
-                    isDark ? 'bg-blue-900/40 text-blue-200' : 'bg-blue-600/10 text-blue-700'
-                  }`}
-                >
-                  <Info className="h-3.5 w-3.5" />
-                  Resumo estatístico
-                </span>
-              </div>
+              <div className="mb-4">
+  <h3
+    className={`text-xl md:text-2xl font-bold tracking-tight ${
+      isDark ? 'text-gray-100' : 'text-gray-800'
+    }`}
+  >
+    Resumo estatístico
+  </h3>
+
+  <span
+    className={`mt-1 inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg ${
+      isDark ? 'bg-blue-900/40 text-blue-200' : 'bg-blue-600/10 text-blue-700'
+    }`}
+  >
+    <Info className="h-3.5 w-3.5" />
+    Visão geral • gerado automaticamente
+  </span>
+</div>
+
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="rounded-xl p-4 border bg-white/60 backdrop-blur dark:bg-gray-900/30 dark:border-blue-900/30">
