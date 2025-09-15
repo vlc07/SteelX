@@ -329,7 +329,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
                     onClick={() => setBaselineIndex(s.idx)}
                     title="Usar como Referência"
                   >
-                    Definir referência
+                    Definir Referência
                   </button>
                   {!s.isOptimized && (
                     <button
