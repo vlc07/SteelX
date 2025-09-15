@@ -414,7 +414,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
             <li className="p-3 rounded-xl border bg-gradient-to-br dark:from-rose-950/40 dark:to-gray-900/30 dark:border-rose-900/40 from-rose-50 to-white border-rose-200">
               {(() => {
                 const losers = enhanced.filter(s => s.idx !== baselineIndex && s.delta < 0);
-                if (losers.length === 0) return <>Todos os cenários estão no mínimo empatados com o baseline.</>;
+                if (losers.length === 0) return <>Todos os cenários estão no mínimo empatados com a referência.</>;
                 const worst = losers.sort((a, b) => a.delta - b.delta)[0];
                 return <>O cenário <b>{worst.name}</b> está <b>{fmt(Math.abs(worst.delta))}</b> abaixo do baseline ({fmt(Math.abs(worst.pct))}%).</>;
               })()}
