@@ -225,7 +225,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
         </div>
 
         <div className={`${cardBase} ${ringBlue} p-5`}>
-          <div className="text-xs uppercase tracking-wide text-blue-600">Baseline</div>
+          <div className="text-xs uppercase tracking-wide text-blue-600">Referência</div>
           <div className={`mt-1 text-lg font-extrabold ${textMain}`}>{baseline?.name ?? '—'}</div>
           <div className="mt-2 text-xs inline-flex items-center gap-1 px-2 py-1 rounded-full border bg-white/60 dark:bg-gray-900/40 dark:border-gray-700">
             <Info className="h-3.5 w-3.5" />
