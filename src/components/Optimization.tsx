@@ -592,7 +592,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         </p>
       </div>
 
-      {/* Presets por objetivo */}
+            {/* Presets por objetivo */}
       <div
         className={`rounded-2xl border bg-gradient-to-br ${gradBlue} p-5 transition-all duration-300 hover:shadow-xl ${ringBlue}`}
       >
@@ -601,7 +601,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             <Settings2 className={`h-5 w-5 ${isDark ? 'text-gray-300' : 'text-gray-600'}`} />
             <h3 className={`font-semibold ${text}`}>Presets por objetivo</h3>
           </div>
-        <span className="text-xs text-gray-500">
+          <span className="text-xs text-gray-500">
             Aplique com 1 clique — você pode ajustar as faixas depois.
           </span>
         </div>
@@ -610,10 +610,14 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           {/* Alta Resistência */}
           <button
             onClick={() => applyPreset('resistencia')}
-            className={`group rounded-xl p-4 border transition ${ringBlue}
-              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white/70 backdrop-blur border-gray-200 hover:bg-white'}
-              hover:-translate-y-0.5 hover:shadow-lg
-              ${activePreset === 'resistencia' ? 'ring-2 ring-blue-400/60 shadow-lg' : ''}`}
+            className={`group rounded-xl p-4 border transition hover:-translate-y-0.5 hover:shadow-xl
+              ${activePreset === 'resistencia'
+                ? 'ring-2 ring-rose-400/60 shadow-lg'
+                : ''} 
+              ${isDark
+                ? 'bg-gradient-to-br from-rose-950/60 to-gray-900/60 border-rose-900/40 hover:from-rose-900/50'
+                : 'bg-gradient-to-br from-rose-50 to-white border-rose-200 hover:from-rose-100'}
+            `}
           >
             <div className="flex items-center gap-2">
               <Flame className="h-5 w-5 text-rose-500" />
@@ -630,10 +634,14 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           {/* Alta Ductilidade */}
           <button
             onClick={() => applyPreset('ductilidade')}
-            className={`group rounded-xl p-4 border transition ${ringBlue}
-              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white/70 backdrop-blur border-gray-200 hover:bg-white'}
-              hover:-translate-y-0.5 hover:shadow-lg
-              ${activePreset === 'ductilidade' ? 'ring-2 ring-blue-400/60 shadow-lg' : ''}`}
+            className={`group rounded-xl p-4 border transition hover:-translate-y-0.5 hover:shadow-xl
+              ${activePreset === 'ductilidade'
+                ? 'ring-2 ring-green-400/60 shadow-lg'
+                : ''} 
+              ${isDark
+                ? 'bg-gradient-to-br from-emerald-950/60 to-gray-900/60 border-emerald-900/40 hover:from-emerald-900/50'
+                : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-200 hover:from-emerald-100'}
+            `}
           >
             <div className="flex items-center gap-2">
               <Dna className="h-5 w-5 text-green-500" />
@@ -642,18 +650,22 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             <div className="text-xs text-gray-500 mt-1">
               Maleabilidade com boa qualidade. T/tempo moderados.
             </div>
-            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
+            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
               λ ≈ 0.12 · Qualidade ≥ 360
             </div>
           </button>
 
-          {/* Economia de energia */}
+          {/* Economia de Energia */}
           <button
             onClick={() => applyPreset('energia')}
-            className={`group rounded-xl p-4 border transition ${ringBlue}
-              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white/70 backdrop-blur border-gray-200 hover:bg-white'}
-              hover:-translate-y-0.5 hover:shadow-lg
-              ${activePreset === 'energia' ? 'ring-2 ring-blue-400/60 shadow-lg' : ''}`}
+            className={`group rounded-xl p-4 border transition hover:-translate-y-0.5 hover:shadow-xl
+              ${activePreset === 'energia'
+                ? 'ring-2 ring-emerald-400/60 shadow-lg'
+                : ''} 
+              ${isDark
+                ? 'bg-gradient-to-br from-green-950/60 to-gray-900/60 border-green-900/40 hover:from-green-900/50'
+                : 'bg-gradient-to-br from-green-50 to-white border-green-200 hover:from-green-100'}
+            `}
           >
             <div className="flex items-center gap-2">
               <Leaf className="h-5 w-5 text-emerald-500" />
@@ -662,7 +674,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             <div className="text-xs text-gray-500 mt-1">
               Reduz custo/CO₂. T/tempo menores (λ mais alto).
             </div>
-            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border-emerald-200">
+            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
               λ ≈ 0.22 · Qualidade ≥ 355
             </div>
           </button>
@@ -670,10 +682,14 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           {/* Balanceado */}
           <button
             onClick={() => applyPreset('balanceado')}
-            className={`group rounded-xl p-4 border transition ${ringBlue}
-              ${isDark ? 'bg-gray-800/60 border-gray-700 hover:bg-gray-700/60' : 'bg-white/70 backdrop-blur border-gray-200 hover:bg-white'}
-              hover:-translate-y-0.5 hover:shadow-lg
-              ${activePreset === 'balanceado' ? 'ring-2 ring-blue-400/60 shadow-lg' : ''}`}
+            className={`group rounded-xl p-4 border transition hover:-translate-y-0.5 hover:shadow-xl
+              ${activePreset === 'balanceado'
+                ? 'ring-2 ring-blue-400/60 shadow-lg'
+                : ''} 
+              ${isDark
+                ? 'bg-gradient-to-br from-blue-950/60 to-gray-900/60 border-blue-900/40 hover:from-blue-900/50'
+                : 'bg-gradient-to-br from-blue-50 to-white border-blue-200 hover:from-blue-100'}
+            `}
           >
             <div className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-blue-500" />
@@ -682,7 +698,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             <div className="text-xs text-gray-500 mt-1">
               Equilíbrio padrão. Você ajusta depois, se quiser.
             </div>
-            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border-blue-200">
+            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
               λ ≈ 0.15 · Qualidade mínima opcional
             </div>
           </button>
