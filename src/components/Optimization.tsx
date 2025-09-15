@@ -1279,7 +1279,7 @@ function ParamCard(props: {
   );
 }
 
-/** Card para edição de faixas — mantém glow violeta */
+/** Card para edição de faixas — agora com cores premium por parâmetro */
 function RangeCard({
   title,
   name,
@@ -1297,16 +1297,38 @@ function RangeCard({
   onChange: (next: Range) => void;
   showGridHint?: boolean;
 }) {
-  const card = `rounded-xl p-4 border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl ${
-    isDark
-      ? 'bg-gray-800 border-gray-700 hover:ring-2 hover:ring-violet-400/50'
-      : 'bg-white border-gray-200 hover:ring-2 hover:ring-violet-300/60'
-  }`;
+  // 🎨 Paleta premium por parâmetro
+  const colorMap: Record<string, { dark: string; light: string; ring: string }> = {
+    temperatura: {
+      dark:  'bg-gradient-to-br from-rose-950/60 to-gray-900/60 border-rose-900/40 hover:from-rose-900/50',
+      light: 'bg-gradient-to-br from-rose-50 to-white border-rose-200 hover:from-rose-100',
+      ring:  'hover:ring-2 hover:ring-rose-400/50'
+    },
+    tempo: {
+      dark:  'bg-gradient-to-br from-blue-950/60 to-gray-900/60 border-blue-900/40 hover:from-blue-900/50',
+      light: 'bg-gradient-to-br from-blue-50 to-white border-blue-200 hover:from-blue-100',
+      ring:  'hover:ring-2 hover:ring-blue-400/50'
+    },
+    pressao: {
+      dark:  'bg-gradient-to-br from-violet-950/60 to-gray-900/60 border-violet-900/40 hover:from-violet-900/50',
+      light: 'bg-gradient-to-br from-violet-50 to-white border-violet-200 hover:from-violet-100',
+      ring:  'hover:ring-2 hover:ring-violet-400/50'
+    },
+    velocidade: {
+      dark:  'bg-gradient-to-br from-emerald-950/60 to-gray-900/60 border-emerald-900/40 hover:from-emerald-900/50',
+      light: 'bg-gradient-to-br from-emerald-50 to-white border-emerald-200 hover:from-emerald-100',
+      ring:  'hover:ring-2 hover:ring-emerald-400/50'
+    }
+  };
+
+  const palette = colorMap[name];
+  const card = `rounded-xl p-4 border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl
+    ${isDark ? palette.dark : palette.light} ${palette.ring}`;
+
   const label = 'text-xs text-gray-500';
   const set = (patch: Partial<Range>) => onChange({ ...value, ...patch });
 
   const clamp = (v: number) => Math.min(value.industrial.max, Math.max(value.industrial.min, v));
-
   const step = Math.max(1, Number(value.step ?? 1));
   const points = Math.floor((value.max - value.min) / step) + 1;
   const invalid = value.min >= value.max;
@@ -1370,6 +1392,7 @@ function RangeCard({
     </div>
   );
 }
+
 
 
 
