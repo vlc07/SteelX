@@ -305,7 +305,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
                     )}
                     {s.idx === baselineIndex && (
                       <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-800 border border-blue-200 inline-flex items-center gap-1">
-                        <Star className="h-3.5 w-3.5" /> Baseline
+                        <Star className="h-3.5 w-3.5" /> Referência
                       </span>
                     )}
                     {s.best && (
