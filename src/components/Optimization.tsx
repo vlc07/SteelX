@@ -580,18 +580,51 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         </div>
       )}
 
-      {/* Cabeçalho */}
-      <div className={`${cardBase} ${ringBlue} p-6`}>
-        <div className="flex items-center gap-2 mb-1">
-          <Beaker className="h-5 w-5 text-blue-500" />
-          <h2 className={`text-xl font-semibold ${text}`}>Otimização de Parâmetros (ML)</h2>
-        </div>
-        <p className={`${sub} text-sm`}>
-          Escolha um método para buscar os melhores parâmetros. As configurações ao lado valem para
-          todos os métodos.
-        </p>
-      </div>
+      {/* Cabeçalho – Design Premium */}
+<div
+  className={[
+    "rounded-2xl p-6 md:p-7 border bg-gradient-to-br transition-all duration-300",
+    "hover:-translate-y-0.5 hover:shadow-2xl",
+    isDark
+      ? "from-indigo-950/70 via-gray-900/60 to-gray-900/50 border-indigo-900/50 ring-1 ring-indigo-500/20"
+      : "from-indigo-50 via-white to-white border-indigo-200 ring-1 ring-indigo-300/20",
+  ].join(" ")}
+>
+  <div className="flex items-start gap-4">
+    {/* ícone em pill */}
+    <div
+      className={[
+        "shrink-0 rounded-xl p-2.5 border",
+        isDark
+          ? "bg-indigo-900/30 border-indigo-800 text-indigo-300"
+          : "bg-indigo-100 border-indigo-200 text-indigo-700",
+      ].join(" ")}
+    >
+      <Beaker className="h-5 w-5" />
+    </div>
 
+    <div className="flex-1">
+      <h2
+        className={[
+          "text-2xl font-bold tracking-tight",
+          isDark ? "text-indigo-200" : "text-indigo-900",
+        ].join(" ")}
+      >
+        Otimização de Parâmetros (ML)
+      </h2>
+
+      <p
+        className={[
+          "mt-1 text-sm",
+          isDark ? "text-gray-300/90" : "text-gray-600",
+        ].join(" ")}
+      >
+        Escolha um método para buscar os melhores parâmetros. As configurações ao lado valem para
+        todos os métodos.
+      </p>
+    </div>
+  </div>
+</div>
       {/* Presets por objetivo */}
       <div
         className={`rounded-2xl border bg-gradient-to-br ${gradBlue} p-5 transition-all duration-300 hover:shadow-xl ${ringBlue}`}
