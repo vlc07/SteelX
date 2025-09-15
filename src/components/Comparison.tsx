@@ -416,7 +416,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
                 const losers = enhanced.filter(s => s.idx !== baselineIndex && s.delta < 0);
                 if (losers.length === 0) return <>Todos os cenários estão no mínimo empatados com a referência.</>;
                 const worst = losers.sort((a, b) => a.delta - b.delta)[0];
-                return <>O cenário <b>{worst.name}</b> está <b>{fmt(Math.abs(worst.delta))}</b> abaixo do baseline ({fmt(Math.abs(worst.pct))}%).</>;
+                return <>O cenário <b>{worst.name}</b> está <b>{fmt(Math.abs(worst.delta))}</b> abaixo da referência ({fmt(Math.abs(worst.pct))}%).</>;
               })()}
             </li>
 
