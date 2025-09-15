@@ -697,7 +697,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
           <div className="space-y-6">
             {/* Cards principais */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-  {/* Card Qualidade Atual */}
+  {/* 1) Qualidade Atual */}
   <div
     className={`p-4 rounded-xl border bg-gradient-to-br ${
       isDark
@@ -729,7 +729,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     </div>
   </div>
 
-  {/* ✅ Novo card Consumo Energético Atual */}
+  {/* 2) Consumo Energético Atual (aparece com simulação ou otimização) */}
   {(simulationResults.length > 0 || optimizationResults) && (
     <div
       className={`p-4 rounded-xl border bg-gradient-to-br ${
@@ -787,149 +787,246 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
       </div>
     </div>
   )}
-              {!!optimizationResults && (
-                <div
-                  className={`p-4 rounded-xl border bg-gradient-to-br ${
-                    isDark
-                      ? 'from-emerald-950/50 to-gray-900/50 border-emerald-900/40'
-                      : 'from-emerald-50 to-white border-emerald-200'
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <span
-                      className={`p-2 rounded-lg mr-3 ${
-                        isDark
-                          ? 'bg-emerald-900/40 text-emerald-200'
-                          : 'bg-emerald-600 text-white'
-                      }`}
-                    >
-                      <Award className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <div
-                        className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}
-                      >
-                        Qualidade Otimizada
-                      </div>
-                      <div
-                        className={`text-2xl font-extrabold ${
-                          isDark ? 'text-gray-100' : 'text-gray-800'
-                        }`}
-                      >
-                        {optimizedQuality != null ? (
-                          <>
-                            {optimizedQuality.toFixed(1)}
-                            <span className="text-lg text-gray-500">/400</span>
-                          </>
-                        ) : (
-                          <>
-                            —<span className="text-lg text-gray-500">/400</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
 
-              <div
-                className={`p-4 rounded-xl border bg-gradient-to-br ${
-                  isDark
-                    ? 'from-violet-950/50 to-gray-900/50 border-violet-900/40'
-                    : 'from-violet-50 to-white border-violet-200'
-                }`}
-              >
-                <div className="flex items-center">
-                  <span
-                    className={`p-2 rounded-lg mr-3 ${
-                      isDark ? 'bg-violet-900/40 text-violet-200' : 'bg-violet-600 text-white'
-                    }`}
-                  >
-                    <BarChart3 className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Total de Simulações
-                    </div>
-                    <div
-                      className={`text-2xl font-extrabold ${
-                        isDark ? 'text-gray-100' : 'text-gray-800'
-                      }`}
-                    >
-                      {simulationResults.length}
-                    </div>
-                  </div>
-                </div>
-              </div>
+  {/* 3) Qualidade Otimizada (aparece com otimização) */}
+  {!!optimizationResults && (
+    <div
+      className={`p-4 rounded-xl border bg-gradient-to-br ${
+        isDark
+          ? 'from-emerald-950/50 to-gray-900/50 border-emerald-900/40'
+          : 'from-emerald-50 to-white border-emerald-200'
+      }`}
+    >
+      <div className="flex items-center">
+        <span
+          className={`p-2 rounded-lg mr-3 ${
+            isDark ? 'bg-emerald-900/40 text-emerald-200' : 'bg-emerald-600 text-white'
+          }`}
+        >
+          <Award className="h-5 w-5" />
+        </span>
+        <div>
+          <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+            Qualidade Otimizada
+          </div>
+          <div
+            className={`text-2xl font-extrabold ${
+              isDark ? 'text-gray-100' : 'text-gray-800'
+            }`}
+          >
+            {optimizedQuality != null ? (
+              <>
+                {optimizedQuality.toFixed(1)}
+                <span className="text-lg text-gray-500">/400</span>
+              </>
+            ) : (
+              <>
+                —<span className="text-lg text-gray-500">/400</span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
 
-              {simulationResults.length > 0 && (
-                <div
-                  className={`p-4 rounded-xl border bg-gradient-to-br ${
-                    isDark
-                      ? 'from-amber-950/50 to-gray-900/50 border-amber-900/40'
-                      : 'from-amber-50 to-white border-amber-200'
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <span
-                      className={`p-2 rounded-lg mr-3 ${
-                        isDark ? 'bg-amber-900/40 text-amber-200' : 'bg-amber-500 text-white'
-                      }`}
-                    >
-                      <PieChart className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                        Melhor Simulação
-                      </div>
-                      <div
-                        className={`text-2xl font-extrabold ${
-                          isDark ? 'text-gray-100' : 'text-gray-800'
-                        }`}
-                      >
-                        {Math.max(
-                          ...simulationResults.map((r) => safeNumber(r.quality))
-                        ).toFixed(1)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-            {(simulationResults.length > 0 || optimizationResults) && (
+  {/* 4) Total de Simulações (sempre) */}
   <div
     className={`p-4 rounded-xl border bg-gradient-to-br ${
       isDark
-        ? 'from-emerald-950/50 to-gray-900/50 border-emerald-900/40'
-        : 'from-emerald-50 to-white border-emerald-200'
+        ? 'from-violet-950/50 to-gray-900/50 border-violet-900/40'
+        : 'from-violet-50 to-white border-violet-200'
     }`}
   >
     <div className="flex items-center">
       <span
         className={`p-2 rounded-lg mr-3 ${
-          isDark ? 'bg-emerald-900/40 text-emerald-200' : 'bg-emerald-600 text-white'
+          isDark ? 'bg-violet-900/40 text-violet-200' : 'bg-violet-600 text-white'
         }`}
       >
-        <Coins className="h-5 w-5" />
+        <BarChart3 className="h-5 w-5" />
       </span>
       <div>
-        <div className={`text-xs ${isDark ? 'text-emerald-200/90' : 'text-emerald-700'}`}>
-          Economia Total Estimada
+        <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+          Total de Simulações
         </div>
         <div
           className={`text-2xl font-extrabold ${
-            isDark ? 'text-gray-100' : 'text-emerald-900'
+            isDark ? 'text-gray-100' : 'text-gray-800'
           }`}
         >
-          R$ {econ.totalSavingBRL.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
-        </div>
-        <div className={`text-[11px] mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-          Energia + Desperdício
+          {simulationResults.length}
         </div>
       </div>
     </div>
   </div>
-)}
-            </div>
+
+  {/* 5) Melhor Simulação (aparece com simulações) */}
+  {simulationResults.length > 0 && (
+    <div
+      className={`p-4 rounded-xl border bg-gradient-to-br ${
+        isDark
+          ? 'from-amber-950/50 to-gray-900/50 border-amber-900/40'
+          : 'from-amber-50 to-white border-amber-200'
+      }`}
+    >
+      <div className="flex items-center">
+        <span
+          className={`p-2 rounded-lg mr-3 ${
+            isDark ? 'bg-amber-900/40 text-amber-200' : 'bg-amber-500 text-white'
+          }`}
+        >
+          <PieChart className="h-5 w-5" />
+        </span>
+        <div>
+          <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+            Melhor Simulação
+          </div>
+          <div
+            className={`text-2xl font-extrabold ${
+              isDark ? 'text-gray-100' : 'text-gray-800'
+            }`}
+          >
+            {Math.max(...simulationResults.map((r) => safeNumber(r.quality))).toFixed(1)}
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* 6) Economia Total Estimada (aparece com simulação ou otimização) */}
+  {(simulationResults.length > 0 || optimizationResults) && (
+    <div
+      className={`p-4 rounded-xl border bg-gradient-to-br ${
+        isDark
+          ? 'from-emerald-950/50 to-gray-900/50 border-emerald-900/40'
+          : 'from-emerald-50 to-white border-emerald-200'
+      }`}
+    >
+      <div className="flex items-center">
+        <span
+          className={`p-2 rounded-lg mr-3 ${
+            isDark ? 'bg-emerald-900/40 text-emerald-200' : 'bg-emerald-600 text-white'
+          }`}
+        >
+          <Coins className="h-5 w-5" />
+        </span>
+        <div>
+          <div className={`text-xs ${isDark ? 'text-emerald-200/90' : 'text-emerald-700'}`}>
+            Economia Total Estimada
+          </div>
+          <div
+            className={`text-2xl font-extrabold ${
+              isDark ? 'text-gray-100' : 'text-emerald-900'
+            }`}
+          >
+            R$ {econ.totalSavingBRL.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+          </div>
+          <div className={`text-[11px] mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+            Energia + Desperdício
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* 7) Classificação Atual de Qualidade (aparece com simulações) */}
+  {simulationResults.length > 0 && (
+    <div
+      className={`p-4 rounded-xl border bg-gradient-to-br ${
+        isDark
+          ? 'from-violet-950/50 to-gray-900/50 border-violet-900/40'
+          : 'from-violet-50 to-white border-violet-200'
+      }`}
+    >
+      <div className="flex items-center">
+        <span
+          className={`p-2 rounded-lg mr-3 ${
+            isDark ? 'bg-violet-900/40 text-violet-200' : 'bg-violet-600 text-white'
+          }`}
+        >
+          <Award className="h-5 w-5" />
+        </span>
+        <div>
+          <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+            Classificação Atual de Qualidade
+          </div>
+          <div
+            className={`text-2xl font-extrabold ${
+              isDark ? 'text-gray-100' : 'text-gray-800'
+            }`}
+          >
+            {classifyQuality(Number(currentQuality))}
+          </div>
+          <span
+            className={`inline-block mt-1 text-[11px] px-2 py-0.5 rounded-md ${
+              Number(currentQuality) >= 365
+                ? (isDark ? 'bg-emerald-900/40 text-emerald-200' : 'bg-emerald-100 text-emerald-700')
+                : Number(currentQuality) >= 355
+                ? (isDark ? 'bg-blue-900/40 text-blue-200' : 'bg-blue-100 text-blue-700')
+                : (isDark ? 'bg-amber-900/40 text-amber-200' : 'bg-amber-100 text-amber-700')
+            }`}
+          >
+            {Number(currentQuality).toFixed(1)} / 400
+          </span>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* 8) Estabilidade do Processo (aparece com simulações) */}
+  {simulationResults.length > 0 && (
+    <div
+      className={`p-4 rounded-xl border bg-gradient-to-br ${
+        isDark
+          ? 'from-slate-950/50 to-gray-900/50 border-slate-900/40'
+          : 'from-slate-50 to-white border-slate-200'
+      }`}
+    >
+      <div className="flex items-center">
+        <span
+          className={`p-2 rounded-lg mr-3 ${
+            isDark ? 'bg-slate-900/40 text-slate-200' : 'bg-slate-600 text-white'
+          }`}
+        >
+          <BarChart3 className="h-5 w-5" />
+        </span>
+        <div>
+          <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+            Estabilidade do Processo
+          </div>
+          <div
+            className={`text-2xl font-extrabold ${
+              isDark ? 'text-gray-100' : 'text-gray-800'
+            }`}
+          >
+            {simulationResults.length > 1 ? std.toFixed(2) : '—'}
+            <span className="text-lg text-gray-500"> dp</span>
+          </div>
+          <span
+            className={`inline-block mt-1 text-[11px] px-2 py-0.5 rounded-md ${
+              simulationResults.length > 1
+                ? std < 3
+                  ? (isDark ? 'bg-emerald-900/40 text-emerald-200' : 'bg-emerald-100 text-emerald-700')
+                  : std < 6
+                  ? (isDark ? 'bg-blue-900/40 text-blue-200' : 'bg-blue-100 text-blue-700')
+                  : (isDark ? 'bg-amber-900/40 text-amber-200' : 'bg-amber-100 text-amber-700')
+                : (isDark ? 'bg-gray-800/60 text-gray-300' : 'bg-gray-100 text-gray-700')
+            }`}
+          >
+            {simulationResults.length > 1
+              ? std < 3
+                ? 'Baixa variabilidade'
+                : std < 6
+                ? 'Variabilidade média'
+                : 'Alta variabilidade'
+              : 'Precisa de ≥ 2 simulações'}
+          </span>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
 
             {/* Insights rápidos – Título padrão + conteúdo premium */}
             <div
