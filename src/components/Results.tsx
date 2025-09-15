@@ -1479,7 +1479,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     }`}
   >
     <Award className="h-3.5 w-3.5" />
-    Resultados da otimização
+    Resultados da Otimização
   </span>
 </div>
 
