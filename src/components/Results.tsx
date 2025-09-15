@@ -364,17 +364,17 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
         ).toFixed(2)
       : '0.00';
 
-  /* ===== Energia + Economia Estimada (valores estáveis entre re-renders) ===== */
+  /* ===== Energia + Economia Estimada ===== */
   const model = React.useMemo(() => getModel('inference'), []);
 
-  // Constantes de negócio (ficam estáveis)
+  // Constantes de negócio
   const ENERGY_PRICE_BRL_PER_KWH = 0.75; // R$/kWh
-  const PRODUCTION_TONS_PERIOD = 100; // ton no período
-  const SCRAP_COST_R_PER_TON = 1500; // R$/ton sucata/retrabalho
-  const MAX_SCRAP_DROP_RATE = 0.06; // teto 6% absolutos
-  const DROP_PER_QUALITY_POINT = 0.002; // ~0,2% por ponto de qualidade
-  const MIN_ENERGY_KWH_TON = 100; // piso de segurança
-  const ENERGY_SAVING_PER_QUALITY_POINT = 1.5; // kWh/ton por ponto de qualidade
+  const PRODUCTION_TONS_PERIOD = 100; // ton
+  const SCRAP_COST_R_PER_TON = 1500; // R$/ton
+  const MAX_SCRAP_DROP_RATE = 0.06; // 6% abs
+  const DROP_PER_QUALITY_POINT = 0.002; // 0,2% por ponto
+  const MIN_ENERGY_KWH_TON = 100;
+  const ENERGY_SAVING_PER_QUALITY_POINT = 1.5; // kWh/ton por ponto
 
   type Econ = {
     energyNow: number;
@@ -838,105 +838,123 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
               )}
             </div>
 
-            {/* Insights rápidos */}
+            {/* Insights rápidos – Design premium */}
             <div
-              className={`rounded-2xl border p-6 bg-gradient-to-br ${
+              className={`rounded-2xl border p-6 bg-gradient-to-br transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl ${
                 isDark
-                  ? 'from-gray-900/50 to-gray-900/70 border-gray-700'
-                  : 'from-gray-50 to-white border-gray-200'
+                  ? 'from-gray-900/60 via-gray-900/70 to-blue-950/40 border-gray-700 backdrop-blur'
+                  : 'from-gray-50 via-white to-blue-50/60 border-gray-200 backdrop-blur'
               }`}
             >
-              <h3
-                className={`text-lg font-semibold mb-4 ${
-                  isDark ? 'text-gray-100' : 'text-gray-800'
-                }`}
-              >
-                Insights Rápidos
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h4
-                    className={`font-medium mb-2 ${
-                      isDark ? 'text-gray-300' : 'text-gray-600'
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg ${
+                      isDark ? 'bg-blue-900/40 text-blue-200' : 'bg-blue-600/10 text-blue-700'
                     }`}
                   >
-                    📊 Análise de Performance
-                  </h4>
-                  <ul
-                    className={`space-y-1 text-sm ${
-                      isDark ? 'text-gray-400' : 'text-gray-500'
-                    }`}
-                  >
-                    <li>
-                      •{' '}
-                      {simulationResults.length > 0
-                        ? `Qualidade média das simulações: ${(
-                            simulationResults.reduce(
-                              (sum, r) => sum + safeNumber(r.quality),
-                              0
-                            ) / simulationResults.length
-                          ).toFixed(1)}`
-                        : 'Nenhuma simulação executada ainda'}
-                    </li>
-                    <li>
-                      •{' '}
-                      {improvementClamped != null
-                        ? `Melhoria potencial: +${improvementClamped.toFixed(1)} unidades`
-                        : 'Execute a otimização para ver melhorias potenciais'}
-                    </li>
-                    <li>
-                      •{' '}
-                      {currentQuality >= 365
-                        ? 'Parâmetros atuais já produzem excelente qualidade'
-                        : currentQuality >= 355
-                        ? 'Parâmetros atuais produzem boa qualidade'
-                        : 'Parâmetros atuais precisam de otimização'}
-                    </li>
-                    <li>
-                      • Consumo energético atual:{' '}
-                      {safeNumber(econ.energyNow).toFixed(1)} kWh/ton (
-                      {econ.energyNow < 500
-                        ? 'muito eficiente'
-                        : econ.energyNow < 600
-                        ? 'eficiente'
-                        : 'ineficiente'}
-                      )
-                    </li>
-                  </ul>
+                    <Info className="h-3.5 w-3.5" />
+                    Insights Rápidos
+                  </span>
                 </div>
-                <div>
-                  <h4
-                    className={`font-medium mb-2 ${
-                      isDark ? 'text-gray-300' : 'text-gray-600'
+                <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Gerado a partir das suas simulações e última otimização
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Bloco 1 */}
+                <div className="space-y-2">
+                  <div
+                    className={`rounded-xl border p-4 transition-all hover:shadow-md ${
+                      isDark
+                        ? 'bg-gray-900/50 border-gray-700'
+                        : 'bg-white/70 border-gray-200'
                     }`}
                   >
-                    🎯 Recomendações
-                  </h4>
-                  <ul
-                    className={`space-y-1 text-sm ${
-                      isDark ? 'text-gray-400' : 'text-gray-500'
+                    <div className="flex items-center gap-2 mb-1">
+                      <CheckCircle2 className={`h-4 w-4 ${isDark ? 'text-blue-300' : 'text-blue-600'}`} />
+                      <h4 className={`text-sm font-semibold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                        📊 Análise de Performance
+                      </h4>
+                    </div>
+                    <ul className={`text-sm leading-6 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <li>
+                        •{' '}
+                        {simulationResults.length > 0
+                          ? `Qualidade média das simulações: ${(
+                              simulationResults.reduce(
+                                (sum, r) => sum + safeNumber(r.quality),
+                                0
+                              ) / simulationResults.length
+                            ).toFixed(1)}`
+                          : 'Nenhuma simulação executada ainda'}
+                      </li>
+                      <li>
+                        •{' '}
+                        {improvementClamped != null
+                          ? `Melhoria potencial: +${improvementClamped.toFixed(1)} unidades`
+                          : 'Execute a otimização para ver melhorias potenciais'}
+                      </li>
+                      <li>
+                        •{' '}
+                        {currentQuality >= 365
+                          ? 'Parâmetros atuais já produzem excelente qualidade'
+                          : currentQuality >= 355
+                          ? 'Parâmetros atuais produzem boa qualidade'
+                          : 'Parâmetros atuais precisam de otimização'}
+                      </li>
+                      <li>
+                        • Consumo energético atual:{' '}
+                        {safeNumber(econ.energyNow).toFixed(1)} kWh/ton (
+                        {econ.energyNow < 500
+                          ? 'muito eficiente'
+                          : econ.energyNow < 600
+                          ? 'eficiente'
+                          : 'ineficiente'}
+                        )
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Bloco 2 */}
+                <div className="space-y-2">
+                  <div
+                    className={`rounded-xl border p-4 transition-all hover:shadow-md ${
+                      isDark
+                        ? 'bg-gray-900/50 border-gray-700'
+                        : 'bg-white/70 border-gray-200'
                     }`}
                   >
-                    <li>
-                      •{' '}
-                      {optimizationResults
-                        ? 'Implemente os parâmetros otimizados gradualmente'
-                        : 'Execute a otimização para encontrar melhores parâmetros'}
-                    </li>
-                    <li>
-                      •{' '}
-                      {simulationResults.length < 10
-                        ? 'Execute mais simulações para validar resultados'
-                        : 'Dados suficientes coletados para análise confiável'}
-                    </li>
-                    <li>• Monitore a temperatura de perto - é o parâmetro mais crítico</li>
-                    <li>
-                      •{' '}
-                      {econ.energyNow > 600
-                        ? 'Considere reduzir temperatura ou tempo para economizar energia'
-                        : 'Consumo energético está em nível aceitável'}
-                    </li>
-                  </ul>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Info className={`h-4 w-4 ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`} />
+                      <h4 className={`text-sm font-semibold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                        🎯 Recomendações
+                      </h4>
+                    </div>
+                    <ul className={`text-sm leading-6 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <li>
+                        •{' '}
+                        {optimizationResults
+                          ? 'Implemente os parâmetros otimizados gradualmente'
+                          : 'Execute a otimização para encontrar melhores parâmetros'}
+                      </li>
+                      <li>
+                        •{' '}
+                        {simulationResults.length < 10
+                          ? 'Execute mais simulações para validar resultados'
+                          : 'Dados suficientes coletados para análise confiável'}
+                      </li>
+                      <li>• Monitore a temperatura de perto — maior impacto na qualidade</li>
+                      <li>
+                        •{' '}
+                        {econ.energyNow > 600
+                          ? 'Reduza temperatura/tempo para economizar energia'
+                          : 'Consumo energético em nível aceitável'}
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1564,6 +1582,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     </div>
   );
 };
+
 
 
 
