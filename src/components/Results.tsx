@@ -870,6 +870,62 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
         {/* ===== Detailed ===== */}
         {activeView === 'detailed' && simulationResults.length > 0 && (
           <div className="space-y-6">
+            {/* ---- Resumo Estatístico (agora NO TOPO, design premium) ---- */}
+            <div
+              className={`rounded-2xl border p-6 bg-gradient-to-br ${
+                isDark
+                  ? 'from-blue-950/40 to-gray-900/60 border-blue-900/40'
+                  : 'from-blue-50 to-white border-blue-200'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span
+                  className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg ${
+                    isDark ? 'bg-blue-900/40 text-blue-200' : 'bg-blue-600/10 text-blue-700'
+                  }`}
+                >
+                  <Info className="h-3.5 w-3.5" />
+                  Resumo estatístico
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="rounded-xl p-4 border bg-white/60 backdrop-blur dark:bg-gray-900/30 dark:border-blue-900/30">
+                  <div className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    Média
+                  </div>
+                  <div className={`text-xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                    {mean.toFixed(2)}
+                  </div>
+                </div>
+                <div className="rounded-xl p-4 border bg-white/60 backdrop-blur dark:bg-gray-900/30 dark:border-blue-900/30">
+                  <div className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    Mediana
+                  </div>
+                  <div className={`text-xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                    {median}
+                  </div>
+                </div>
+                <div className="rounded-xl p-4 border bg-white/60 backdrop-blur dark:bg-gray-900/30 dark:border-blue-900/30">
+                  <div className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    Desvio Padrão
+                  </div>
+                  <div className={`text-xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                    {std.toFixed(2)}
+                  </div>
+                </div>
+                <div className="rounded-xl p-4 border bg-white/60 backdrop-blur dark:bg-gray-900/30 dark:border-blue-900/30">
+                  <div className={`text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    Amplitude
+                  </div>
+                  <div className={`text-xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                    {range}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Grid de gráficos (mantidos onde estavam) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Tendência de Qualidade */}
               <div
@@ -911,7 +967,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                   }}
                 />
 
-                {/* RESUMO AUTOMÁTICO – Tendência (Design Premium) */}
+                {/* RESUMO AUTOMÁTICO – Tendência */}
                 {simulationResults.length > 0 && (
                   <div
                     className={`mt-3 rounded-xl p-3 border shadow-sm bg-gradient-to-br ${
@@ -1001,7 +1057,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                   }}
                 />
 
-                {/* RESUMO AUTOMÁTICO – Distribuição (Design Premium) */}
+                {/* RESUMO AUTOMÁTICO – Distribuição */}
                 {totalCount > 0 && (
                   <div
                     className={`mt-3 rounded-xl p-3 border shadow-sm bg-gradient-to-br ${
@@ -1052,65 +1108,6 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     })()}
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Resumo estatístico */}
-            <div
-              className={`rounded-2xl border p-6 bg-gradient-to-br ${
-                isDark
-                  ? 'from-gray-900/50 to-gray-900/70 border-gray-700'
-                  : 'from-white to-white border-gray-200'
-              }`}
-            >
-              <h3
-                className={`text-lg font-semibold mb-4 ${
-                  isDark ? 'text-gray-100' : 'text-gray-700'
-                }`}
-              >
-                Resumo Estatístico
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    Média
-                  </div>
-                  <div
-                    className={`text-xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}
-                  >
-                    {mean.toFixed(2)}
-                  </div>
-                </div>
-                <div>
-                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    Mediana
-                  </div>
-                  <div
-                    className={`text-xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}
-                  >
-                    {median}
-                  </div>
-                </div>
-                <div>
-                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    Desvio Padrão
-                  </div>
-                  <div
-                    className={`text-xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}
-                  >
-                    {std.toFixed(2)}
-                  </div>
-                </div>
-                <div>
-                  <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                    Amplitude
-                  </div>
-                  <div
-                    className={`text-xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}
-                  >
-                    {range}
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -1247,7 +1244,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                 </div>
               </div>
 
-              {/* COMPARAÇÃO RÁPIDA (percentuais) — Design Premium */}
+              {/* COMPARAÇÃO RÁPIDA (percentuais) */}
               <div
                 className={`rounded-xl p-4 mb-4 border shadow-sm bg-gradient-to-br ${
                   isDark
@@ -1354,6 +1351,83 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
         {/* ===== Comparison ===== */}
         {activeView === 'comparison' && (
           <div className="space-y-6">
+            {/* ---- Resumo das Melhorias (agora NO TOPO, design premium) ---- */}
+            {optimizationResults && (
+              <div
+                className={`rounded-2xl border p-6 bg-gradient-to-br ${
+                  isDark
+                    ? 'from-emerald-950/50 to-gray-900/60 border-emerald-900/40'
+                    : 'from-emerald-50 to-white border-emerald-200'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span
+                    className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg ${
+                      isDark ? 'bg-emerald-900/40 text-emerald-200' : 'bg-emerald-600/10 text-emerald-700'
+                    }`}
+                  >
+                    <Award className="h-3.5 w-3.5" />
+                    Resumo das Melhorias
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="rounded-xl p-4 border bg-white/60 backdrop-blur dark:bg-gray-900/30 dark:border-emerald-900/30">
+                    <div className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>
+                      Melhoria na Qualidade
+                    </div>
+                    <div className={`text-2xl font-bold ${isDark ? 'text-emerald-100' : 'text-emerald-800'}`}>
+                      +{optimizationResults.improvement ?? '—'} unidades
+                    </div>
+                    <div className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>
+                      {currentQuality
+                        ? `(${(
+                            (safeNumber(optimizationResults.improvement) / currentQuality) *
+                            100
+                          ).toFixed(1)}% de melhoria)`
+                        : '(—)'}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl p-4 border bg-white/60 backdrop-blur dark:bg-gray-900/30 dark:border-emerald-900/30">
+                    <div className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>
+                      Parâmetro Mais Alterado
+                    </div>
+                    <div className={`text-xl font-bold ${isDark ? 'text-emerald-100' : 'text-emerald-800'}`}>
+                      Temperatura
+                    </div>
+                    <div className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>
+                      {(
+                        safeNumber(optimizationResults.temperatura) - currentParams.temperatura
+                      ) >= 0
+                        ? '+'
+                        : ''}
+                      {(
+                        safeNumber(optimizationResults.temperatura) - currentParams.temperatura
+                      ).toFixed(1)}
+                      °C
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl p-4 border bg-white/60 backdrop-blur dark:bg-gray-900/30 dark:border-emerald-900/30">
+                    <div className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>
+                      Classificação Final
+                    </div>
+                    <div className={`text-xl font-bold ${isDark ? 'text-emerald-100' : 'text-emerald-800'}`}>
+                      {optimizedQuality != null
+                        ? optimizedQuality >= 365
+                          ? 'Excelente'
+                          : optimizedQuality >= 355
+                          ? 'Boa'
+                          : 'Regular'
+                        : '—'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Gráfico de comparação */}
             {optimizationResults ? (
               <div
                 className={`rounded-2xl border p-4 bg-gradient-to-br ${
@@ -1418,116 +1492,13 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                 </div>
               </div>
             )}
-
-            {optimizationResults && (
-              <div
-                className={`rounded-2xl border p-6 bg-gradient-to-br ${
-                  isDark
-                    ? 'from-emerald-950/50 to-gray-900/60 border-emerald-900/40'
-                    : 'from-emerald-50 to-white border-emerald-200'
-                }`}
-              >
-                <h3
-                  className={`text-lg font-semibold mb-4 ${
-                    isDark ? 'text-emerald-200' : 'text-emerald-800'
-                  }`}
-                >
-                  Resumo das Melhorias
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <div
-                      className={`text-sm ${
-                        isDark ? 'text-emerald-300' : 'text-emerald-600'
-                      }`}
-                    >
-                      Melhoria na Qualidade
-                    </div>
-                    <div
-                      className={`text-2xl font-bold ${
-                        isDark ? 'text-emerald-100' : 'text-emerald-800'
-                      }`}
-                    >
-                      +{optimizationResults.improvement ?? '—'} unidades
-                    </div>
-                    <div
-                      className={`text-sm ${
-                        isDark ? 'text-emerald-300' : 'text-emerald-600'
-                      }`}
-                    >
-                      {currentQuality
-                        ? `(${(
-                            (safeNumber(optimizationResults.improvement) /
-                              currentQuality) *
-                            100
-                          ).toFixed(1)}% de melhoria)`
-                        : '(—)'}
-                    </div>
-                  </div>
-                  <div>
-                    <div
-                      className={`text-sm ${
-                        isDark ? 'text-emerald-300' : 'text-emerald-600'
-                      }`}
-                    >
-                      Parâmetro Mais Alterado
-                    </div>
-                    <div
-                      className={`text-xl font-bold ${
-                        isDark ? 'text-emerald-100' : 'text-emerald-800'
-                      }`}
-                    >
-                      Temperatura
-                    </div>
-                    <div
-                      className={`text-sm ${
-                        isDark ? 'text-emerald-300' : 'text-emerald-600'
-                      }`}
-                    >
-                      {(
-                        safeNumber(optimizationResults.temperatura) -
-                        currentParams.temperatura
-                      ) >= 0
-                        ? '+'
-                        : ''}
-                      {(
-                        safeNumber(optimizationResults.temperatura) -
-                        currentParams.temperatura
-                      ).toFixed(1)}
-                      °C
-                    </div>
-                  </div>
-                  <div>
-                    <div
-                      className={`text-sm ${
-                        isDark ? 'text-emerald-300' : 'text-emerald-600'
-                      }`}
-                    >
-                      Classificação Final
-                    </div>
-                    <div
-                      className={`text-xl font-bold ${
-                        isDark ? 'text-emerald-100' : 'text-emerald-800'
-                      }`}
-                    >
-                      {optimizedQuality != null
-                        ? optimizedQuality >= 365
-                          ? 'Excelente'
-                          : optimizedQuality >= 355
-                          ? 'Boa'
-                          : 'Regular'
-                        : '—'}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
     </div>
   );
 };
+
 
 
 
