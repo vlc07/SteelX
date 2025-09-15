@@ -846,17 +846,25 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                   : 'from-gray-50 via-white to-blue-50/60 border-gray-200 backdrop-blur'
               }`}
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg ${
-                      isDark ? 'bg-blue-900/40 text-blue-200' : 'bg-blue-600/10 text-blue-700'
-                    }`}
-                  >
-                    <Info className="h-3.5 w-3.5" />
-                    Insights Rápidos
-                  </span>
-                </div>
+              <div className="mb-4">
+  <h3
+    className={`text-xl md:text-2xl font-bold tracking-tight ${
+      isDark ? 'text-gray-100' : 'text-gray-800'
+    }`}
+  >
+    Insights Rápidos
+  </h3>
+
+  <span
+    className={`mt-1 inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg ${
+      isDark ? 'bg-gray-800/60 text-gray-300' : 'bg-gray-100 text-gray-700'
+    }`}
+  >
+    <Info className="h-3.5 w-3.5" />
+    Análises automáticas do sistema
+  </span>
+</div>
+
                 <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                   Gerado a partir das suas simulações e última otimização
                 </span>
