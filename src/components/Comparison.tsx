@@ -172,7 +172,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
             <div className={`rounded-lg border ${isDark ? 'border-indigo-800 bg-indigo-950/40' : 'border-indigo-200 bg-white/20'} px-3 py-2`}>
               <div className="flex items-center gap-2">
                 <Settings2 className="h-4 w-4" />
-                <span className="text-sm">Baseline</span>
+                <span className="text-sm">Referência</span>
                 <select
                   value={baselineIndex}
                   onChange={(e) => setBaselineIndex(Number(e.target.value))}
