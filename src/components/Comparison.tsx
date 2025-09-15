@@ -327,7 +327,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
                   <button
                     className="text-xs px-2 py-1 rounded-md border hover:bg-white/60 dark:hover:bg-gray-800/60 transition"
                     onClick={() => setBaselineIndex(s.idx)}
-                    title="Usar como baseline"
+                    title="Usar como Referência"
                   >
                     Definir baseline
                   </button>
