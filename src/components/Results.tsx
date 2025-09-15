@@ -968,7 +968,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                 }`}
               >
                 <Info className="h-3.5 w-3.5" />
-                Visão geral • gerado automaticamente
+                Visão Geral • Gerado automaticamente
               </span>
             </div>
 
