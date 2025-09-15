@@ -466,10 +466,10 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       onOptimizationComplete({
         ...res,
         bestParams: res.best.x,
-        qualidade: qe.quality,          // para quem usa "qualidade"
-        quality: qe.quality,            // para quem usa "quality"
-        energia: qe.energy,             // para quem usa "energia"
-        energy: qe.energy,              // para quem usa "energy"
+        qualidade: qe.quality,
+        quality: qe.quality,
+        energia: qe.energy,
+        energy: qe.energy,
         temperatura: res.best.x.temperatura,
         tempo: res.best.x.tempo,
         pressao: res.best.x.pressao,
@@ -592,7 +592,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
         </p>
       </div>
 
-            {/* Presets por objetivo */}
+      {/* Presets por objetivo */}
       <div
         className={`rounded-2xl border bg-gradient-to-br ${gradBlue} p-5 transition-all duration-300 hover:shadow-xl ${ringBlue}`}
       >
@@ -650,7 +650,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             <div className="text-xs text-gray-500 mt-1">
               Maleabilidade com boa qualidade. T/tempo moderados.
             </div>
-            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border-emerald-200">
               λ ≈ 0.12 · Qualidade ≥ 360
             </div>
           </button>
@@ -674,7 +674,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             <div className="text-xs text-gray-500 mt-1">
               Reduz custo/CO₂. T/tempo menores (λ mais alto).
             </div>
-            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
+            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border-emerald-200">
               λ ≈ 0.22 · Qualidade ≥ 355
             </div>
           </button>
@@ -698,7 +698,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
             <div className="text-xs text-gray-500 mt-1">
               Equilíbrio padrão. Você ajusta depois, se quiser.
             </div>
-            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200">
+            <div className="mt-2 text-[11px] inline-block px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border-blue-200">
               λ ≈ 0.15 · Qualidade mínima opcional
             </div>
           </button>
@@ -931,18 +931,21 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
       {last && (
         <div
           ref={resultRef}
-          className={`rounded-2xl border overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5
+          className={`rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5
             ${
               isDark
-                ? 'border-green-700 bg-gradient-to-br from-gray-800 to-gray-900'
-                : 'border-green-200 bg-gradient-to-br from-green-50 to-white'
+                ? 'border border-emerald-700/70 ring-1 ring-emerald-500/30 bg-gradient-to-br from-gray-900 to-gray-800'
+                : 'border border-emerald-200 ring-1 ring-emerald-300/30 bg-gradient-to-br from-emerald-50 via-white to-white'
             }`}
         >
           {/* Header */}
           <div
-            className={`flex items-center justify-between px-6 py-5 ${
-              isDark ? 'bg-gray-900/40' : 'bg-green-100/80'
-            }`}
+            className={`flex items-center justify-between px-6 py-5 border-b
+              ${
+                isDark
+                  ? 'bg-gradient-to-r from-gray-900/80 via-gray-900/40 to-transparent border-emerald-800/40'
+                  : 'bg-gradient-to-r from-emerald-50 via-emerald-50 to-white border-emerald-200'
+              }`}
           >
             <div className="flex items-center gap-3">
               <div
@@ -994,7 +997,14 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
           <div className="p-6 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Método usado */}
-              <div className={`${cardBase} ${ringEmerald} p-4`}>
+              <div
+                className={`p-4 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl
+                  ${
+                    isDark
+                      ? 'bg-gradient-to-br from-blue-950/50 to-gray-900/50 border-blue-900/40 hover:ring-2 hover:ring-blue-400/40'
+                      : 'bg-gradient-to-br from-blue-50 to-white border-blue-200 hover:ring-2 hover:ring-blue-300/60'
+                  }`}
+              >
                 <div className="text-xs uppercase tracking-wide text-gray-500">Método utilizado</div>
                 <div className={`mt-1 text-lg font-semibold ${text}`}>
                   {fullMethodName(last.method)}
@@ -1002,7 +1012,14 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
               </div>
 
               {/* Qualidade prevista */}
-              <div className={`${cardBase} ${ringEmerald} p-4`}>
+              <div
+                className={`p-4 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl
+                  ${
+                    isDark
+                      ? 'bg-gradient-to-br from-emerald-950/50 to-gray-900/50 border-emerald-900/40 hover:ring-2 hover:ring-emerald-400/40'
+                      : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-200 hover:ring-2 hover:ring-emerald-300/60'
+                  }`}
+              >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs uppercase tracking-wide text-gray-500">
                     Qualidade prevista
@@ -1022,7 +1039,14 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
               </div>
 
               {/* Energia */}
-              <div className={`${cardBase} ${ringEmerald} p-4`}>
+              <div
+                className={`p-4 rounded-xl border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl
+                  ${
+                    isDark
+                      ? 'bg-gradient-to-br from-amber-950/40 to-gray-900/50 border-amber-900/40 hover:ring-2 hover:ring-amber-400/40'
+                      : 'bg-gradient-to-br from-amber-50 to-white border-amber-200 hover:ring-2 hover:ring-amber-300/60'
+                  }`}
+              >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs uppercase tracking-wide text-gray-500">
                     Consumo energético
@@ -1392,6 +1416,7 @@ function RangeCard({
     </div>
   );
 }
+
 
 
 
