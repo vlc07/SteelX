@@ -89,6 +89,27 @@ export const Results: React.FC<ResultsProps> = ({
     ? Number(optimizedQualityRaw)
     : null;
 
+  /* ---------- MELHORIA (robusto) ---------- */
+  const rawImprovement = optimizationResults?.improvement;
+  const derivedImprovement =
+    optimizedQuality != null && Number.isFinite(Number(currentQuality))
+      ? Number(optimizedQuality) - Number(currentQuality)
+      : null;
+
+  const improvement =
+    Number.isFinite(Number(rawImprovement)) ? Number(rawImprovement) : derivedImprovement;
+
+  const improvementClamped = improvement != null ? Math.max(0, improvement) : null;
+
+  const improvementPctNum =
+    improvementClamped != null && Number(currentQuality) > 0
+      ? (improvementClamped / Number(currentQuality)) * 100
+      : NaN;
+
+  const improvementPctTxt = Number.isFinite(improvementPctNum)
+    ? `${improvementPctNum.toFixed(1)}%`
+    : '(—)';
+
   /* ===== Exportação ===== */
   const downloadAllResults = () => {
     const avgQuality =
@@ -192,7 +213,9 @@ PARÂMETROS OTIMIZADOS:
           ? safeNumber(optimizationResults.energy ?? optimizationResults.energia).toFixed(1)
           : '—'
       } kWh/ton
-- Melhoria: ${optimizationResults.improvement ?? '—'} unidades
+- Melhoria (estimada): ${
+        improvementClamped != null ? improvementClamped.toFixed(1) : '—'
+      } unidades
 `
     : ''
 }
@@ -206,8 +229,8 @@ RESUMO DAS SIMULAÇÕES:
 RECOMENDAÇÕES:
 ${
   optimizationResults
-    ? `1. Implementar os parâmetros otimizados para obter melhoria de ${
-        optimizationResults.improvement ?? '—'
+    ? `1. Implementar os parâmetros otimizados para obter melhoria estimada de ${
+        improvementClamped != null ? improvementClamped.toFixed(1) : '—'
       } unidades
 2. Monitorar especialmente a temperatura, que tem maior impacto na qualidade
 3. Realizar testes piloto antes da implementação completa`
@@ -284,10 +307,10 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
       {
         label: 'Atual',
         data: [
-          currentParams.temperatura,
-          currentParams.tempo,
-          currentParams.pressao,
-          currentParams.velocidade,
+          safeNumber(currentParams.temperatura),
+          safeNumber(currentParams.tempo),
+          safeNumber(currentParams.pressao),
+          safeNumber(currentParams.velocidade),
         ],
         backgroundColor: 'rgba(59, 130, 246, 0.8)',
       },
@@ -296,10 +319,10 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
             {
               label: 'Otimizado',
               data: [
-                optimizationResults.temperatura ?? 0,
-                optimizationResults.tempo ?? 0,
-                optimizationResults.pressao ?? 0,
-                optimizationResults.velocidade ?? 0,
+                safeNumber(optimizationResults.temperatura),
+                safeNumber(optimizationResults.tempo),
+                safeNumber(optimizationResults.pressao),
+                safeNumber(optimizationResults.velocidade),
               ],
               backgroundColor: 'rgba(34, 197, 94, 0.8)',
             },
@@ -432,9 +455,8 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
 
     // qualidade (ganho)
     const qNow = safeNumber(currentQuality, 0);
-    const qOpt = optimizedQuality != null && Number.isFinite(optimizedQuality)
-      ? Number(optimizedQuality)
-      : null;
+    const qOpt =
+      optimizedQuality != null && Number.isFinite(optimizedQuality) ? Number(optimizedQuality) : null;
     const qualityGain = Math.max(0, (qOpt ?? 0) - qNow);
 
     // energia otimizada
@@ -480,6 +502,62 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
       totalSavingBRL: energySavingBRLLocal + scrapSavingBRLLocal,
     });
   }, [econKey]);
+
+  // ===== Dinâmica do "Parâmetro Mais Alterado"
+  const paramMeta: Record<string, { label: string; unit: string; current: number; opt?: number }> =
+    {
+      temperatura: {
+        label: 'Temperatura',
+        unit: '°C',
+        current: safeNumber(currentParams.temperatura, NaN),
+        opt: optimizationResults ? safeNumber(optimizationResults.temperatura, NaN) : undefined,
+      },
+      tempo: {
+        label: 'Tempo',
+        unit: 'min',
+        current: safeNumber(currentParams.tempo, NaN),
+        opt: optimizationResults ? safeNumber(optimizationResults.tempo, NaN) : undefined,
+      },
+      pressao: {
+        label: 'Pressão',
+        unit: 'kPa',
+        current: safeNumber(currentParams.pressao, NaN),
+        opt: optimizationResults ? safeNumber(optimizationResults.pressao, NaN) : undefined,
+      },
+      velocidade: {
+        label: 'Velocidade',
+        unit: 'rpm',
+        current: safeNumber(currentParams.velocidade, NaN),
+        opt: optimizationResults ? safeNumber(optimizationResults.velocidade, NaN) : undefined,
+      },
+    };
+
+  const mostChangedParam = React.useMemo(() => {
+    if (!optimizationResults) return null;
+    let bestKey: string | null = null;
+    let bestAbsDelta = -Infinity;
+    let signedDelta = 0;
+
+    Object.entries(paramMeta).forEach(([key, info]) => {
+      if (!Number.isFinite(Number(info.opt))) return;
+      const delta = Number(info.opt) - Number(info.current);
+      const abs = Math.abs(delta);
+      if (abs > bestAbsDelta) {
+        bestAbsDelta = abs;
+        signedDelta = delta;
+        bestKey = key;
+      }
+    });
+
+    if (!bestKey || bestAbsDelta < 0 || !Number.isFinite(bestAbsDelta)) return null;
+    const info = paramMeta[bestKey];
+    return {
+      key: bestKey,
+      label: info.label,
+      delta: signedDelta,
+      unit: info.unit,
+    };
+  }, [optimizationResults, currentParams]);
 
   // ===== Chart (usa valores estáveis do estado)
   const axisColor = isDark ? '#e5e7eb' : '#374151';
@@ -802,10 +880,8 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     </li>
                     <li>
                       •{' '}
-                      {optimizationResults
-                        ? `Melhoria potencial: +${
-                            optimizationResults.improvement ?? '—'
-                          } unidades`
+                      {improvementClamped != null
+                        ? `Melhoria potencial: +${improvementClamped.toFixed(1)} unidades`
                         : 'Execute a otimização para ver melhorias potenciais'}
                     </li>
                     <li>
@@ -870,7 +946,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
         {/* ===== Detailed ===== */}
         {activeView === 'detailed' && simulationResults.length > 0 && (
           <div className="space-y-6">
-            {/* ---- Resumo Estatístico (agora NO TOPO, design premium) ---- */}
+            {/* ---- Resumo Estatístico (no topo, design premium) ---- */}
             <div
               className={`rounded-2xl border p-6 bg-gradient-to-br ${
                 isDark
@@ -925,7 +1001,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
               </div>
             </div>
 
-            {/* Grid de gráficos (mantidos onde estavam) */}
+            {/* Grid de gráficos */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Tendência de Qualidade */}
               <div
@@ -1197,7 +1273,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     }`}
                   >
                     R{'$ '}
-                    {(econ.scrapSavingBRL).toLocaleString('pt-BR', {
+                    {econ.scrapSavingBRL.toLocaleString('pt-BR', {
                       maximumFractionDigits: 0,
                     })}
                   </div>
@@ -1230,7 +1306,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     }`}
                   >
                     R{'$ '}
-                    {(econ.totalSavingBRL).toLocaleString('pt-BR', {
+                    {econ.totalSavingBRL.toLocaleString('pt-BR', {
                       maximumFractionDigits: 0,
                     })}
                   </div>
@@ -1266,13 +1342,14 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                 {(() => {
                   const energyRedPctNum = pct(econ.energyDeltaPerTon, econ.energyNow);
                   const energyRedPct = fmtPct(energyRedPctNum);
-                  const hasEnergyGain = Number.isFinite(energyRedPctNum) && econ.energyDeltaPerTon > 0;
+                  const hasEnergyGain =
+                    Number.isFinite(energyRedPctNum) && econ.energyDeltaPerTon > 0;
 
                   const hasQ =
                     optimizedQuality != null &&
                     Number.isFinite(Number(optimizedQuality)) &&
                     currentQuality > 0;
-                  const qDelta = hasQ ? (Number(optimizedQuality) - currentQuality) : NaN;
+                  const qDelta = hasQ ? Number(optimizedQuality) - currentQuality : NaN;
                   const qPctNum = hasQ ? pct(qDelta, currentQuality) : NaN;
                   const qPct = fmtPct(qPctNum);
 
@@ -1351,7 +1428,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
         {/* ===== Comparison ===== */}
         {activeView === 'comparison' && (
           <div className="space-y-6">
-            {/* ---- Resumo das Melhorias (agora NO TOPO, design premium) ---- */}
+            {/* ---- Resumo das Melhorias (no topo, design premium) ---- */}
             {optimizationResults && (
               <div
                 className={`rounded-2xl border p-6 bg-gradient-to-br ${
@@ -1377,15 +1454,10 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                       Melhoria na Qualidade
                     </div>
                     <div className={`text-2xl font-bold ${isDark ? 'text-emerald-100' : 'text-emerald-800'}`}>
-                      +{optimizationResults.improvement ?? '—'} unidades
+                      +{improvementClamped != null ? improvementClamped.toFixed(1) : '—'} unidades
                     </div>
                     <div className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>
-                      {currentQuality
-                        ? `(${(
-                            (safeNumber(optimizationResults.improvement) / currentQuality) *
-                            100
-                          ).toFixed(1)}% de melhoria)`
-                        : '(—)'}
+                      {improvementPctTxt !== '(—)' ? `(${improvementPctTxt} de melhoria)` : '(—)'}
                     </div>
                   </div>
 
@@ -1394,18 +1466,12 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                       Parâmetro Mais Alterado
                     </div>
                     <div className={`text-xl font-bold ${isDark ? 'text-emerald-100' : 'text-emerald-800'}`}>
-                      Temperatura
+                      {mostChangedParam ? mostChangedParam.label : '—'}
                     </div>
                     <div className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-600'}`}>
-                      {(
-                        safeNumber(optimizationResults.temperatura) - currentParams.temperatura
-                      ) >= 0
-                        ? '+'
-                        : ''}
-                      {(
-                        safeNumber(optimizationResults.temperatura) - currentParams.temperatura
-                      ).toFixed(1)}
-                      °C
+                      {mostChangedParam
+                        ? `${mostChangedParam.delta >= 0 ? '+' : ''}${mostChangedParam.delta.toFixed(1)} ${mostChangedParam.unit}`
+                        : '(—)'}
                     </div>
                   </div>
 
@@ -1498,6 +1564,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     </div>
   );
 };
+
 
 
 
