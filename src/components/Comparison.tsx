@@ -47,7 +47,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
     velocidade: 300,
   });
 
-  // ===== tokens premium (iguais ao restante do app)
+  // ===== tokens premium
   const ringBlue =
     isDark ? 'hover:ring-2 hover:ring-blue-400/50' : 'hover:ring-2 hover:ring-blue-300/60';
   const cardBase =
@@ -65,7 +65,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
   const textMain = isDark ? 'text-gray-100' : 'text-gray-900';
   const textSub = isDark ? 'text-gray-300' : 'text-gray-600';
 
-  // ===== lógica de comparação
+  // ===== comparação
   const enhanced: (S & { delta: number; pct: number; best?: boolean })[] = useMemo(() => {
     const base = scenarios[baselineIndex]?.quality ?? 0;
     const arr = scenarios.map((s, idx) => ({
@@ -168,15 +168,15 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
             <div className="text-xs uppercase tracking-wide text-blue-600 dark:text-blue-300">Referência</div>
             <div className={`mt-1 text-lg font-extrabold ${textMain}`}>{baseline?.name ?? '—'}</div>
             <div
-              className={`mt-2 inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border
-                ${isDark ? 'bg-gray-900/40 text-gray-200 border-gray-700' : 'bg-blue-50 text-blue-700 border-blue-200'}`}
+              className={`mt-2 inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-medium border
+                ${isDark ? 'bg-gray-900/40 text-gray-100 border-gray-700' : 'bg-blue-50 text-blue-700 border-blue-200'}`}
             >
               <Info className="h-3.5 w-3.5" />
               deltas calculados vs este cenário
             </div>
           </div>
 
-          {/* Melhor cenário */}
+          {/* Melhor */}
           <div className={`${cardBase} p-5 ${gradEmerald}`}>
             <div className="text-xs uppercase tracking-wide text-emerald-600 dark:text-emerald-300">
               Melhor cenário
@@ -207,22 +207,26 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
       {/* Formulário: adicionar cenário */}
       <div className={`${cardBase} ${ringBlue} p-6 ${gradBlue}`}>
         <h3 className={`font-semibold mb-4 ${textMain}`}>{t('addScenario')}</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div>
+
+        {/* grade ajustada para 4 colunas XL */}
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
+          {/* Nome */}
+          <div className="min-w-[220px]">
             <label className={`block text-sm mb-1 ${textSub}`}>Nome do Cenário</label>
             <input
               type="text"
               value={newScenario.name}
               onChange={(e) => setNewScenario({ ...newScenario, name: e.target.value })}
-              className={`w-full rounded-md border px-3 py-2 ${
-                isDark
-                  ? 'bg-gray-900 text-gray-100 border-gray-700'
-                  : 'bg-white text-gray-900 border-gray-300'
-              }`}
+              className="w-full h-11 rounded-md border px-3
+                bg-white text-gray-900 placeholder-gray-400 border-gray-300
+                dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500 dark:border-gray-700
+                focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-300
+                dark:focus:ring-blue-400/40 dark:focus:border-blue-600"
               placeholder="Ex.: Cenário C"
             />
           </div>
 
+          {/* Campos numéricos */}
           <div className="grid grid-cols-2 gap-3">
             <Field
               label={t('temperature')}
@@ -236,6 +240,8 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
               value={newScenario.tempo}
               onChange={(v) => setNewScenario({ ...newScenario, tempo: v })}
             />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             <Field
               label={t('pressure')}
               icon={<Gauge className="h-4 w-4" />}
@@ -250,11 +256,14 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
             />
           </div>
 
-          <div className="flex items-end">
+          {/* Botão */}
+          <div className="flex xl:col-span-1 items-end">
             <button
               onClick={addScenario}
-              className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 text-white 
-                bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-700 transition-all ${ringBlue}`}
+              aria-label="Adicionar cenário"
+              className={`w-full h-11 rounded-lg font-semibold flex items-center justify-center gap-2 text-white 
+                bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-700
+                shadow-sm transition-all ${ringBlue}`}
             >
               <Plus className="h-4 w-4" />
               Adicionar
@@ -263,9 +272,9 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
         </div>
       </div>
 
-      {/* Insights premium (coloridos) */}
+      {/* Insights premium */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className={`${cardBase} p-4 ${gradEmerald}`}>
+        <div className={`${cardBase} p-4 ${gradEmerald} text-gray-900 dark:text-gray-100`}>
           {(() => {
             const winners = enhanced.filter((s) => s.idx !== baselineIndex && s.delta > 0);
             if (winners.length === 0)
@@ -284,9 +293,10 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
           })()}
         </div>
 
-        <div className={`${cardBase} p-4 ${isDark
-            ? 'bg-gradient-to-br from-rose-950/60 via-gray-900/40 to-gray-900/60 border-rose-900/40'
-            : 'bg-gradient-to-br from-rose-50 via-white to-white border-rose-200'}`}>
+        <div className={`${cardBase} p-4 text-gray-900 dark:text-gray-100
+            ${isDark
+              ? 'bg-gradient-to-br from-rose-950/60 via-gray-900/40 to-gray-900/60 border-rose-900/40'
+              : 'bg-gradient-to-br from-rose-50 via-white to-white border-rose-200'}`}>
           {(() => {
             const losers = enhanced.filter((s) => s.idx !== baselineIndex && s.delta < 0);
             if (losers.length === 0)
@@ -301,7 +311,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
           })()}
         </div>
 
-        <div className={`${cardBase} p-4 ${gradViolet}`}>
+        <div className={`${cardBase} p-4 ${gradViolet} text-gray-900 dark:text-gray-100`}>
           {(() => {
             const values = enhanced.map((s) => s.quality);
             const amp = Math.max(...values) - Math.min(...values);
@@ -509,7 +519,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
   );
 };
 
-/* ---------- pequenos componentes ---------- */
+/* ---------- componentes auxiliares ---------- */
 function Field({
   label,
   icon,
@@ -522,15 +532,19 @@ function Field({
   onChange: (v: number) => void;
 }) {
   return (
-    <div>
-      <label className="block text-sm text-gray-600 dark:text-gray-300 mb-1">{label}</label>
+    <div className="min-w-[180px]">
+      <label className="block text-sm mb-1 text-gray-700 dark:text-gray-200">{label}</label>
       <div className="relative">
-        <div className="absolute left-2 top-2.5 text-gray-400">{icon}</div>
+        <div className="absolute left-2 top-2.5 text-gray-500 dark:text-gray-400">{icon}</div>
         <input
           type="number"
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full rounded-md border pl-8 pr-3 py-2 bg-white text-gray-900 border-gray-300 dark:bg-gray-900 dark:text-gray-100 dark:border-gray-700"
+          className="w-full h-11 rounded-md border pl-8 pr-3
+            bg-white text-gray-900 placeholder-gray-400 border-gray-300
+            dark:bg-gray-900 dark:text-gray-100 dark:placeholder-gray-500 dark:border-gray-700
+            focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-300
+            dark:focus:ring-blue-400/40 dark:focus:border-blue-600"
         />
       </div>
     </div>
@@ -559,4 +573,5 @@ function ParamBox({
     </div>
   );
 }
+
 
