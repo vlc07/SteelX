@@ -978,7 +978,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
       isDark ? 'text-gray-100' : 'text-gray-800'
     }`}
   >
-    Resumo estatístico
+    Resumo Estatístico
   </h3>
 
   <span
@@ -1464,16 +1464,25 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     : 'from-emerald-50 to-white border-emerald-200'
                 }`}
               >
-                <div className="flex items-center justify-between mb-3">
-                  <span
-                    className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg ${
-                      isDark ? 'bg-emerald-900/40 text-emerald-200' : 'bg-emerald-600/10 text-emerald-700'
-                    }`}
-                  >
-                    <Award className="h-3.5 w-3.5" />
-                    Resumo das Melhorias
-                  </span>
-                </div>
+<div className="mb-4">
+  <h3
+    className={`text-xl md:text-2xl font-bold tracking-tight ${
+      isDark ? 'text-gray-100' : 'text-gray-800'
+    }`}
+  >
+    Resumo das Melhorias
+  </h3>
+
+  <span
+    className={`mt-1 inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg ${
+      isDark ? 'bg-emerald-900/40 text-emerald-200' : 'bg-emerald-600/10 text-emerald-700'
+    }`}
+  >
+    <Award className="h-3.5 w-3.5" />
+    Resultados da otimização
+  </span>
+</div>
+
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="rounded-xl p-4 border bg-white/60 backdrop-blur dark:bg-gray-900/30 dark:border-emerald-900/30">
