@@ -715,7 +715,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           >
             <div className="flex items-center gap-2 mb-2">
               <Beaker className="h-5 w-5 text-purple-500" />
-              <h3 className={`font-semibold ${text}`}>Grid Search</h3>
+              <h3 className={`font-semibold ${text}`}>Algoritmo Grid Search</h3>
             </div>
             <p className={`${sub} text-sm mb-4`}>
               Testa várias combinações de parâmetros como se fosse uma tabela. Simples, mas pode
@@ -934,7 +934,7 @@ export const Optimization: React.FC<Props> = ({ t, isDark, onOptimizationComplet
           className={`rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-0.5
             ${
               isDark
-                ? 'border border-emerald-700/70 ring-1 ring-emerald-500/30 bg-gradient-to-br from-gray-900 to-gray-800'
+                ? 'border border-emerald-700/70 ring-1 ring-emerald-500/30 bg-gradient-to-br from-gray-950 via-gray-900 to-gray-900'
                 : 'border border-emerald-200 ring-1 ring-emerald-300/30 bg-gradient-to-br from-emerald-50 via-white to-white'
             }`}
         >
@@ -993,8 +993,14 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
             </div>
           </div>
 
-          {/* Body */}
-          <div className="p-6 space-y-6">
+          {/* Body – fundo premium (sem cinza chapado) */}
+          <div
+            className={`p-6 space-y-6 ${
+              isDark
+                ? 'bg-gradient-to-br from-gray-950/40 via-gray-900/30 to-gray-900/20'
+                : 'bg-gradient-to-br from-emerald-50/40 via-white to-white'
+            }`}
+          >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Método usado */}
               <div
@@ -1005,7 +1011,9 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
                       : 'bg-gradient-to-br from-blue-50 to-white border-blue-200 hover:ring-2 hover:ring-blue-300/60'
                   }`}
               >
-                <div className="text-xs uppercase tracking-wide text-gray-500">Método utilizado</div>
+                <div className={`text-xs uppercase tracking-wide ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+                  Método utilizado
+                </div>
                 <div className={`mt-1 text-lg font-semibold ${text}`}>
                   {fullMethodName(last.method)}
                 </div>
@@ -1021,7 +1029,7 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
                   }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs uppercase tracking-wide text-gray-500">
+                  <span className={`text-xs uppercase tracking-wide ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                     Qualidade prevista
                   </span>
                   <span
@@ -1048,7 +1056,7 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
                   }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs uppercase tracking-wide text-gray-500">
+                  <span className={`text-xs uppercase tracking-wide ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
                     Consumo energético
                   </span>
                   <span
@@ -1066,7 +1074,7 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
               </div>
             </div>
 
-            {/* Parâmetros otimizados */}
+            {/* Parâmetros otimizados — agora com gradientes premium por parâmetro */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <ParamCard
                 title="Temperatura"
@@ -1127,7 +1135,7 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
         </div>
       )}
 
-      {/* Histórico – mais respiro (gap-6) e título visível no dark */}
+      {/* Histórico */}
       <div className={`${cardBase} ${ringBlue} p-6`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -1252,7 +1260,7 @@ Valores menores no controle de equilíbrio priorizam qualidade. Valores maiores 
 /** Mini-card para cada parâmetro no “Melhor Resultado Encontrado” */
 function ParamCard(props: {
   title: string;
-  name: string;
+  name: 'temperatura' | 'tempo' | 'pressao' | 'velocidade';
   value: number;
   unit: string;
   min: number;
@@ -1262,22 +1270,48 @@ function ParamCard(props: {
   isDark: boolean;
   pct: number; // 0..100
 }) {
-  const { title, value, unit, min, max, badge, icon, isDark, pct } = props;
+  const { title, name, value, unit, min, max, badge, icon, isDark, pct } = props;
+
+  // Gradiente premium por parâmetro
+  const palette: Record<typeof name, { dark: string; light: string; ring: string }> = {
+    temperatura: {
+      dark:  'bg-gradient-to-br from-rose-950/60 to-gray-900/60 border border-rose-900/40',
+      light: 'bg-gradient-to-br from-rose-50 to-white border border-rose-200',
+      ring:  isDark ? 'hover:ring-2 hover:ring-rose-400/50' : 'hover:ring-2 hover:ring-rose-300/60'
+    },
+    tempo: {
+      dark:  'bg-gradient-to-br from-blue-950/60 to-gray-900/60 border border-blue-900/40',
+      light: 'bg-gradient-to-br from-blue-50 to-white border border-blue-200',
+      ring:  isDark ? 'hover:ring-2 hover:ring-blue-400/50' : 'hover:ring-2 hover:ring-blue-300/60'
+    },
+    pressao: {
+      dark:  'bg-gradient-to-br from-violet-950/60 to-gray-900/60 border border-violet-900/40',
+      light: 'bg-gradient-to-br from-violet-50 to-white border border-violet-200',
+      ring:  isDark ? 'hover:ring-2 hover:ring-violet-400/50' : 'hover:ring-2 hover:ring-violet-300/60'
+    },
+    velocidade: {
+      dark:  'bg-gradient-to-br from-emerald-950/60 to-gray-900/60 border border-emerald-900/40',
+      light: 'bg-gradient-to-br from-emerald-50 to-white border border-emerald-200',
+      ring:  isDark ? 'hover:ring-2 hover:ring-emerald-400/50' : 'hover:ring-2 hover:ring-emerald-300/60'
+    }
+  };
+
+  const base = `rounded-xl p-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl ${palette[name].ring} ${
+    isDark ? palette[name].dark : palette[name].light
+  }`;
+
   return (
-    <div
-      className={`rounded-xl p-4 border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl
-      ${isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} ${
-        isDark ? 'hover:ring-2 hover:ring-emerald-400/50' : 'hover:ring-2 hover:ring-emerald-300/60'
-      }`}
-    >
+    <div className={base}>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <div className={`p-2 rounded-md ${isDark ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-700'}`}>
             {icon}
           </div>
-          <span className="text-xs uppercase tracking-wide text-gray-500">{title}</span>
+          <span className={`text-xs uppercase tracking-wide ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
+            {title}
+          </span>
         </div>
-        <span className="text-xs text-gray-500">
+        <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-500'}`}>
           {min}–{max} {unit}
         </span>
       </div>
@@ -1416,6 +1450,7 @@ function RangeCard({
     </div>
   );
 }
+
 
 
 
