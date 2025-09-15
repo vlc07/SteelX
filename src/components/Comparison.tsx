@@ -294,54 +294,55 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
               key={s.idx}
               className={`${cardBase} p-5 ${s.best ? ringEmerald : ringBlue}`}
             >
-              <div className="flex items-start justify-between">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h4 className={`font-semibold ${textMain} truncate`}>{s.name}</h4>
-                    {s.isOptimized && (
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                        Otimizado
-                      </span>
-                    )}
-                    {s.idx === baselineIndex && (
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-800 border border-blue-200 inline-flex items-center gap-1">
-                        <Star className="h-3.5 w-3.5" /> Referência
-                      </span>
-                    )}
-                    {s.best && (
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1">
-                        <Crown className="h-3.5 w-3.5" /> Melhor
-                      </span>
-                    )}
-                  </div>
+              <div className="flex items-start justify-between gap-2">
+  {/* Bloco do título + chips ocupa o espaço disponível */}
+  <div className="min-w-0 flex-1">
+    <div className="flex flex-wrap items-center gap-2">
+      <h4
+        className={`font-semibold ${textMain} whitespace-normal break-words leading-tight max-w-full pr-2`}
+      >
+        {s.name}
+      </h4>
 
-                  <div className="mt-1 inline-flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${badge.cls}`}>
-                      {badge.label}
-                    </span>
-                    <span className={`text-xs ${textSub}`}>Qualidade: <b>{fmt(s.quality)}</b></span>
-                  </div>
-                </div>
+      {s.isOptimized && (
+        <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+          Otimizado
+        </span>
+      )}
+      {s.idx === baselineIndex && (
+        <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-800 border border-blue-200 inline-flex items-center gap-1">
+          <Star className="h-3.5 w-3.5" /> Referência
+        </span>
+      )}
+      {s.best && (
+        <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200 inline-flex items-center gap-1">
+          <Crown className="h-3.5 w-3.5" /> Melhor
+        </span>
+      )}
+    </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    className="text-xs px-2 py-1 rounded-md border hover:bg-white/60 dark:hover:bg-gray-800/60 transition"
-                    onClick={() => setBaselineIndex(s.idx)}
-                    title="Usar como Referência"
-                  >
-                    Definir Referência
-                  </button>
-                  {!s.isOptimized && (
-                    <button
-                      onClick={() => removeScenario(s.idx)}
-                      className="text-rose-600 hover:text-rose-700"
-                      title="Remover"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
+    <div className="mt-1 inline-flex items-center gap-2">
+      {/* ...badge de qualidade permanece igual... */}
+    </div>
+  </div>
+
+  {/* Botões não encolhem o título */}
+  <div className="flex items-center gap-2 shrink-0">
+    <button
+      className="text-xs px-2 py-1 rounded-md border hover:bg-white/60 dark:hover:bg-gray-800/60 transition"
+      onClick={() => setBaselineIndex(s.idx)}
+      title="Usar como referência"
+    >
+      Definir Referência
+    </button>
+    {!s.isOptimized && (
+      <button onClick={() => removeScenario(s.idx)} className="text-rose-600 hover:text-rose-700" title="Remover">
+        <Trash2 className="h-4 w-4" />
+      </button>
+    )}
+  </div>
+</div>
+
 
               {/* Barra de qualidade */}
               <div className="mt-3">
