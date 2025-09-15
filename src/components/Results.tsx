@@ -928,7 +928,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
       </div>
     </div>
   </div>
-              )}
+)}
             </div>
 
             {/* Insights rápidos – Título padrão + conteúdo premium */}
