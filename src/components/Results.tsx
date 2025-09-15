@@ -960,7 +960,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                   isDark ? 'text-gray-100' : 'text-gray-800'
                 }`}
               >
-                Resumo estatístico
+                Resumo Estatístico
               </h3>
               <span
                 className={`mt-1 inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg ${
