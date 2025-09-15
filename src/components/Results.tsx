@@ -1,13 +1,3 @@
-Aqui vai o **arquivo completo** `src/components/Results.tsx`, com:
-
-* títulos em formato **h3 + badge** para **Resumo estatístico**, **Resumo das Melhorias** e **Insights Rápidos**;
-* cálculo de **melhoria** robusto (mostra número e % mesmo quando `optimizationResults.improvement` não vem);
-* **Insights Rápidos** em design premium;
-* sem elementos adjacentes fora de um wrapper (evita o erro do Babel).
-
-Cole tudo:
-
-```tsx
 // src/components/Results.tsx
 import React, { useState } from 'react';
 import {
@@ -1363,9 +1353,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
     </div>
   );
 };
-```
 
-Se quiser, eu converto os títulos de “Economia Estimada (R\$)” e “Comparação: Atual vs Otimizado” para o mesmo padrão **h3 + badge** também.
 
 
 
