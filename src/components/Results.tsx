@@ -894,6 +894,42 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                     </div>
                   </div>
                 </div>
+
+            {(simulationResults.length > 0 || optimizationResults) && (
+  <div
+    className={`p-4 rounded-xl border bg-gradient-to-br ${
+      isDark
+        ? 'from-emerald-950/50 to-gray-900/50 border-emerald-900/40'
+        : 'from-emerald-50 to-white border-emerald-200'
+    }`}
+  >
+    <div className="flex items-center">
+      <span
+        className={`p-2 rounded-lg mr-3 ${
+          isDark ? 'bg-emerald-900/40 text-emerald-200' : 'bg-emerald-600 text-white'
+        }`}
+      >
+        <Coins className="h-5 w-5" />
+      </span>
+      <div>
+        <div className={`text-xs ${isDark ? 'text-emerald-200/90' : 'text-emerald-700'}`}>
+          Economia Total Estimada
+        </div>
+        <div
+          className={`text-2xl font-extrabold ${
+            isDark ? 'text-gray-100' : 'text-emerald-900'
+          }`}
+        >
+          R$ {econ.totalSavingBRL.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+        </div>
+        <div className={`text-[11px] mt-1 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+          Energia + Desperdício
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
               )}
             </div>
 
