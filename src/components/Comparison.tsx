@@ -188,7 +188,7 @@ export const Comparison: React.FC<Props> = ({ t, isDark }) => {
         </div>
 
         <p className={`${isDark ? 'text-gray-300' : 'text-gray-600'} text-sm mt-3`}>
-          Adicione cenários, escolha uma <b>Referência</b> e veja deltas e destaques automaticamente.
+          Compare rapidamente cenários manuais e otimizados, <b>com deltas, ranking e insights automáticos.</b>
         </p>
       </div>
 
