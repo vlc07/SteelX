@@ -404,7 +404,7 @@ export const Comparison: React.FC<ComparisonProps> = ({ t, isDark }) => {
             <li className="p-3 rounded-xl border bg-gradient-to-br dark:from-emerald-950/40 dark:to-gray-900/30 dark:border-emerald-900/40 from-emerald-50 to-white border-emerald-200">
               {(() => {
                 const winners = enhanced.filter(s => s.idx !== baselineIndex && s.delta > 0);
-                if (winners.length === 0) return <>Nenhum cenário supera o baseline <b>{baseline.name}</b>.</>;
+                if (winners.length === 0) return <>Nenhum cenário supera a referência <b>{baseline.name}</b>.</>;
                 const top = winners.sort((a, b) => b.delta - a.delta)[0];
                 return <>O cenário <b>{top.name}</b> é o que mais supera o baseline: <b>+{fmt(top.delta)}</b> ({fmt(top.pct)}%).</>;
               })()}
