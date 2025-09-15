@@ -728,6 +728,7 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
                 </div>
               </div>
              <div
+               
   {(simulationResults.length > 0 || optimizationResults) && (
   <div
     className={`p-4 rounded-xl border bg-gradient-to-br ${
