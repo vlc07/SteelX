@@ -697,97 +697,96 @@ Autores: Vitor Lorenzo Cerutti, Bernardo Krauspenhar Paganin, Otávio Susin Horn
           <div className="space-y-6">
             {/* Cards principais */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div
-                className={`p-4 rounded-xl border bg-gradient-to-br ${
-                  isDark
-                    ? 'from-blue-950/50 to-gray-900/50 border-blue-900/40'
-                    : 'from-blue-50 to-white border-blue-200'
-                }`}
-              >
-                <div className="flex items-center">
-                  <span
-                    className={`p-2 rounded-lg mr-3 ${
-                      isDark ? 'bg-blue-900/40 text-blue-200' : 'bg-blue-600 text-white'
-                    }`}
-                  >
-                    <TrendingUp className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Qualidade Atual
-                    </div>
-                    <div
-                      className={`text-2xl font-extrabold ${
-                        isDark ? 'text-gray-100' : 'text-gray-800'
-                      }`}
-                    >
-                      {safeNumber(currentQuality).toFixed(1)}
-                      <span className="text-lg text-gray-500">/400</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-             <div
-               
-  {(simulationResults.length > 0 || optimizationResults) && (
+  {/* Card Qualidade Atual */}
   <div
     className={`p-4 rounded-xl border bg-gradient-to-br ${
       isDark
-        ? 'from-teal-950/50 to-gray-900/50 border-teal-900/40'
-        : 'from-teal-50 to-white border-teal-200'
+        ? 'from-blue-950/50 to-gray-900/50 border-blue-900/40'
+        : 'from-blue-50 to-white border-blue-200'
     }`}
   >
     <div className="flex items-center">
       <span
         className={`p-2 rounded-lg mr-3 ${
-          isDark ? 'bg-teal-900/40 text-teal-200' : 'bg-teal-600 text-white'
+          isDark ? 'bg-blue-900/40 text-blue-200' : 'bg-blue-600 text-white'
         }`}
       >
-        <Coins className="h-5 w-5" />
+        <TrendingUp className="h-5 w-5" />
       </span>
       <div>
         <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-          Consumo Energético Atual
+          Qualidade Atual
         </div>
         <div
           className={`text-2xl font-extrabold ${
             isDark ? 'text-gray-100' : 'text-gray-800'
           }`}
         >
-          {Number.isFinite(econ.energyNow) ? econ.energyNow.toFixed(1) : '—'}{' '}
-          <span className="text-lg text-gray-500">kWh/ton</span>
-        </div>
-
-        {/* Status */}
-        <div className="mt-1">
-          <span
-            className={`inline-block text-[11px] px-2 py-0.5 rounded-md ${
-              econ.energyNow < 500
-                ? isDark
-                  ? 'bg-emerald-900/40 text-emerald-200'
-                  : 'bg-emerald-100 text-emerald-700'
-                : econ.energyNow < 600
-                ? isDark
-                  ? 'bg-blue-900/40 text-blue-200'
-                  : 'bg-blue-100 text-blue-700'
-                : isDark
-                ? 'bg-amber-900/40 text-amber-200'
-                : 'bg-amber-100 text-amber-700'
-            }`}
-          >
-            {econ.energyNow < 500
-              ? 'muito eficiente'
-              : econ.energyNow < 600
-              ? 'eficiente'
-              : 'ineficiente'}
-          </span>
+          {safeNumber(currentQuality).toFixed(1)}
+          <span className="text-lg text-gray-500">/400</span>
         </div>
       </div>
     </div>
   </div>
-)}
 
+  {/* ✅ Novo card Consumo Energético Atual */}
+  {(simulationResults.length > 0 || optimizationResults) && (
+    <div
+      className={`p-4 rounded-xl border bg-gradient-to-br ${
+        isDark
+          ? 'from-teal-950/50 to-gray-900/50 border-teal-900/40'
+          : 'from-teal-50 to-white border-teal-200'
+      }`}
+    >
+      <div className="flex items-center">
+        <span
+          className={`p-2 rounded-lg mr-3 ${
+            isDark ? 'bg-teal-900/40 text-teal-200' : 'bg-teal-600 text-white'
+          }`}
+        >
+          <Coins className="h-5 w-5" />
+        </span>
+        <div>
+          <div className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+            Consumo Energético Atual
+          </div>
+          <div
+            className={`text-2xl font-extrabold ${
+              isDark ? 'text-gray-100' : 'text-gray-800'
+            }`}
+          >
+            {Number.isFinite(econ.energyNow) ? econ.energyNow.toFixed(1) : '—'}{' '}
+            <span className="text-lg text-gray-500">kWh/ton</span>
+          </div>
 
+          {/* Status */}
+          <div className="mt-1">
+            <span
+              className={`inline-block text-[11px] px-2 py-0.5 rounded-md ${
+                econ.energyNow < 500
+                  ? isDark
+                    ? 'bg-emerald-900/40 text-emerald-200'
+                    : 'bg-emerald-100 text-emerald-700'
+                  : econ.energyNow < 600
+                  ? isDark
+                    ? 'bg-blue-900/40 text-blue-200'
+                    : 'bg-blue-100 text-blue-700'
+                  : isDark
+                  ? 'bg-amber-900/40 text-amber-200'
+                  : 'bg-amber-100 text-amber-700'
+              }`}
+            >
+              {econ.energyNow < 500
+                ? 'muito eficiente'
+                : econ.energyNow < 600
+                ? 'eficiente'
+                : 'ineficiente'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
               {!!optimizationResults && (
                 <div
                   className={`p-4 rounded-xl border bg-gradient-to-br ${
