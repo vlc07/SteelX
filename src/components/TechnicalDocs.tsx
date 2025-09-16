@@ -3,8 +3,6 @@ import {
   BookOpen,
   Cpu,
   BarChart3,
-  Settings,
-  Zap,
   Target,
   GitBranch,
   Brain,
@@ -43,10 +41,9 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
     []
   );
 
-  // ===== helpers de tema / estilo premium
+  // helpers de tema
   const titleColor = isDark ? 'text-slate-100' : 'text-slate-900';
   const subColor   = isDark ? 'text-slate-300' : 'text-slate-600';
-  const hairColor  = isDark ? 'text-slate-400' : 'text-slate-500';
 
   const shell = `rounded-2xl border bg-gradient-to-br ${
     isDark ? 'from-slate-900 to-slate-800 border-slate-700' : 'from-white to-slate-50 border-slate-200'
@@ -77,20 +74,21 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
     isDark ? 'bg-slate-900/60 border-slate-700' : 'bg-white border-slate-200'
   } p-6`;
 
-  const sectionCard = (tone: 'blue' | 'green' | 'violet' | 'yellow' | 'purple' | 'red' | 'slate' = 'slate') => {
+  const sectionCard = (
+    tone: 'blue' | 'green' | 'violet' | 'yellow' | 'purple' | 'red' | 'slate' = 'slate'
+  ) => {
     const map = {
-      blue:   isDark ? 'from-blue-950/50 to-slate-900/50 border-blue-900/30'   : 'from-blue-50 to-white border-blue-200',
+      blue:   isDark ? 'from-blue-950/50 to-slate-900/50 border-blue-900/30'     : 'from-blue-50 to-white border-blue-200',
       green:  isDark ? 'from-emerald-950/50 to-slate-900/50 border-emerald-900/30' : 'from-emerald-50 to-white border-emerald-200',
       violet: isDark ? 'from-violet-950/50 to-slate-900/50 border-violet-900/30' : 'from-violet-50 to-white border-violet-200',
-      yellow: isDark ? 'from-amber-950/40 to-slate-900/50 border-amber-900/30' : 'from-amber-50 to-white border-amber-200',
+      yellow: isDark ? 'from-amber-950/40 to-slate-900/50 border-amber-900/30'   : 'from-amber-50 to-white border-amber-200',
       purple: isDark ? 'from-purple-950/50 to-slate-900/50 border-purple-900/30' : 'from-purple-50 to-white border-purple-200',
-      red:    isDark ? 'from-rose-950/50 to-slate-900/50 border-rose-900/30'   : 'from-rose-50 to-white border-rose-200',
-      slate:  isDark ? 'from-slate-800 to-slate-900 border-slate-700'          : 'from-white to-slate-50 border-slate-200',
+      red:    isDark ? 'from-rose-950/50 to-slate-900/50 border-rose-900/30'     : 'from-rose-50 to-white border-rose-200',
+      slate:  isDark ? 'from-slate-800 to-slate-900 border-slate-700'            : 'from-white to-slate-50 border-slate-200',
     };
     return `rounded-2xl border bg-gradient-to-br ${map[tone]} p-5 hover:-translate-y-0.5 hover:shadow-xl transition`;
   };
 
-  // ===== filtro rápido (apenas interface, filtra títulos/trechos por query)
   const q = query.trim().toLowerCase();
   const matchText = (text: string) => (q ? text.toLowerCase().includes(q) : true);
 
@@ -130,15 +128,13 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar de navegação */}
+        {/* Sidebar */}
         <aside className={sidebarShell}>
           <h3 className={`font-semibold mb-3 ${titleColor}`}>Seções</h3>
           <nav className="space-y-2">
             {sections.map((s) => {
               const Icon = s.icon;
-              // esconder seção no menu se query não bate no título
-              const visible = matchText(s.title);
-              if (!visible) return null;
+              if (!matchText(s.title)) return null;
               return (
                 <button
                   key={s.id}
@@ -148,21 +144,17 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
                 >
                   <Icon className="h-4 w-4" />
                   <span className="truncate">{s.title}</span>
-                  <ChevronRight
-                    className={`ml-auto h-4 w-4 ${
-                      activeSection === s.id ? 'opacity-90' : 'opacity-40'
-                    }`}
-                  />
+                  <ChevronRight className={`ml-auto h-4 w-4 ${activeSection === s.id ? 'opacity-90' : 'opacity-40'}`} />
                 </button>
               );
             })}
           </nav>
         </aside>
 
-        {/* Área de conteúdo */}
+        {/* Conteúdo */}
         <section className="lg:col-span-3">
           <div className={contentShell}>
-            {/* ====== OVERVIEW ====== */}
+            {/* ===== OVERVIEW ===== */}
             {activeSection === 'overview' && (
               <div className="space-y-6">
                 <h3 className={`text-xl font-bold ${titleColor}`}>Visão Geral do Sistema</h3>
@@ -211,7 +203,7 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
               </div>
             )}
 
-            {/* ====== ALGORITHMS ====== */}
+            {/* ===== ALGORITHMS ===== */}
             {activeSection === 'algorithms' && (
               <div className="space-y-6">
                 <h3 className={`text-xl font-bold ${titleColor}`}>Algoritmos de Otimização</h3>
@@ -235,7 +227,7 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
                         <li>4. Retorna a combinação com maior qualidade prevista</li>
                       </ul>
                     </div>
-                    <div className={sectionCard('green') + ' mt-3'}>
+                    <div className={`${sectionCard('green')} mt-3`}>
                       <h5 className={`font-medium mb-1 ${titleColor}`}>Vantagens</h5>
                       <p className={`text-sm ${subColor}`}>
                         Garante encontrar o ótimo global dentro das faixas definidas. Simples de implementar e entender.
@@ -263,7 +255,7 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
                         <li>6. <strong>Repetição:</strong> Evolui por várias gerações</li>
                       </ul>
                     </div>
-                    <div className={sectionCard('yellow') + ' mt-3'}>
+                    <div className={`${sectionCard('yellow')} mt-3`}>
                       <h5 className={`font-medium mb-1 ${titleColor}`}>Características</h5>
                       <p className={`text-sm ${subColor}`}>
                         Eficiente para espaços de busca complexos. Pode escapar de ótimos locais via diversidade populacional.
@@ -289,7 +281,7 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
                         <li>4. <strong>Atualização:</strong> Refina o modelo com novos dados</li>
                       </ul>
                     </div>
-                    <div className={sectionCard('purple') + ' mt-3'}>
+                    <div className={`${sectionCard('purple')} mt-3`}>
                       <h5 className={`font-medium mb-1 ${titleColor}`}>Eficiência</h5>
                       <p className={`text-sm ${subColor}`}>
                         Requer menos avaliações. Ideal quando cada avaliação é custosa computacionalmente.
@@ -297,9 +289,10 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-            {/* ====== SENSITIVITY ====== */}
+            {/* ===== SENSITIVITY ===== */}
             {activeSection === 'sensitivity' && (
               <div className="space-y-6">
                 <h3 className={`text-xl font-bold ${titleColor}`}>Análise de Sensibilidade</h3>
@@ -360,7 +353,7 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
               </div>
             )}
 
-            {/* ====== SIMULATION ====== */}
+            {/* ===== SIMULATION ===== */}
             {activeSection === 'simulation' && (
               <div className="space-y-6">
                 <h3 className={`text-xl font-bold ${titleColor}`}>Sistema de Simulação</h3>
@@ -419,7 +412,7 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
               </div>
             )}
 
-            {/* ====== ML MODELS ====== */}
+            {/* ===== ML MODELS ===== */}
             {activeSection === 'ml-models' && (
               <div className="space-y-6">
                 <h3 className={`text-xl font-bold ${titleColor}`}>Modelos de Machine Learning</h3>
@@ -485,7 +478,7 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
               </div>
             )}
 
-            {/* ====== IMPLEMENTATION ====== */}
+            {/* ===== IMPLEMENTATION ===== */}
             {activeSection === 'implementation' && (
               <div className="space-y-6">
                 <h3 className={`text-xl font-bold ${titleColor}`}>Detalhes de Implementação</h3>
@@ -567,4 +560,5 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
     </div>
   );
 };
+
 
