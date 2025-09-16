@@ -567,3 +567,4 @@ export const TechnicalDocs: React.FC<TechnicalDocsProps> = ({ t, isDark }) => {
     </div>
   );
 };
+
